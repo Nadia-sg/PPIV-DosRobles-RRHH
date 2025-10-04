@@ -1,6 +1,9 @@
 # PPIV_DosRobles_RRHH
 
-Proyecto integrador de Recursos Humanos (Dos Robles) desarrollado como monorepo.
+Desarrollo de un sistema de gestión de recursos humanos para la empresa Dos Robles, 
+que permita administrar la información de empleados, 
+controlar la asistencia tanto en planta como en obras externas, 
+y generar reportes automáticos relacionados con ausencias, horas extra y licencias.
 
 ## Estructura del proyecto
 PPIV_DosRobles_RRHH/
