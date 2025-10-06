@@ -1,84 +1,123 @@
 /* src/styles/MainLayout.module.css */
 
+/* Contenedor general */
 .container {
-  min-height: 100vh;
+  position: relative;
   width: 100%;
+  min-height: 100vh;
   background: linear-gradient(45deg, #b9b9b9 0%, #ffffff 100%);
   position: relative;
   overflow: hidden;
 }
 
-
+/* Vector decorativo superior */
 .topVector {
   position: absolute;
   top: 0;
   left: 0;
   width: 100%;
   height: auto;
-  z-index: 1;
-  pointer-events: none;
+  z-index: 0;
 }
 
-/* Barra superior fija */
+/* Barra superior */
 .topBar {
-  position: fixed;
-  top: 0;
-  left: 0;
-  width: 100%;
-  height: 100px;
+  position: relative;
+  z-index: 10;
   display: flex;
   justify-content: space-between;
-  align-items: center;
-  padding: 0 24px;
-  z-index: 2;
+  align-items: flex-start;
+  height: 100px;
+  padding: 4px 1.5rem;
+  background: transparent;
+  margin-top: 1rem;
 }
 
-
+/* Logo */
 .logoContainer {
-  display: flex;
-  align-items: center;
+  display: flex-end;
+  margin-left: 6rem;
 }
 
 .logo {
-  height: 80px;
-  max-height: 80px; 
-  width: auto;
+  height: 100px;
   object-fit: contain;
-  margin-top: 1rem;     
-  margin-left: 5rem;
+}
+
+/* Logout */
+.logoutContainer {
+  height: 100%;
+  display: flex;
+  align-items: flex-start;
 }
 
 /* Botón de salida */
 .logoutBtn {
-  background-color: #98d0c7 !important;
-  color: var(--neutral4);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background-color: #98d0c7;
+  border: none;
+  border-radius: 0.3rem;
+  padding: 2px;
+  height: 30%;
+  aspect-ratio: 1 / 1;
+  cursor: pointer;
   box-shadow: 0 2px 6px rgba(0, 0, 0, 0.2);
-  border-radius: 8px !important;
-  width: 40px;
-  height: 40px;
-  max-height: 70px;
-  padding: 4px !important;
   transition: all 0.2s ease;
 }
 
-.logoutContainer {
-  position: fixed;
-  top: 10px;
-  right: 20px;
-  z-index: 2;
-  margin-top: 0.3rem;     
-  margin-right: 2rem;   
-}
-
 .logoutBtn:hover {
-  transform: translateY(-2px);
-  background-color: var(--secondary) !important;
-  color: var(--neutral6);
+  background-color: var(--secondary);
 }
 
+/* Ícono dentro del botón */
+.logoutIcon {
+  width: 70%;
+  height: 70%;
+  object-fit: contain;
+}
 
-.content {
-  padding-top: 100px; 
-  position: relative;
-  z-index: 1;
+/* Responsividad */
+
+@media (max-width: 1024px) {
+  .topBar {
+    height: 50px;
+  }
+
+  .logo {
+    height: 50px;
+  }
+  .logoContainer {
+    display: flex-end;
+    margin-left: 2rem;
+  }
+
+  .logoutBtn {
+    height: 50%;
+  }
+}
+
+@media (max-width: 768px) {
+  .topBar {
+    height: 50px;
+    padding: 4px 1rem; 
+    margin-top: 0;
+  }
+
+
+  .logo {
+    height: 30px; 
+  }
+
+  .logoContainer {
+    display: flex-end;
+    margin-left: 1rem;
+    margin-top: 0.5rem;
+
+  }
+
+  .logoutBtn {
+    height: 50%; 
+  }
 }
