@@ -1,3 +1,5 @@
+/*src/styles/AppLayout.module.css*/
+
 .pageContainer {
   display: flex;
   gap: 2rem;
@@ -7,30 +9,10 @@
   z-index: 10;
 }
 
-/* Menú lateral */
+/* Sidebar dentro del layout */
 .sidebar {
-  flex: 0 0 220px; /* ancho fijo */
-  background-color: rgba(255, 255, 255, 0.8);
-  border-radius: 12px;
-  padding: 1rem;
-  height: 100%; /* ocupa toda la altura disponible del pageContainer */
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
-}
-
-.sidebar ul {
-  list-style: none;
-  padding: 0;
-  margin: 0;
-}
-
-.sidebar li {
-  padding: 0.5rem 0;
-  cursor: pointer;
-  transition: color 0.2s ease;
-}
-
-.sidebar li:hover {
-  color: #2b7a78;
+  flex: 0 0 220px;
+  height: 100%;
 }
 
 /* Contenido principal */
