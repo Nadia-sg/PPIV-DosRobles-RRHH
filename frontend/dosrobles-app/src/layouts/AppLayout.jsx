@@ -1,13 +1,12 @@
 /* src/layouts/AppLayout.jsx */
 
-/* src/layouts/AppLayout.jsx */
-
 import React from "react";
+import { Outlet } from "react-router-dom"; 
 import MainLayout from "./MainLayout";
 import Sidebar from "../components/Sidebar"; 
 import styles from "../styles/AppLayout.module.css";
 
-export default function AppLayout({ children, user, isAdmin }) {
+export default function AppLayout({ user, isAdmin }) {
   return (
     <MainLayout>
       <div className={styles.pageContainer}>
@@ -16,9 +15,10 @@ export default function AppLayout({ children, user, isAdmin }) {
 
         {/* Contenido principal */}
         <section className={styles.mainContent}>
-          {children}
+          <Outlet /> {/* las páginas se insertan aquí */}
         </section>
       </div>
     </MainLayout>
   );
 }
+
