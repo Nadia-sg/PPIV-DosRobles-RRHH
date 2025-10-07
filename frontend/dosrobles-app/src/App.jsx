@@ -21,6 +21,9 @@ import CalendarioLicencias from "./pages/licencias/CalendarioLicencias";
 import CalculoHaberes from "./pages/nomina/CalculoHaberes";
 import RecibosDigitales from "./pages/nomina/RecibosDigitales";
 
+//Pruebas de componentes
+import ComponentsDemo from "./pages/ComponentsDemo";
+
 function App() {
   return (
     <Routes>
@@ -45,6 +48,9 @@ function App() {
         {/* Nómina */}
         <Route path="/nomina/calculo" element={<CalculoHaberes />} />
         <Route path="/nomina/recibos" element={<RecibosDigitales />} />
+
+        {/* Demo componentes */}
+        <Route path="/components-demo" element={<ComponentsDemo />} />
 
         {/* Ruta por defecto */}
         <Route path="*" element={<h1>Página no encontrada</h1>} />
