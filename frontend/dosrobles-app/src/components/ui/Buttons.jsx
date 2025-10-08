@@ -96,3 +96,5 @@ export const RejectButton = styled(PrimaryButton)({
   "&:hover": { backgroundColor: "#E06668" },
   "&:active": { backgroundColor: "#CC5C60" },
 });
+
+
