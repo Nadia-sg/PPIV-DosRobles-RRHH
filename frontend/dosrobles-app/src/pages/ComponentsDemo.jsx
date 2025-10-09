@@ -1,6 +1,5 @@
 // src/pages/ComponentsDemo.jsx
-
-import React from "react";
+import React, { useState } from "react";
 import {
   Box,
   Typography,
@@ -9,6 +8,7 @@ import {
   CardContent,
   Stack,
   Divider,
+  Button,
 } from "@mui/material";
 import {
   PrimaryButton,
@@ -25,14 +25,21 @@ import FavoriteIcon from "@mui/icons-material/Favorite";
 import CloseIcon from "@mui/icons-material/Close";
 import { SearchBar } from "../components/ui/SearchBar";
 import CustomTable from "../components/ui/CustomTable";
+import ModalDialog from "../components/ui/ModalDialog";
+import ModalCard from "../components/ui/ModalCard";
 
 export default function ComponentsDemo() {
+  const [openModal, setOpenModal] = useState(false);
+  const [openModalCard, setOpenModalCard] = useState(false);
+
   const sections = [
     {
       title: "Botones Principales",
       description: "Usados para acciones primarias o destacadas.",
       buttons: [
-        <PrimaryButton startIcon={<FavoriteIcon />}>Botón Primario</PrimaryButton>,
+        <PrimaryButton startIcon={<FavoriteIcon />}>
+          Botón Primario
+        </PrimaryButton>,
         <RejectButton startIcon={<CloseIcon />}>Rechazar</RejectButton>,
       ],
     },
@@ -40,7 +47,9 @@ export default function ComponentsDemo() {
       title: "Botones Secundarios",
       description: "Usados para acciones de apoyo o secundarias.",
       buttons: [
-        <SecondaryButton startIcon={<FavoriteIcon />}>Botón Secundario</SecondaryButton>,
+        <SecondaryButton startIcon={<FavoriteIcon />}>
+          Botón Secundario
+        </SecondaryButton>,
       ],
     },
     {
@@ -49,7 +58,9 @@ export default function ComponentsDemo() {
       buttons: [
         <PrevButton startIcon={<ArrowBackIcon />}>Anterior</PrevButton>,
         <NextButton endIcon={<ArrowForwardIcon />}>Siguiente</NextButton>,
-        <CloseButton><CloseIcon /></CloseButton>,
+        <CloseButton>
+          <CloseIcon />
+        </CloseButton>,
       ],
     },
     {
@@ -59,7 +70,8 @@ export default function ComponentsDemo() {
     },
     {
       title: "Campos de Búsqueda",
-      description: "Usados para buscar empleados, registros o datos específicos.",
+      description:
+        "Usados para buscar empleados, registros o datos específicos.",
       buttons: [<SearchBar placeholder="Buscar..." />],
     },
   ];
@@ -75,11 +87,11 @@ export default function ComponentsDemo() {
   return (
     <Box sx={{ p: 4, backgroundColor: "#f9f9f9", minHeight: "100vh" }}>
       <Typography variant="h4" gutterBottom fontWeight={700}>
-        🎨 Catálogo de Componentes — Botones y Tablas
+        🎨 Catálogo de Componentes — Botones, Tablas y Diálogos
       </Typography>
       <Typography variant="body1" color="text.secondary" sx={{ mb: 4 }}>
-        Esta página sirve como guía visual y de referencia para los distintos estilos de componentes
-        definidos en el proyecto.
+        Esta página sirve como guía visual y de referencia para los distintos
+        estilos de componentes definidos en el proyecto.
       </Typography>
 
       <Grid container spacing={3}>
@@ -98,7 +110,11 @@ export default function ComponentsDemo() {
                 <Typography variant="h6" fontWeight={600}>
                   {section.title}
                 </Typography>
-                <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                <Typography
+                  variant="body2"
+                  color="text.secondary"
+                  sx={{ mb: 2 }}
+                >
                   {section.description}
                 </Typography>
                 <Divider sx={{ mb: 2 }} />
@@ -127,7 +143,8 @@ export default function ComponentsDemo() {
                 Tabla de Ejemplo
               </Typography>
               <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
-                Ejemplo visual del componente de tabla reutilizable con acciones.
+                Ejemplo visual del componente de tabla reutilizable con
+                acciones.
               </Typography>
               <Divider sx={{ mb: 2 }} />
               <CustomTable
@@ -136,6 +153,96 @@ export default function ComponentsDemo() {
                 onEdit={(row) => console.log("Editar", row)}
                 onDelete={(row) => console.log("Eliminar", row)}
               />
+            </CardContent>
+          </Card>
+        </Grid>
+
+        {/* Modales / Diálogos */}
+        <Grid item xs={12} md={6}>
+          <Card
+            sx={{
+              borderRadius: 3,
+              boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+              transition: "transform 0.2s ease",
+              "&:hover": { transform: "translateY(-4px)" },
+            }}
+          >
+            <CardContent>
+              <Typography variant="h6" fontWeight={600}>
+                Modales / Diálogos
+              </Typography>
+              <Typography variant="body2" color="text.secondary" sx={{ mb: 2 }}>
+                Ventanas emergentes para confirmaciones, alertas o formularios.
+              </Typography>
+              <Divider sx={{ mb: 2 }} />
+
+              {/* Botón y ModalDialog */}
+              <Button
+                variant="contained"
+                sx={{
+                  bgcolor: "#7FC6BA",
+                  "&:hover": { bgcolor: "#6FB0A6" },
+                  borderRadius: 2,
+                  mr: 2,
+                  mb: 2,
+                }}
+                onClick={() => setOpenModal(true)}
+              >
+                Abrir Modal
+              </Button>
+              <ModalDialog
+                open={openModal}
+                onClose={() => setOpenModal(false)}
+                title="Confirmar acción"
+                content="¿Estás segura de que querés continuar con esta operación?"
+                actions={[
+                  {
+                    label: "Cancelar",
+                    variant: "outlined",
+                    onClick: () => setOpenModal(false),
+                  },
+                  {
+                    label: "Confirmar",
+                    variant: "contained",
+                    onClick: () => {
+                      alert("Acción confirmada");
+                      setOpenModal(false);
+                    },
+                  },
+                ]}
+              />
+
+              {/* Botón y ModalCard */}
+              <PrimaryButton
+                onClick={() => setOpenModalCard(true)}
+                sx={{ mb: 2 }}
+              >
+                Abrir Modal Card
+              </PrimaryButton>
+              <ModalCard
+                open={openModalCard}
+                onClose={() => setOpenModalCard(false)}
+                title="Agregar Empleado"
+                actions={[
+                  {
+                    label: "Cancelar",
+                    variant: "outlined",
+                    onClick: () => setOpenModalCard(false),
+                  },
+                  {
+                    label: "Guardar",
+                    variant: "contained",
+                    onClick: () => alert("Empleado agregado!"),
+                  },
+                ]}
+                width={500}
+              >
+                {/* Contenido interno: formulario de ejemplo */}
+                <Stack spacing={2}>
+                  <PrimaryButton>Input o formulario aquí</PrimaryButton>
+                  <SecondaryButton>Otro campo o botón</SecondaryButton>
+                </Stack>
+              </ModalCard>
             </CardContent>
           </Card>
         </Grid>

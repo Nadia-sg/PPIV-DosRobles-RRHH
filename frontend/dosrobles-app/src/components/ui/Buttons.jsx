@@ -100,18 +100,20 @@ export const RejectButton = styled(PrimaryButton)({
 
 // Botón de Cerrar
 export const CloseButton = styled(BaseButton)({
-  width: 30,      
+  width: 30,
   height: 30,
   borderRadius: 8,
-  backgroundColor: "#FFFFFF",
-  color: "#808080",
-  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
   padding: 0,
   minWidth: "auto",
+  display: "flex",
+  justifyContent: "center",
+  alignItems: "center",
+  backgroundColor: "#FFFFFF",
+  boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
+  color: "#808080",
   "&:hover": {
     backgroundColor: "#808080",
     color: "#FFFFFF",
   },
 });
-
 
