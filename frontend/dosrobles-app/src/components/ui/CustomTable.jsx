@@ -41,13 +41,13 @@ const CustomTable = ({
             {columns.map((col, i) => (
               <TableCell
                 key={i}
-                sx={{ color: headerTextColor, fontWeight: "bold", borderBottom: "none" }}
+                sx={{ color: headerTextColor, fontWeight: "medium", borderBottom: "none" }}
               >
                 {col}
               </TableCell>
             ))}
             {showActions && (
-              <TableCell sx={{ color: headerTextColor, fontWeight: "bold", borderBottom: "none" }}>
+              <TableCell sx={{ color: headerTextColor, fontWeight: "medium", borderBottom: "none" }}>
                 Acciones
               </TableCell>
             )}

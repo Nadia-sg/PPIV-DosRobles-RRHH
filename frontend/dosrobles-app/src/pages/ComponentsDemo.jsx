@@ -17,6 +17,7 @@ import {
   PrevButton,
   LoginButton,
   RejectButton,
+  CloseButton,
 } from "../components/ui/Buttons";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
@@ -43,11 +44,12 @@ export default function ComponentsDemo() {
       ],
     },
     {
-      title: "Navegación",
-      description: "Botones para avanzar o retroceder entre pasos.",
+      title: "Otros botones",
+      description: "Botones para avanzar o retroceder entre pasos y cerrar.",
       buttons: [
         <PrevButton startIcon={<ArrowBackIcon />}>Anterior</PrevButton>,
         <NextButton endIcon={<ArrowForwardIcon />}>Siguiente</NextButton>,
+        <CloseButton><CloseIcon /></CloseButton>,
       ],
     },
     {

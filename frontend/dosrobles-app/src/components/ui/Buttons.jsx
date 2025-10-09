@@ -2,6 +2,7 @@
 
 import { Button } from "@mui/material";
 import { styled } from "@mui/material/styles";
+import CloseIcon from "@mui/icons-material/Close";
 
 // Botón base — todos heredan de este
 export const BaseButton = styled(Button)(
@@ -95,6 +96,22 @@ export const RejectButton = styled(PrimaryButton)({
   backgroundColor: "#FF7779",
   "&:hover": { backgroundColor: "#E06668" },
   "&:active": { backgroundColor: "#CC5C60" },
+});
+
+// Botón de Cerrar
+export const CloseButton = styled(BaseButton)({
+  width: 30,      
+  height: 30,
+  borderRadius: 8,
+  backgroundColor: "#FFFFFF",
+  color: "#808080",
+  boxShadow: "0 2px 6px rgba(0,0,0,0.2)",
+  padding: 0,
+  minWidth: "auto",
+  "&:hover": {
+    backgroundColor: "#808080",
+    color: "#FFFFFF",
+  },
 });
 
 

@@ -23,6 +23,7 @@ import RecibosDigitales from "./pages/nomina/RecibosDigitales";
 
 //Pruebas de componentes
 import ComponentsDemo from "./pages/ComponentsDemo";
+import FormDemo from "./pages/FormDemo";
 
 function App() {
   return (
@@ -51,6 +52,10 @@ function App() {
 
         {/* Demo componentes */}
         <Route path="/components-demo" element={<ComponentsDemo />} />
+
+  
+        {/* Demo formularios */}
+        <Route path="/form-demo" element={<FormDemo />} />
 
         {/* Ruta por defecto */}
         <Route path="*" element={<h1>Página no encontrada</h1>} />
