@@ -1,11 +1,11 @@
-import './App.css'
+import './App.css';
 import './index.css';
 import React from "react";
-import { Routes, Route } from "react-router-dom";
+import { Routes, Route, Navigate } from "react-router-dom"; // ← Faltaba Navigate
 
 import AppLayout from "./layouts/AppLayout";  
 import Home from './pages/Home';
-import Login from './pages/Login';
+import LoginPage from './pages/LoginPage';
 
 // Módulo 1 - Empleados
 import EmpleadosList from "./pages/empleados/EmpleadosList";
@@ -21,20 +21,22 @@ import CalendarioLicencias from "./pages/licencias/CalendarioLicencias";
 import CalculoHaberes from "./pages/nomina/CalculoHaberes";
 import RecibosDigitales from "./pages/nomina/RecibosDigitales";
 
-//Pruebas de componentes
+// Pruebas de componentes
 import ComponentsDemo from "./pages/ComponentsDemo";
 import FormDemo from "./pages/FormDemo";
 
 function App() {
   return (
     <Routes>
+      {/* Redirección inicial al login */}
+      <Route path="/" element={<Navigate to="/login" />} />
+
       {/* Login sin layout */}
-      <Route path="/login" element={<Login />} />
+      <Route path="/login" element={<LoginPage />} />
 
       {/* Todas las demás rutas con layout */}
       <Route element={<AppLayout />}>
-        {/* Home */}
-        <Route path="/" element={<Home />} />
+        <Route path="/home" element={<Home />} />
 
         {/* Empleados */}
         <Route path="/empleados" element={<EmpleadosList />} />
@@ -53,7 +55,6 @@ function App() {
         {/* Demo componentes */}
         <Route path="/components-demo" element={<ComponentsDemo />} />
 
-  
         {/* Demo formularios */}
         <Route path="/form-demo" element={<FormDemo />} />
 

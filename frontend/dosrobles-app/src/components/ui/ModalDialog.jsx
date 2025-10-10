@@ -28,7 +28,7 @@ export default function ModalDialog({
       fullWidth
       PaperProps={{
         sx: {
-          bgcolor: "#E9E9E9",
+          bgcolor: "#ffffff",
           borderRadius: 3,
           boxShadow: "0px 4px 20px rgba(0,0,0,0.1)",
           position: "relative",
