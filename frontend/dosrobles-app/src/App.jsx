@@ -36,6 +36,8 @@ function App() {
 
       {/* Todas las demás rutas con layout */}
       <Route element={<AppLayout />}>
+        {/* Home */}
+
         <Route path="/home" element={<Home />} />
 
         {/* Empleados */}
