@@ -118,7 +118,7 @@ export const CloseButton = styled(BaseButton)({
 });
 
 // Botón "Next" solo con ícono
-export const IconNextButton = styled(NextButton)({
+export const IconNextButton = styled(NextButton)(({ theme }) => ({
   width: 36,
   height: 36,
   minWidth: "auto",
@@ -126,12 +126,14 @@ export const IconNextButton = styled(NextButton)({
   borderRadius: "20%",
   boxShadow: "0 2px 4px rgba(0,0,0,0.2)",
   "& .MuiSvgIcon-root": {
-    fontSize: 18, // tamaño del ícono
+    fontSize: 18, 
+    [theme.breakpoints.down("sm")]: {
+       width: 16,
+       height: 16, 
+    },
   },
   "&:hover": {
     backgroundColor: "#D9D9D9",
     transform: "scale(1.05)",
   },
-});
-
-
+}));

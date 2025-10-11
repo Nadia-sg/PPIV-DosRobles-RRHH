@@ -6,7 +6,6 @@ import {
   Card,
   Typography,
   useMediaQuery,
-  IconButton,
   CircularProgress,
 } from "@mui/material";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
@@ -14,7 +13,6 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import {
   PrimaryButton,
   SecondaryButton,
-  NextButton,
   IconNextButton,
 } from "../components/ui/Buttons";
 
@@ -36,29 +34,28 @@ export default function Home() {
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: "100dvh",
-        overflow: "hidden",
+        height: isMobile ? "auto" : "100dvh", // desktop full viewport, mobile auto
+        overflow: "hidden", // scroll controlado por AppLayout
         backgroundColor: "#f5f5f5",
-        gap: 1.5,
+        gap: 2,
         boxSizing: "border-box",
         padding: 4,
       }}
     >
-      {/* ///////////////////////
-             ///// FILA SUPERIOR ////
-             /////////////////////// */}
+      {/* ===================
+          FILA SUPERIOR
+          =================== */}
       <Box
         sx={{
           display: "flex",
-          flex: "0 0 30%",
+          flex: isMobile ? "0 0 auto" : "0 0 30%", // altura fija desktop, auto mobile
           gap: 2,
           flexWrap: isMobile ? "wrap" : "nowrap",
         }}
       >
-        {/* ///////////////////////
-               ///// CUADRANTE 1 ////
-               /////////////////////// */}
-
+        {/* ===================
+            CUADRANTE 1 - Fichaje
+            =================== */}
         <Card
           sx={{
             flex: isMobile ? "0 0 100%" : "0 0 50%",
@@ -68,7 +65,7 @@ export default function Home() {
             flexDirection: "column",
             justifyContent: "space-between",
             p: 2,
-            height: "90%",
+            height: isMobile ? "auto" : "90%",
             boxSizing: "border-box",
           }}
         >
@@ -130,7 +127,6 @@ export default function Home() {
               }}
             >
               <Box sx={{ position: "relative", display: "inline-flex" }}>
-                {/* Fondo */}
                 <CircularProgress
                   variant="determinate"
                   value={100}
@@ -138,7 +134,6 @@ export default function Home() {
                   thickness={5}
                   sx={{ color: "#e0e0e0" }}
                 />
-                {/* Progreso */}
                 <CircularProgress
                   variant="determinate"
                   value={progress}
@@ -146,7 +141,6 @@ export default function Home() {
                   thickness={5}
                   sx={{ color: "#817A6F", position: "absolute", left: 0 }}
                 />
-                {/* Texto central */}
                 <Box
                   sx={{
                     position: "absolute",
@@ -169,9 +163,9 @@ export default function Home() {
           </Box>
         </Card>
 
-        {/* ///////////////////////
-               ///// CUADRANTE 2 ////
-               /////////////////////// */}
+        {/* ===================
+            CUADRANTE 2 - Estado del equipo
+            =================== */}
         <Card
           sx={{
             flex: isMobile ? "0 0 100%" : "0 0 50%",
@@ -181,11 +175,11 @@ export default function Home() {
             flexDirection: "column",
             justifyContent: "flex-start",
             p: 2,
-            height: "90%",
+            height: isMobile ? "auto" : "90%",
           }}
         >
           {/* Encabezado */}
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
             <Typography variant="h6" fontWeight="bold" color="#808080">
               Estado del Equipo
             </Typography>
@@ -195,73 +189,170 @@ export default function Home() {
           </Box>
 
           {/* Tabla de estado */}
-          <Box sx={{ 
-            display: "flex", 
-            flexDirection: "column", 
-            gap: 1,
-            pt: 4, }}>
-
-            {/* Fila 1 - Ausentes */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+              mt: 1,
+            }}
+          >
+            {[
+              { color: "#FFD0D0", title: "Ausentes", count: 3 },
+              { color: "#8EC6BA", title: "Fichados", count: 12 },
+            ].map((item, idx) => (
               <Box
-                sx={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  backgroundColor: "#FFD0D0",
-                  flexShrink: 0,
-                  ml: 2, 
-                }}
-              />
-              <Box sx={{ display: "flex", flexDirection: "column" }}>
-                <Typography variant="subtitle1" fontWeight="bold" color="#808080">
-                  Ausentes
-                </Typography>
-                <Typography variant="body2" color="#A0A0A0">
-                  3 empleados
-                </Typography>
-              </Box>
-            </Box>
-
-            {/* Fila 2 - Fichados */}
-            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
-              <Box
-                sx={{
-                  width: 28,
-                  height: 28,
-                  borderRadius: "50%",
-                  backgroundColor: "#8EC6BA",
-                  flexShrink: 0,
-                  ml: 2,
+                key={idx}
+                sx={{ display: "flex", alignItems: "center", gap: 2 }}
+              >
+                <Box
+                  sx={{
+                    width: 28,
+                    height: 28,
+                    borderRadius: "50%",
+                    backgroundColor: item.color,
+                    flexShrink: 0,
                   }}
-              />
-              <Box sx={{ display: "flex", flexDirection: "column" }}>
-                <Typography variant="subtitle1" fontWeight="bold" color="#808080">
-                  Fichados
-                </Typography>
-                <Typography variant="body2" color="#A0A0A0">
-                  12 empleados
-                </Typography>
+                />
+                <Box sx={{ display: "flex", flexDirection: "column" }}>
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight="bold"
+                    color="#808080"
+                  >
+                    {item.title}
+                  </Typography>
+                  <Typography variant="body2" color="#A0A0A0">
+                    {item.count} empleados
+                  </Typography>
+                </Box>
               </Box>
-            </Box>
+            ))}
           </Box>
         </Card>
       </Box>
 
-      {/* ///////////////////////
-             ///// FILA INFERIOR ////
-             /////////////////////// */}
+      {/* ===================
+          FILA INFERIOR
+          =================== */}
       <Box
         sx={{
           display: "flex",
-          flex: "0 0 40%",
+          flex: isMobile ? "0 0 auto" : "0 0 40%",
           gap: 2,
           flexWrap: isMobile ? "wrap" : "nowrap",
         }}
       >
-        {/* ///////////////////////
-               ///// CUADRANTE 3 ////
-               /////////////////////// */}
+        {/* ===================
+            CUADRANTE 3 - Bandeja
+            =================== */}
+        <Card
+          sx={{
+            flex: isMobile ? "0 0 100%" : "0 0 50%",
+            borderRadius: 3,
+            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
+            display: "flex",
+            flexDirection: "column",
+            p: 2,
+            height: isMobile ? "auto" : "100%",
+          }}
+        >
+          {/* Encabezado */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
+            <Typography variant="h6" fontWeight="bold" color="#808080">
+              Bandeja de entrada
+            </Typography>
+            <IconNextButton>
+              <ArrowForwardIosIcon />
+            </IconNextButton>
+          </Box>
+
+
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+              flex: 1,
+              overflowY: "auto",
+            }}
+          >
+            {[...Array(5)].map((_, i) => (
+              <Box
+                key={i}
+                sx={{
+                  display: "flex",
+                  flexDirection: {
+                    xs: "column", 
+                    md: "row",
+                  },
+                  justifyContent: {
+                    xs: "flex-start",
+                    md: "space-between",
+                  },
+                  alignItems: {
+                    xs: "flex-start",
+                    md: "center",
+                  },
+                  gap: {
+                    xs: 0.5,
+                    md: 0,
+                  },
+                  backgroundColor: "#E9E9E9",
+                  borderRadius: 1,
+                  p: 1.5,
+                  mb: 1,
+                  cursor: "pointer",
+                  "&:hover": { backgroundColor: "#dcdcdc" },
+                }}
+              >
+                {/* Encabezado fila */}
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: {
+                      xs: "space-between",
+                      md: "flex-start",
+                    },
+                    width: "100%",
+                    mb: { xs: 0.5, md: 0 },
+                  }}
+                >
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ flex: { md: 1 } }}
+                  >
+                    Remitente {i + 1}
+                  </Typography>
+                  <Typography
+                    variant="body2"
+                    color="text.secondary"
+                    sx={{ textAlign: { md: "right" } }}
+                  >
+                    Fecha {i + 1}
+                  </Typography>
+                </Box>
+
+                {/* Asunto del mail */}
+                <Typography
+                  variant="body2"
+                  fontWeight="bold"
+                  sx={{
+                    width: "100%",
+                    textAlign: { md: "center" },
+                  }}
+                >
+                  Asunto del mail {i + 1}
+                </Typography>
+              </Box>
+            ))}
+          </Box>
+        </Card>
+
+        {/* ===================
+            CUADRANTE 4
+            =================== */}
         <Card
           sx={{
             flex: isMobile ? "0 0 100%" : "0 0 50%",
@@ -271,25 +362,7 @@ export default function Home() {
             justifyContent: "center",
             alignItems: "center",
             p: 2,
-            height: "100%",
-          }}
-        >
-          <Typography variant="h6">Cuadrante 3</Typography>
-        </Card>
-
-        {/* ///////////////////////
-               ///// CUADRANTE 4 ////
-               /////////////////////// */}
-         <Card
-          sx={{
-            flex: isMobile ? "0 0 100%" : "0 0 50%",
-            borderRadius: 3,
-            boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
-            display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
-            p: 2,
-            height: "100%",
+            height: isMobile ? "auto" : "100%",
           }}
         >
           <Typography variant="h6">Cuadrante 4</Typography>

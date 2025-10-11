@@ -23,9 +23,10 @@ export default function AppLayout({ user, isAdmin }) {
         <section
           className={styles.mainContent}
           style={{
-            // Solo ocultar scroll en desktop, en mobile se deja automático
+            // En desktop: ocultamos scroll si estamos en /home, en mobile siempre auto
             overflowY:
-              location.pathname === "/home" && !isMobile ? "hidden" : "auto",
+              !isMobile && location.pathname === "/home" ? "hidden" : "auto",
+            height: "100%", 
           }}
         >
           <Outlet />
