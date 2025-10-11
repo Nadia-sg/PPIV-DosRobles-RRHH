@@ -5,9 +5,13 @@ import MainLayout from "./MainLayout";
 import Sidebar from "../components/Sidebar";
 import styles from "../styles/AppLayout.module.css";
 import { Outlet, useLocation } from "react-router-dom";
+import { useMediaQuery } from "@mui/material";
 
 export default function AppLayout({ user, isAdmin }) {
   const location = useLocation();
+
+  // Detectamos si estamos en mobile
+  const isMobile = useMediaQuery("(max-width:900px)");
 
   return (
     <MainLayout>
@@ -19,7 +23,9 @@ export default function AppLayout({ user, isAdmin }) {
         <section
           className={styles.mainContent}
           style={{
-            overflowY: location.pathname === "/home" ? "hidden" : "auto",
+            // Solo ocultar scroll en desktop, en mobile se deja automático
+            overflowY:
+              location.pathname === "/home" && !isMobile ? "hidden" : "auto",
           }}
         >
           <Outlet />

@@ -15,6 +15,7 @@ import {
   PrimaryButton,
   SecondaryButton,
   NextButton,
+  IconNextButton,
 } from "../components/ui/Buttons";
 
 export default function Home() {
@@ -40,7 +41,7 @@ export default function Home() {
         backgroundColor: "#f5f5f5",
         gap: 1.5,
         boxSizing: "border-box",
-        padding: 2,
+        padding: 4,
       }}
     >
       {/* ///////////////////////
@@ -76,7 +77,9 @@ export default function Home() {
             <Typography variant="h6" fontWeight="bold" color="#808080">
               Fichaje
             </Typography>
-            <NextButton endIcon={<ArrowForwardIosIcon />}></NextButton>
+            <IconNextButton>
+              <ArrowForwardIosIcon />
+            </IconNextButton>
           </Box>
 
           {/* Cuerpo */}
@@ -95,7 +98,7 @@ export default function Home() {
                 display: "flex",
                 flexDirection: "column",
                 gap: 1.5,
-                marginLeft:1.5,
+                marginLeft: 1.5,
               }}
             >
               <PrimaryButton startIcon={<PlayArrowIcon />}>
@@ -141,7 +144,7 @@ export default function Home() {
                   value={progress}
                   size={100}
                   thickness={5}
-                  sx={{ color: "#1976d2", position: "absolute", left: 0 }}
+                  sx={{ color: "#817A6F", position: "absolute", left: 0 }}
                 />
                 {/* Texto central */}
                 <Box
@@ -175,13 +178,73 @@ export default function Home() {
             borderRadius: 3,
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
             display: "flex",
-            justifyContent: "center",
-            alignItems: "center",
+            flexDirection: "column",
+            justifyContent: "flex-start",
             p: 2,
             height: "90%",
           }}
         >
-          <Typography variant="h6">Cuadrante 2</Typography>
+          {/* Encabezado */}
+          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 0.5 }}>
+            <Typography variant="h6" fontWeight="bold" color="#808080">
+              Estado del Equipo
+            </Typography>
+            <IconNextButton>
+              <ArrowForwardIosIcon />
+            </IconNextButton>
+          </Box>
+
+          {/* Tabla de estado */}
+          <Box sx={{ 
+            display: "flex", 
+            flexDirection: "column", 
+            gap: 1,
+            pt: 4, }}>
+
+            {/* Fila 1 - Ausentes */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box
+                sx={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  backgroundColor: "#FFD0D0",
+                  flexShrink: 0,
+                  ml: 2, 
+                }}
+              />
+              <Box sx={{ display: "flex", flexDirection: "column" }}>
+                <Typography variant="subtitle1" fontWeight="bold" color="#808080">
+                  Ausentes
+                </Typography>
+                <Typography variant="body2" color="#A0A0A0">
+                  3 empleados
+                </Typography>
+              </Box>
+            </Box>
+
+            {/* Fila 2 - Fichados */}
+            <Box sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box
+                sx={{
+                  width: 28,
+                  height: 28,
+                  borderRadius: "50%",
+                  backgroundColor: "#8EC6BA",
+                  flexShrink: 0,
+                  ml: 2,
+                  }}
+              />
+              <Box sx={{ display: "flex", flexDirection: "column" }}>
+                <Typography variant="subtitle1" fontWeight="bold" color="#808080">
+                  Fichados
+                </Typography>
+                <Typography variant="body2" color="#A0A0A0">
+                  12 empleados
+                </Typography>
+              </Box>
+            </Box>
+          </Box>
         </Card>
       </Box>
 
@@ -217,7 +280,7 @@ export default function Home() {
         {/* ///////////////////////
                ///// CUADRANTE 4 ////
                /////////////////////// */}
-        <Card
+         <Card
           sx={{
             flex: isMobile ? "0 0 100%" : "0 0 50%",
             borderRadius: 3,
