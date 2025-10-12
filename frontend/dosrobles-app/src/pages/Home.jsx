@@ -282,16 +282,18 @@ export default function Home() {
                   width: "100%",
                   mb: { xs: 0.5, md: 0 },
                 }}>
-                  <Typography variant="body2" color="text.secondary">
-                    Remitente {i + 1}
-                  </Typography>
+
                   <Typography variant="body2" color="text.secondary">
                     Fecha {i + 1}
+                  </Typography>
+                  <Typography variant="body2" color="text.secondary">
+                    Remitente {i + 1}
                   </Typography>
                 </Box>
                 <Typography variant="body2" fontWeight="bold" sx={{ width: "100%" }}>
                   Asunto del mail {i + 1}
                 </Typography>
+                
               </Box>
             ))}
           </Box>
@@ -307,7 +309,7 @@ export default function Home() {
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "flex-start",
+            justifyContent: "",
             p: 2,
             height: "100%",
           }}

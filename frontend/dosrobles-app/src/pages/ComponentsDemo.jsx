@@ -1,4 +1,5 @@
 // src/pages/ComponentsDemo.jsx
+
 import React, { useState } from "react";
 import {
   Box,
@@ -18,11 +19,13 @@ import {
   LoginButton,
   RejectButton,
   CloseButton,
+  FichaButtonWithIcon, 
 } from "../components/ui/Buttons";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import CloseIcon from "@mui/icons-material/Close";
+import AssignmentIcon from "@mui/icons-material/Assignment";
 import { SearchBar } from "../components/ui/SearchBar";
 import CustomTable from "../components/ui/CustomTable";
 import ModalDialog from "../components/ui/ModalDialog";
@@ -37,9 +40,7 @@ export default function ComponentsDemo() {
       title: "Botones Principales",
       description: "Usados para acciones primarias o destacadas.",
       buttons: [
-        <PrimaryButton startIcon={<FavoriteIcon />}>
-          Botón Primario
-        </PrimaryButton>,
+        <PrimaryButton startIcon={<FavoriteIcon />}>Botón Primario</PrimaryButton>,
         <RejectButton startIcon={<CloseIcon />}>Rechazar</RejectButton>,
       ],
     },
@@ -47,9 +48,7 @@ export default function ComponentsDemo() {
       title: "Botones Secundarios",
       description: "Usados para acciones de apoyo o secundarias.",
       buttons: [
-        <SecondaryButton startIcon={<FavoriteIcon />}>
-          Botón Secundario
-        </SecondaryButton>,
+        <SecondaryButton startIcon={<FavoriteIcon />}>Botón Secundario</SecondaryButton>,
       ],
     },
     {
@@ -61,6 +60,7 @@ export default function ComponentsDemo() {
         <CloseButton>
           <CloseIcon />
         </CloseButton>,
+        <FichaButtonWithIcon icon={AssignmentIcon} label="Ver Ficha" />, // ✅ corregido
       ],
     },
     {

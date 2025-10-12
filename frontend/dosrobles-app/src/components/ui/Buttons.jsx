@@ -1,8 +1,10 @@
 /*src/components/ui/Buttons.jsx*/ 
 
+
 import { Button } from "@mui/material";
 import { styled } from "@mui/material/styles";
 import CloseIcon from "@mui/icons-material/Close";
+import AssignmentIcon from "@mui/icons-material/Assignment"; 
 
 // Botón base — todos heredan de este
 export const BaseButton = styled(Button)(
@@ -137,3 +139,58 @@ export const IconNextButton = styled(NextButton)(({ theme }) => ({
     transform: "scale(1.05)",
   },
 }));
+
+// 🔹 Botón Ver Ficha
+export const FichaButton = styled(BaseButton)(({ theme }) => ({
+  width: 60,
+  height: 60,
+  flexDirection: "column",
+  borderRadius: 10,
+  backgroundColor: "var(--primary, #7FC6BA)",
+  color: "#FFFFFF",
+  boxShadow: "0 2px 6px rgba(0,0,0,0.25)",
+  textTransform: "none",
+  fontWeight: "500",
+  fontSize: 10,
+  justifyContent: "center",
+  alignItems: "center",
+  padding: 4,
+  gap: 2,
+  transition: "transform 0.2s ease, background-color 0.2s ease",
+
+  "& .MuiSvgIcon-root": {
+    fontSize: 22,
+    margin: 0,
+  },
+  "&:hover": {
+    backgroundColor: "#56A99B",
+    transform: "scale(1.05)",
+  },
+  "&:active": {
+    backgroundColor: "#4C9187",
+    transform: "scale(0.97)",
+  },
+
+  // RESPONSIVE: versión mobile
+  "@media (max-width: 600px)": {
+    width: 50,
+    height: 50,
+    gap: 0,
+
+    "& > *:not(.MuiSvgIcon-root)": {
+      display: "none",
+    },
+
+    "& .MuiSvgIcon-root": {
+      fontSize: 24,
+    },
+  },
+}));
+
+// 🔹 Wrapper para usar icon + label fácilmente
+export const FichaButtonWithIcon = ({ icon: Icon, label, ...props }) => (
+  <FichaButton {...props}>
+    {Icon && <Icon />}
+    {label && label}
+  </FichaButton>
+);
