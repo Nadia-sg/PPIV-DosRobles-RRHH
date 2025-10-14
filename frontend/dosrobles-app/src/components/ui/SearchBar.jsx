@@ -23,11 +23,17 @@ const StyledInput = styled(InputBase)(({ theme }) => ({
   },
 }));
 
-export const SearchBar = ({ placeholder = "Buscar..." }) => {
+const SearchBar = ({ placeholder = "Buscar...", value, onChange }) => {
   return (
     <SearchContainer>
-      <StyledInput placeholder={placeholder} />
+      <StyledInput
+        placeholder={placeholder}
+        value={value}
+        onChange={onChange}
+      />
       <SearchIcon />
     </SearchContainer>
   );
 };
+
+export default SearchBar;

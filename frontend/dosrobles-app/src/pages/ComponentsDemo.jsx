@@ -23,7 +23,7 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import FavoriteIcon from "@mui/icons-material/Favorite";
 import CloseIcon from "@mui/icons-material/Close";
-import { SearchBar } from "../components/ui/SearchBar";
+import SearchBar from "../components/ui/SearchBar";
 import CustomTable from "../components/ui/CustomTable";
 import ModalDialog from "../components/ui/ModalDialog";
 import ModalCard from "../components/ui/ModalCard";
