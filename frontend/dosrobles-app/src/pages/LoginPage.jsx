@@ -1,17 +1,33 @@
 import React, { useState } from "react";
-import { Box, Typography, useMediaQuery } from "@mui/material";
+import { Box, Typography, useMediaQuery, Alert } from "@mui/material";
 import TextInput from "../components/ui/TextInput";
 import { LoginButton } from "../components/ui/Buttons";
 import loginImage from "../assets/login.jpg";
-import logoImage from "../assets/Logo4.png"; 
+import logoImage from "../assets/Logo4.png";
+import { useNavigate } from "react-router-dom"; 
 
 export default function LoginPage() {
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
+  const [error, setError] = useState(""); 
   const isMobile = useMediaQuery("(max-width:900px)");
+  const navigate = useNavigate();
+
+  // Usuario login de prueba 
+  const validUser = "admin";
+  const validPassword = "123";
 
   const handleLogin = () => {
     console.log("Usuario:", user, "Contraseña:", password);
+
+    if (user === validUser && password === validPassword) {
+      setError("");
+      // Redirige al home
+      navigate("/home");
+    } else {
+      // Usuario o contraseña incorrectos
+      setError("Usuario o contraseña incorrectos");
+    }
   };
 
   return (
@@ -37,7 +53,6 @@ export default function LoginPage() {
             overflow: "hidden",
           }}
         >
-          {/* Imagen */}
           <Box
             component="img"
             src={loginImage}
@@ -52,8 +67,6 @@ export default function LoginPage() {
               zIndex: 0,
             }}
           />
-
-          {/* Logo centrado sobre la imagen */}
           <Box
             component="img"
             src={logoImage}
@@ -93,7 +106,6 @@ export default function LoginPage() {
           p: isMobile ? 3 : 4,
         }}
       >
-        {/* LOGO SUPERIOR (solo en mobile) */}
         {isMobile && (
           <Box
             component="img"
@@ -110,7 +122,6 @@ export default function LoginPage() {
           />
         )}
 
-        {/* Textos */}
         <Typography
           variant={isMobile ? "h4" : "h3"}
           sx={{
@@ -118,7 +129,7 @@ export default function LoginPage() {
             mb: 1,
             color: "#FCFCFC",
             letterSpacing: "0.5px",
-            marginBottom:"0",
+            marginBottom: "0",
           }}
         >
           Bienvenidos
@@ -146,7 +157,6 @@ export default function LoginPage() {
           Iniciar sesión
         </Typography>
 
-        {/* Inputs y botón */}
         <Box sx={{ width: isMobile ? "85%" : "60%", minWidth: 280 }}>
           <TextInput
             placeholder="Usuario"
@@ -159,6 +169,13 @@ export default function LoginPage() {
             value={password}
             onChange={(e) => setPassword(e.target.value)}
           />
+
+          {/* Mensaje de error */}
+          {error && (
+            <Alert severity="error" sx={{ mt: 2 }}>
+              {error}
+            </Alert>
+          )}
 
           <LoginButton
             onClick={handleLogin}
