@@ -1,10 +1,102 @@
-import React from "react";
+// src/pages/EmpleadosList.jsx
+import React, { useState } from "react";
+import {
+  Box,
+  Typography,
+  Avatar,
+  useMediaQuery,
+  useTheme,
+} from "@mui/material";
+import EditIcon from "@mui/icons-material/Edit";
+import DescriptionIcon from "@mui/icons-material/Description";
+import CustomTable from "../../components/ui/CustomTable";
+import { SecondaryButton, FichaButtonWithIcon } from "../../components/ui/Buttons";
+import NuevoEmpleadoModal from "../../components/modales/NuevoEmpleadoModal";
 
+const EmpleadosList = () => {
+  const theme = useTheme();
+  const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
-export default function EmpleadosList() {
+  const [modalOpen, setModalOpen] = useState(false);
+
+  const empleados = [
+    {
+      id: 1,
+      foto: "/src/assets/empleados/empleado1.png",
+      nombre: "Mariana Carmona",
+      legajo: "A102",
+      area: "Recursos Humanos",
+      telefono: "11-3456-7890",
+    },
+    {
+      id: 2,
+      foto: "/src/assets/empleados/empleado2.png",
+      nombre: "Juan Pérez",
+      legajo: "A103",
+      area: "Carpintería",
+      telefono: "11-9876-5432",
+    },
+  ];
+
+  // Columnas según tamaño de pantalla
+  const columns = isMobile
+    ? ["Foto", "Nombre y Apellido", "Ficha"]
+    : ["Foto", "Nombre y Apellido", "Legajo", "Área de Trabajo", "Teléfono", "Ficha"];
+
+  // Filas de la tabla
+  const rows = empleados.map((emp) => ({
+    foto: <Avatar src={emp.foto} alt={emp.nombre} sx={{ width: 40, height: 40 }} />,
+    nombre: emp.nombre,
+    legajo: emp.legajo,
+    area: emp.area,
+    telefono: emp.telefono,
+    ficha: <FichaButtonWithIcon icon={DescriptionIcon} label="Ver Ficha" />,
+  }));
+
   return (
-     <>
-      <h1>Empleados</h1>
-    </>
+
+    <Box sx={{ padding: "2rem" }}>
+      {/* Encabezado */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          marginBottom: "1.5rem",
+          flexWrap: "wrap",
+          gap: "0.5rem",
+        }}
+      >
+        <Typography variant="h5" sx={{ fontWeight: "bold", color: "#585858" }}>
+          Empleados
+        </Typography>
+
+        <SecondaryButton
+          startIcon={<EditIcon />}
+          onClick={() => setModalOpen(true)}
+        >
+          Nuevo Empleado
+        </SecondaryButton>
+      </Box>
+
+      {/* Tabla */}
+      <CustomTable
+        columns={columns}
+        rows={rows.map((row) => (isMobile ? {
+          foto: row.foto,
+          nombre: row.nombre,
+          ficha: row.ficha,
+        } : row))}
+      />
+
+      {/* Modal Nuevo Empleado */}
+      <NuevoEmpleadoModal
+        open={modalOpen}
+        onClose={() => setModalOpen(false)}
+      />
+    </Box>
   );
-}
+};
+
+export default EmpleadosList;
+
