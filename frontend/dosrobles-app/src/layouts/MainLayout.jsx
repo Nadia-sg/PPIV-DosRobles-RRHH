@@ -4,8 +4,11 @@ import logo from "../assets/logo.png";
 import topVector from "../assets/topVector.svg";
 import topVectorMobile from "../assets/topVector-mobile.svg"; 
 import logoutIcon from "../assets/logout.svg"; 
+import { useNavigate } from "react-router-dom";
 
 export default function MainLayout({ children }) {
+  const navigate = useNavigate();
+
   return (
     <div className={styles.container}>
       {/* Vector decorativo superior responsivo */}
@@ -21,7 +24,11 @@ export default function MainLayout({ children }) {
       {/* Barra superior */}
       <header className={styles.topBar}>
         {/* Logo */}
-        <div className={styles.logoContainer}>
+        <div
+          className={styles.logoContainer}
+          onClick={() => navigate("/home")} // redirige al Home
+          style={{ cursor: "pointer" }}  // indica que se puede clickear
+        >
           <img src={logo} alt="Logo Dos Robles" className={styles.logo} />
         </div>
 

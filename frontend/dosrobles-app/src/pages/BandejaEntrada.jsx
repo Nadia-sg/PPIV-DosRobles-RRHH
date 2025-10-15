@@ -1,11 +1,11 @@
-// src/pages/licencias/BandejaEntrada.jsx
+// src/pages/BandejaEntrada.jsx
 // Pantalla de Bandeja de Entrada para gerente/administrador
 
 import { useState } from "react";
 import { Box, Typography, Card, CardContent, Collapse, IconButton } from "@mui/material";
 import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
-import { PrimaryButton, SecondaryButton } from "../../components/ui/Buttons";
-import ModalAprobacionLicencia from "../../components/licencias/ModalAprobacionLicencia";
+import { PrimaryButton, SecondaryButton } from "../components/ui/Buttons";
+import ModalAprobacionLicencia from "../components/licencias/ModalAprobacionLicencia";
 
 export default function BandejaEntrada() {
   const [expandedId, setExpandedId] = useState(null);

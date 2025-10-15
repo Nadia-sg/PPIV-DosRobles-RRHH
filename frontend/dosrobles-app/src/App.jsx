@@ -16,7 +16,7 @@ import HistorialFichajes from "./pages/fichaje/HistorialFichajes";
 // Módulo 3 - Licencias
 import LicenciasList from "./pages/licencias/LicenciasList";
 import CalendarioLicencias from "./pages/licencias/CalendarioLicencias";
-import BandejaEntrada from "./pages/licencias/BandejaEntrada";
+import BandejaEntrada from "./pages/BandejaEntrada";
 
 // Módulo 4 - Nómina
 import CalculoHaberes from "./pages/nomina/CalculoHaberes";
@@ -37,9 +37,12 @@ function App() {
 
       {/* Todas las demás rutas con layout */}
       <Route element={<AppLayout />}>
-        {/* Home */}
 
+        {/* Home */}
         <Route path="/home" element={<Home />} />
+
+         {/* Bandeja de Entrada*/}
+        <Route path="/bandeja-entrada" element={<BandejaEntrada />} />
 
         {/* Empleados */}
         <Route path="/empleados" element={<EmpleadosList />} />
@@ -50,7 +53,7 @@ function App() {
         {/* Licencias */}
         <Route path="/licencias" element={<LicenciasList />} />
         <Route path="/licencias/calendario" element={<CalendarioLicencias />} />
-        <Route path="/licencias/bandeja-entrada" element={<BandejaEntrada />} />
+    
 
         {/* Nómina */}
         <Route path="/nomina/calculo" element={<CalculoHaberes />} />
