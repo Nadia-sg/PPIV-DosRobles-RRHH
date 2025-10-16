@@ -9,6 +9,7 @@ import LoginPage from './pages/LoginPage';
 
 // Módulo 1 - Empleados
 import EmpleadosList from "./pages/empleados/EmpleadosList";
+import FichaEmpleadoLectura from "./pages/empleados/FichaEmpleadoLectura";
 
 // Módulo 2 - Fichaje
 import HistorialFichajes from "./pages/fichaje/HistorialFichajes";
@@ -42,6 +43,7 @@ function App() {
 
         {/* Empleados */}
         <Route path="/empleados" element={<EmpleadosList />} />
+        <Route path="/mi-ficha" element={<FichaEmpleadoLectura />} />
 
         {/* Fichaje */}
         <Route path="/fichaje/historial" element={<HistorialFichajes />} />
