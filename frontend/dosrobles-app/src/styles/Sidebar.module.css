@@ -127,6 +127,7 @@
 .activeSub {
   color: var(--secondary, #817a6f);
   font-weight: 500;
+   background-color: #d9d9d9;
 }
 
 /* Animación */

@@ -1,4 +1,5 @@
 /* src/components/Sidebar.jsx */
+
 import styles from "../styles/Sidebar.module.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import React, { useState, forwardRef, useEffect } from "react";
@@ -14,14 +15,13 @@ import MenuIcon from "@mui/icons-material/Menu";
 
 const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
   const userName = "Mariana";
-  const [openMenu, setOpenMenu] = useState(null);
+  const [openMenus, setOpenMenus] = useState({}); 
   const [menuOpen, setMenuOpen] = useState(true);
   const [active, setActive] = useState("");
 
   const navigate = useNavigate();
   const location = useLocation();
 
-  // Mapear nombres de menú a rutas
   const routes = {
     Inicio: "/home",
     Bandeja: "/bandeja-entrada",
@@ -34,7 +34,6 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
     Nómina: "/nomina/calculo",
   };
 
-  // Mantener activo según la URL actual
   useEffect(() => {
     const currentName = Object.keys(routes).find(
       (key) => routes[key] === location.pathname
@@ -42,8 +41,12 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
     if (currentName) setActive(currentName);
   }, [location.pathname]);
 
+  // toggleMenu solo alterna el estado del menú clickeado
   const toggleMenu = (menuName) => {
-    setOpenMenu(openMenu === menuName ? null : menuName);
+    setOpenMenus((prev) => ({
+      ...prev,
+      [menuName]: !prev[menuName], // si estaba abierto, se cierra, si estaba cerrado, se abre
+    }));
   };
 
   const handleSelect = (name) => {
@@ -65,7 +68,6 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
       {menuOpen && (
         <>
           <div className={styles.profile}>
-            
             <div className={styles.avatar}>MC</div>
             <p className={styles.greeting}>¡Buenos días, {userName}!</p>
           </div>
@@ -95,14 +97,14 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
                 onClick={() => toggleMenu("personal")}
               >
                 <PersonOutlineIcon className={styles.icon} /> <span>Personal</span>
-                {openMenu === "personal" ? (
+                {openMenus["personal"] ? (
                   <ArrowDropUpIcon className={styles.arrowIcon} />
                 ) : (
                   <ArrowDropDownIcon className={styles.arrowIcon} />
                 )}
               </div>
 
-              {openMenu === "personal" && (
+              {openMenus["personal"] && (
                 <ul className={styles.submenu}>
                   {["Mi Ficha", "Ausencias", "Mi Fichaje", "Mis Documentos"].map(
                     (item) => (
@@ -125,14 +127,14 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
                 onClick={() => toggleMenu("organizacion")}
               >
                 <PeopleOutlineIcon className={styles.icon} /> <span>Organización</span>
-                {openMenu === "organizacion" ? (
+                {openMenus["organizacion"] ? (
                   <ArrowDropUpIcon className={styles.arrowIcon} />
                 ) : (
                   <ArrowDropDownIcon className={styles.arrowIcon} />
                 )}
               </div>
 
-              {openMenu === "organizacion" && (
+              {openMenus["organizacion"] && (
                 <ul className={styles.submenu}>
                   {["Empleados", "Control Horario", "Nómina"].map((item) => (
                     <li

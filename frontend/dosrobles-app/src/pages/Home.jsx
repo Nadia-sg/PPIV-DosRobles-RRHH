@@ -18,6 +18,7 @@ import {
   SecondaryButton,
   IconNextButton,
 } from "../components/ui/Buttons";
+import { useNavigate } from "react-router-dom";
 
 export default function Home() {
   const isMobile = useMediaQuery("(max-width:900px)");
@@ -31,6 +32,8 @@ export default function Home() {
 
   const totalSeconds = 8 * 3600;
   const progress = Math.min((seconds / totalSeconds) * 100, 100);
+
+  const navigate = useNavigate();
 
   const eventos = [
     { fecha: "25 Oct", hora: "14:00", nombre: "Cumpleaños Erica", icono: <CakeIcon /> },
@@ -82,7 +85,7 @@ export default function Home() {
             <Typography variant="h6" fontWeight="bold" color="#808080">
               Fichaje
             </Typography>
-            <IconNextButton>
+            <IconNextButton onClick={() => navigate("/fichaje/historial")}>
               <ArrowForwardIosIcon />
             </IconNextButton>
           </Box>
@@ -190,9 +193,6 @@ export default function Home() {
             <Typography variant="h6" fontWeight="bold" color="#808080">
               Estado del Equipo
             </Typography>
-            <IconNextButton>
-              <ArrowForwardIosIcon />
-            </IconNextButton>
           </Box>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 1 }}>
@@ -253,7 +253,7 @@ export default function Home() {
             <Typography variant="h6" fontWeight="bold" color="#808080">
               Bandeja de entrada
             </Typography>
-            <IconNextButton>
+             <IconNextButton onClick={() => navigate("/bandeja-entrada")}>
               <ArrowForwardIosIcon />
             </IconNextButton>
           </Box>
