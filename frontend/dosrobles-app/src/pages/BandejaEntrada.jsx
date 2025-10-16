@@ -90,9 +90,14 @@ export default function BandejaEntrada() {
   return (
     <Box sx={{ p: 4 }}>
       {/* Header */}
-      <Typography variant="h4" sx={{ fontWeight: 600, color: "#585858", mb: 3 }}>
-        Bandeja De Entrada
-      </Typography>
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, color: "#585858", mb: 1 }}>
+          Bandeja de Entrada
+        </Typography>
+        <Typography variant="body2" sx={{ color: "#808080" }}>
+          Consultá tus mensajes y notificaciones internas
+        </Typography>
+      </Box>
 
       {/* Título de la tabla */}
       <Box

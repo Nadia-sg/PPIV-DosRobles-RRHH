@@ -25,7 +25,7 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
   const routes = {
     Inicio: "/home",
     Bandeja: "/bandeja-entrada",
-    "Mi Perfil": "/mi-ficha",
+    "Mi Ficha": "/mi-ficha",
     Ausencias: "/licencias",
     "Mi Fichaje": "/fichaje/historial",
     "Mis Documentos": "/nomina/recibos",
@@ -104,7 +104,7 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
 
               {openMenu === "personal" && (
                 <ul className={styles.submenu}>
-                  {["Mi Perfil", "Ausencias", "Mi Fichaje", "Mis Documentos"].map(
+                  {["Mi Ficha", "Ausencias", "Mi Fichaje", "Mis Documentos"].map(
                     (item) => (
                       <li
                         key={item}

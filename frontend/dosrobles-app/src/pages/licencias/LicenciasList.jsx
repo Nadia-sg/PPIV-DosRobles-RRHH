@@ -10,7 +10,6 @@ import ModalSolicitudLicencia from "../../components/licencias/ModalSolicitudLic
 import ModalDetallesLicencia from "../../components/licencias/ModalDetallesLicencia";
 
 export default function LicenciasList() {
-
   const [modalSolicitudOpen, setModalSolicitudOpen] = useState(false);
   const [modalDetallesOpen, setModalDetallesOpen] = useState(false);
   const [licenciaSeleccionada, setLicenciaSeleccionada] = useState(null);
@@ -205,9 +204,17 @@ export default function LicenciasList() {
           mb: 3,
         }}
       >
-        <Typography variant="h4" sx={{ fontWeight: 600, color: "#585858" }}>
-          Ausencias
-        </Typography>
+        <Box sx={{ mb: 3 }}>
+          <Typography
+            variant="h4"
+            sx={{ fontWeight: 600, color: "#585858", mb: 1 }}
+          >
+            Ausencias
+          </Typography>
+          <Typography variant="body2" sx={{ color: "#808080" }}>
+            Historial de licencias y ausencias solicitadas.
+          </Typography>
+        </Box>
 
         {/* Botón para solicitar ausencia (solo empleados) */}
         {!esGerente && (

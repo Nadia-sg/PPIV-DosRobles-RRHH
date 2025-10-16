@@ -82,9 +82,14 @@ const EmpleadosList = () => {
           gap: "0.5rem",
         }}
       >
-        <Typography variant="h5" sx={{ fontWeight: "bold", color: "#585858" }}>
+        <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, color: "#585858", mb: 1 }}>
           Empleados
         </Typography>
+        <Typography variant="body2" sx={{ color: "#808080" }}>
+          Visualizá el listado completo de empleados y accedé a su información detallada
+        </Typography>
+      </Box>
 
         <SecondaryButton
           startIcon={<EditIcon />}

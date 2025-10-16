@@ -1,12 +1,14 @@
 // src/pages/empleados/FichaEmpleadoEditable.jsx
+
 import React from "react";
+import ModalCard from "../../components/ui/ModalCard";
 import FichaEmpleadoBase from "./FichaEmpleadoBase";
-import Empleado2 from "../../assets/empleados/empleado2.png"; // mock foto
+import Empleado2 from "../../assets/empleados/empleado2_1.png"; // mock foto
 
 const mockData = {
   legajo: "000123",
-  nombre: "Mariana",
-  apellido: "Gómez",
+  nombre: "Juan",
+  apellido: "Pérez",
   fechaAlta: "01/10/2025",
   cuil: "20-12345678-9",
   telefono: "011-1234-5678",
@@ -31,12 +33,28 @@ const FichaEmpleadoEditable = ({ open, onClose }) => {
   if (!open) return null;
 
   const actions = [
-    { label: "Editar", onClick: () => console.log("Editar") },
-    { label: "Enviar Mensaje", onClick: () => console.log("Mensaje") },
-    { label: "Asignar Tarea", onClick: () => console.log("Asignar") },
+    { label: "Editar", onClick: () => console.log("Editar"), variant: "contained" },
+    { label: "Enviar Mensaje", onClick: () => console.log("Mensaje"), variant: "outlined" },
+    { label: "Asignar Tarea", onClick: () => console.log("Asignar"), variant: "outlined" },
   ];
 
-  return <FichaEmpleadoBase data={mockData} readOnly={false} actions={actions} onClose={onClose} />;
+  return (
+    <ModalCard
+      open={open}
+      onClose={onClose}
+      title="Ficha Empleado"
+      width={1000} 
+      actions={actions}
+    >
+      <FichaEmpleadoBase
+        data={mockData}
+        readOnly={false}
+        actions={[]}      
+        showClose={false} 
+      />
+    </ModalCard>
+  );
 };
 
 export default FichaEmpleadoEditable;
+

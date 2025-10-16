@@ -1,42 +1,33 @@
 // src/pages/empleados/FichaEmpleadoBase.jsx
+
 import React from "react";
-import { Box, Stack, Typography, Avatar } from "@mui/material";
-import FormCard from "../../components/ui/FormCard";;
+import { Box, Stack, Avatar, Typography } from "@mui/material";
+import FormCard from "../../components/ui/FormCard";
 import BaseInput from "../../components/ui/BaseInput";
 import SelectInput from "../../components/ui/SelectInput";
 import DateField from "../../components/ui/DateField";
-import { SecondaryButton, PrimaryButton } from "../../components/ui/Buttons";
+import CloseIcon from "@mui/icons-material/Close";
+import { PrimaryButton, CloseButton } from "../../components/ui/Buttons";
 
-const FichaEmpleadoBase = ({ data, readOnly = true, actions = [], onClose }) => {
+const FichaEmpleadoBase = ({ data, readOnly = true, actions = [], onClose}) => {
   const { legajo, nombre, apellido, fechaAlta, foto } = data;
 
   return (
-    <Box sx={{ position: "relative", p: 3 }}>
-      {/* Botón cerrar */}
-      <Box sx={{ position: "absolute", top: 16, right: 16 }}>
-        <SecondaryButton onClick={onClose}>Cerrar</SecondaryButton>
-      </Box>
+    <Box sx={{ position: "relative", p: 4 }}>
+      {/* === FOTO + BOTONES === */}
+      <Box
+        sx={{
+          display: "flex",
+          justifyContent: "space-between",
+          alignItems: "center",
+          mb: 3,
+          ml:4,
+          width: "100%",
+        }}
+      >
+        <Avatar src={foto} sx={{ width: 100, height: 100 }} />
 
-      {/* Info inicial */}
-      <Box sx={{ display: "flex", gap: 3, mb: 3 }}>
-        <Box sx={{ flex: 1 }}>
-          <Box sx={{ display: "flex", mb: 1 }}>
-            <Typography sx={{ width: 120 }}>Nº de Legajo:</Typography>
-            <Box sx={{ border: "1px solid #ccc", px: 2 }}>{legajo}</Box>
-          </Box>
-          <Box sx={{ display: "flex", mb: 1 }}>
-            <Typography sx={{ width: 120 }}>Nombre y Apellido:</Typography>
-            <Box sx={{ border: "1px solid #ccc", px: 2 }}>{nombre} {apellido}</Box>
-          </Box>
-          <Box sx={{ display: "flex" }}>
-            <Typography sx={{ width: 120 }}>Fecha de Alta:</Typography>
-            <Box sx={{ border: "1px solid #ccc", px: 2 }}>{fechaAlta}</Box>
-          </Box>
-        </Box>
-
-        {/* Foto + botones */}
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center", gap: 2 }}>
-          <Avatar src={foto} sx={{ width: 100, height: 100 }} />
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mr: 8 }}>
           {actions.map((btn, i) => (
             <PrimaryButton key={i} onClick={btn.onClick} {...btn.props}>
               {btn.label}
@@ -45,7 +36,23 @@ const FichaEmpleadoBase = ({ data, readOnly = true, actions = [], onClose }) => 
         </Box>
       </Box>
 
-      {/* Formulario STEP1 - Datos Personales */}
+      {/* Info inicial */}
+      <Box sx={{ display: "flex", mb: 1, ml: 4, color: "#808080" }}>
+        <Typography sx={{ width: 120 }}>Nº de Legajo:</Typography>
+        <Box sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2, ml: 4 }}>{legajo}</Box>
+      </Box>
+      <Box sx={{ display: "flex", mb: 1, ml: 4, color: "#808080" }}>
+        <Typography sx={{ width: 150 }}>Nombre y Apellido:</Typography>
+        <Box sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2 }}>
+          {nombre} {apellido}
+        </Box>
+      </Box>
+      <Box sx={{ display: "flex", ml: 4, color: "#808080" }}>
+        <Typography sx={{ width: 120 }}>Fecha de Alta:</Typography>
+        <Box sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2, ml: 4 }}>{fechaAlta}</Box>
+      </Box>
+
+      {/* === FORMULARIO STEP1 - Datos Personales === */}
       <FormCard title="Datos Personales" sx={{ mb: 2 }}>
         <Stack spacing={2}>
           <BaseInput label="Nombre" value={data.nombre} readOnly={readOnly} />
@@ -56,7 +63,7 @@ const FichaEmpleadoBase = ({ data, readOnly = true, actions = [], onClose }) => 
         </Stack>
       </FormCard>
 
-      {/* Formulario STEP2 - Datos Laborales */}
+      {/* === FORMULARIO STEP2 - Datos Laborales === */}
       <FormCard title="Datos Laborales" sx={{ mb: 2 }}>
         <Stack spacing={2}>
           <BaseInput label="Área de trabajo" value={data.area} readOnly={readOnly} />
@@ -69,7 +76,7 @@ const FichaEmpleadoBase = ({ data, readOnly = true, actions = [], onClose }) => 
         </Stack>
       </FormCard>
 
-      {/* Formulario STEP3 - Datos de Remuneración */}
+      {/* === FORMULARIO STEP3 - Datos de Remuneración === */}
       <FormCard title="Datos de Remuneración">
         <Stack spacing={2}>
           <BaseInput label="Tipo de remuneración" value={data.tipoRemuneracion} readOnly={readOnly} />

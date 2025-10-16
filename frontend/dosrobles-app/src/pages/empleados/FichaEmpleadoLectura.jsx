@@ -1,7 +1,8 @@
 // src/pages/empleados/FichaEmpleadoLectura.jsx
 import React from "react";
+import { Box, Typography } from "@mui/material";
 import FichaEmpleadoBase from "./FichaEmpleadoBase";
-import Empleado2 from "../../assets/empleados/empleado2.png"; // mock foto
+import Empleado2 from "../../assets/empleados/empleado1_1.png"; // mock foto
 
 const mockData = {
   legajo: "000123",
@@ -28,14 +29,29 @@ const mockData = {
 };
 
 const FichaEmpleadoLectura = ({ open, onClose }) => {
-  if (!open) return null;
-
   const actions = [
     { label: "Solicitar Ausencia", onClick: () => console.log("Solicitar Ausencia") },
     { label: "Enviar Mensaje", onClick: () => console.log("Mensaje") },
   ];
 
-  return <FichaEmpleadoBase data={mockData} readOnly={true} actions={actions} onClose={onClose} />;
+  return (
+    <Box sx={{ p: 4 }}>
+      {/* Header específico para lectura */}
+      <Box sx={{ mb: 3 }}>
+        <Typography variant="h4" sx={{ fontWeight: 600, color: "#585858", mb: 0.5 }}>
+          Mi Ficha
+        </Typography>
+        <Typography variant="body2" sx={{ color: "#808080", mb: 4 }}>
+          Consultá tus datos personales, laborales y de contacto. 
+          Asegurate de mantener tu información actualizada.
+        </Typography>
+      </Box>
+
+      {/* Ficha base sin header */}
+      <FichaEmpleadoBase data={mockData} readOnly={true} actions={actions} onClose={onClose} showClose={true} />
+    </Box>
+  );
 };
 
 export default FichaEmpleadoLectura;
+
