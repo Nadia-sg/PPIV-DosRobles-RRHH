@@ -1,4 +1,5 @@
-// src/pages/EmpleadosList.jsx
+// src/pages/empleados/EmpleadosList.jsx
+
 import React, { useState } from "react";
 import {
   Box,
@@ -10,14 +11,20 @@ import {
 import EditIcon from "@mui/icons-material/Edit";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CustomTable from "../../components/ui/CustomTable";
-import { SecondaryButton, FichaButtonWithIcon } from "../../components/ui/Buttons";
+import {
+  SecondaryButton,
+  FichaButtonWithIcon,
+} from "../../components/ui/Buttons";
 import NuevoEmpleadoModal from "../../components/modales/NuevoEmpleadoModal";
+import FichaEmpleadoEditable from "./FichaEmpleadoEditable";
 
 const EmpleadosList = () => {
   const theme = useTheme();
   const isMobile = useMediaQuery(theme.breakpoints.down("sm"));
 
   const [modalOpen, setModalOpen] = useState(false);
+  const [fichaOpen, setFichaOpen] = useState(false);
+  const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
 
   const empleados = [
     {
@@ -38,23 +45,31 @@ const EmpleadosList = () => {
     },
   ];
 
-  // Columnas según tamaño de pantalla
+  const handleVerFicha = (empleado) => {
+    setEmpleadoSeleccionado(empleado);
+    setFichaOpen(true);
+  };
+
   const columns = isMobile
     ? ["Foto", "Nombre y Apellido", "Ficha"]
     : ["Foto", "Nombre y Apellido", "Legajo", "Área de Trabajo", "Teléfono", "Ficha"];
 
-  // Filas de la tabla
   const rows = empleados.map((emp) => ({
     foto: <Avatar src={emp.foto} alt={emp.nombre} sx={{ width: 40, height: 40 }} />,
     nombre: emp.nombre,
     legajo: emp.legajo,
     area: emp.area,
     telefono: emp.telefono,
-    ficha: <FichaButtonWithIcon icon={DescriptionIcon} label="Ver Ficha" />,
+    ficha: (
+      <FichaButtonWithIcon
+        icon={DescriptionIcon}
+        label="Ver Ficha"
+        onClick={() => handleVerFicha(emp)}
+      />
+    ),
   }));
 
   return (
-
     <Box sx={{ padding: "2rem" }}>
       {/* Encabezado */}
       <Box
@@ -82,11 +97,15 @@ const EmpleadosList = () => {
       {/* Tabla */}
       <CustomTable
         columns={columns}
-        rows={rows.map((row) => (isMobile ? {
-          foto: row.foto,
-          nombre: row.nombre,
-          ficha: row.ficha,
-        } : row))}
+        rows={
+          isMobile
+            ? rows.map((row) => ({
+                foto: row.foto,
+                nombre: row.nombre,
+                ficha: row.ficha,
+              }))
+            : rows
+        }
       />
 
       {/* Modal Nuevo Empleado */}
@@ -94,9 +113,17 @@ const EmpleadosList = () => {
         open={modalOpen}
         onClose={() => setModalOpen(false)}
       />
+
+      {/* Modal Ficha Editable */}
+      {fichaOpen && empleadoSeleccionado && (
+        <FichaEmpleadoEditable
+          open={fichaOpen}
+          onClose={() => setFichaOpen(false)}
+          empleado={empleadoSeleccionado}
+        />
+      )}
     </Box>
   );
 };
 
 export default EmpleadosList;
-

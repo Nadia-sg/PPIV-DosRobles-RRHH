@@ -25,7 +25,7 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
   const routes = {
     Inicio: "/home",
     Bandeja: "/bandeja-entrada",
-    "Mi Perfil": "/personal/perfil",
+    "Mi Perfil": "/mi-ficha",
     Ausencias: "/licencias",
     "Mi Fichaje": "/fichaje/historial",
     "Mis Documentos": "/nomina/recibos",
