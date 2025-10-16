@@ -1,25 +1,46 @@
 /* src/components/Sidebar.jsx */
-import React, { useState, forwardRef } from "react";
 import styles from "../styles/Sidebar.module.css";
+import { useNavigate, useLocation } from "react-router-dom";
+import React, { useState, forwardRef, useEffect } from "react";
 
-// Import MUI Icons
+// MUI Icons
 import HomeIcon from "@mui/icons-material/Home";
 import MailOutlineIcon from "@mui/icons-material/MailOutline";
-import CalendarTodayIcon from "@mui/icons-material/CalendarToday";
 import PersonOutlineIcon from "@mui/icons-material/PersonOutline";
 import PeopleOutlineIcon from "@mui/icons-material/PeopleOutline";
-import ScheduleIcon from "@mui/icons-material/Schedule";
-import DescriptionIcon from "@mui/icons-material/Description";
-import AssignmentIcon from "@mui/icons-material/Assignment";
 import ArrowDropDownIcon from "@mui/icons-material/ArrowDropDown";
 import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import MenuIcon from "@mui/icons-material/Menu";
 
 const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
-  const userName = "Mariana"; 
+  const userName = "Mariana";
   const [openMenu, setOpenMenu] = useState(null);
   const [menuOpen, setMenuOpen] = useState(true);
-  const [active, setActive] = useState("Inicio");
+  const [active, setActive] = useState("");
+
+  const navigate = useNavigate();
+  const location = useLocation();
+
+  // Mapear nombres de menú a rutas
+  const routes = {
+    Inicio: "/home",
+    Bandeja: "/bandeja-entrada",
+    "Mi Perfil": "/personal/perfil",
+    Ausencias: "/licencias",
+    "Mi Fichaje": "/fichaje/historial",
+    "Mis Documentos": "/nomina/recibos",
+    Empleados: "/empleados",
+    "Control Horario": "/fichaje/historial",
+    Nómina: "/nomina/calculo",
+  };
+
+  // Mantener activo según la URL actual
+  useEffect(() => {
+    const currentName = Object.keys(routes).find(
+      (key) => routes[key] === location.pathname
+    );
+    if (currentName) setActive(currentName);
+  }, [location.pathname]);
 
   const toggleMenu = (menuName) => {
     setOpenMenu(openMenu === menuName ? null : menuName);
@@ -27,12 +48,12 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
 
   const handleSelect = (name) => {
     setActive(name);
+    if (routes[name]) navigate(routes[name]);
     if (onItemClick) onItemClick(name);
   };
 
   return (
     <aside ref={ref} className={`${styles.sidebar} ${className}`}>
-      {/* Botón hamburguesa (modo responsive) */}
       <button
         className={styles.menuToggle}
         onClick={() => setMenuOpen(!menuOpen)}
@@ -43,13 +64,12 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
 
       {menuOpen && (
         <>
-          {/* Sección de perfil */}
           <div className={styles.profile}>
+            
             <div className={styles.avatar}>MC</div>
             <p className={styles.greeting}>¡Buenos días, {userName}!</p>
           </div>
 
-          {/* Lista principal */}
           <ul className={styles.menuList}>
             <li
               className={`${styles.menuItem} ${
@@ -57,8 +77,7 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
               }`}
               onClick={() => handleSelect("Inicio")}
             >
-              <HomeIcon className={styles.icon} />
-              Inicio
+              <HomeIcon className={styles.icon} /> Inicio
             </li>
 
             <li
@@ -67,28 +86,15 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
               }`}
               onClick={() => handleSelect("Bandeja")}
             >
-              <MailOutlineIcon className={styles.icon} />
-              Bandeja de Entrada
+              <MailOutlineIcon className={styles.icon} /> Bandeja de Entrada
             </li>
 
-            <li
-              className={`${styles.menuItem} ${
-                active === "Calendario" ? styles.active : ""
-              }`}
-              onClick={() => handleSelect("Calendario")}
-            >
-              <CalendarTodayIcon className={styles.icon} />
-              Calendario
-            </li>
-
-            {/* Dropdown: Personal */}
             <li className={styles.dropdown}>
               <div
                 className={styles.dropdownHeader}
                 onClick={() => toggleMenu("personal")}
               >
-                <PersonOutlineIcon className={styles.icon} />
-                <span>Personal</span>
+                <PersonOutlineIcon className={styles.icon} /> <span>Personal</span>
                 {openMenu === "personal" ? (
                   <ArrowDropUpIcon className={styles.arrowIcon} />
                 ) : (
@@ -113,14 +119,12 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
               )}
             </li>
 
-            {/* Dropdown: Organización */}
             <li className={styles.dropdown}>
               <div
                 className={styles.dropdownHeader}
                 onClick={() => toggleMenu("organizacion")}
               >
-                <PeopleOutlineIcon className={styles.icon} />
-                <span>Organización</span>
+                <PeopleOutlineIcon className={styles.icon} /> <span>Organización</span>
                 {openMenu === "organizacion" ? (
                   <ArrowDropUpIcon className={styles.arrowIcon} />
                 ) : (
@@ -130,17 +134,15 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
 
               {openMenu === "organizacion" && (
                 <ul className={styles.submenu}>
-                  {["Empleados", "Control Horario", "Nómina", "Tareas"].map(
-                    (item) => (
-                      <li
-                        key={item}
-                        className={active === item ? styles.activeSub : ""}
-                        onClick={() => handleSelect(item)}
-                      >
-                        {item}
-                      </li>
-                    )
-                  )}
+                  {["Empleados", "Control Horario", "Nómina"].map((item) => (
+                    <li
+                      key={item}
+                      className={active === item ? styles.activeSub : ""}
+                      onClick={() => handleSelect(item)}
+                    >
+                      {item}
+                    </li>
+                  ))}
                 </ul>
               )}
             </li>
