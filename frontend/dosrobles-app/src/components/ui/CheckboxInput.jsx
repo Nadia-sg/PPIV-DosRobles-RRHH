@@ -32,12 +32,7 @@ export default function CheckboxInput({
         sx={{
           display: "flex",
           alignItems: "center",
-          backgroundColor: "#FFFFFF",
-          border: "1px solid #E2E1E1",
-          borderRadius: 2,
-          boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
-          px: 1.5,
-          py: 1,
+          ml:4,
         }}
       >
         <FormControlLabel
