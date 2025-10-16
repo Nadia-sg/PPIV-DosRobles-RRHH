@@ -41,13 +41,24 @@ const CustomTable = ({
             {columns.map((col, i) => (
               <TableCell
                 key={i}
-                sx={{ color: headerTextColor, fontWeight: "medium", borderBottom: "none" }}
+                sx={{
+                  color: headerTextColor,
+                  fontWeight: "medium",
+                  borderBottom: "none",
+                  fontSize: "0.95rem",
+                }}
               >
                 {col}
               </TableCell>
             ))}
             {showActions && (
-              <TableCell sx={{ color: headerTextColor, fontWeight: "medium", borderBottom: "none" }}>
+              <TableCell
+                sx={{
+                  color: headerTextColor,
+                  fontWeight: "medium",
+                  borderBottom: "none",
+                }}
+              >
                 Acciones
               </TableCell>
             )}
@@ -73,24 +84,42 @@ const CustomTable = ({
             >
               {columns.map((col, i) => {
                 const key = Object.keys(row)[i];
+                const cellValue = row[key];
+
                 return (
                   <TableCell
                     key={i}
-                    sx={{ color: textColor, borderBottom: "none", fontSize: "0.95rem" }}
+                    sx={{
+                      color: textColor,
+                      borderBottom: "none",
+                      fontSize: "0.95rem",
+                    }}
                   >
-                    {row[key]}
+                    {/* Soporta texto o JSX */}
+                    {React.isValidElement(cellValue)
+                      ? cellValue
+                      : cellValue ?? "-"}
                   </TableCell>
                 );
               })}
+
               {showActions && (
                 <TableCell sx={{ borderBottom: "none" }}>
                   {onEdit && (
-                    <IconButton size="small" color="primary" onClick={() => onEdit(row)}>
+                    <IconButton
+                      size="small"
+                      color="primary"
+                      onClick={() => onEdit(row)}
+                    >
                       <EditIcon />
                     </IconButton>
                   )}
                   {onDelete && (
-                    <IconButton size="small" color="error" onClick={() => onDelete(row)}>
+                    <IconButton
+                      size="small"
+                      color="error"
+                      onClick={() => onDelete(row)}
+                    >
                       <DeleteIcon />
                     </IconButton>
                   )}

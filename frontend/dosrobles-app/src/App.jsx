@@ -13,6 +13,7 @@ import FichaEmpleadoLectura from "./pages/empleados/FichaEmpleadoLectura";
 
 // Módulo 2 - Fichaje
 import HistorialFichajes from "./pages/fichaje/HistorialFichajes";
+import FichajeEmpleados from "./pages/fichaje/FichajeEmpleados";
 
 // Módulo 3 - Licencias
 import LicenciasList from "./pages/licencias/LicenciasList";
@@ -51,6 +52,7 @@ function App() {
 
         {/* Fichaje */}
         <Route path="/fichaje/historial" element={<HistorialFichajes />} />
+        <Route path="/fichaje/empleados" element={<FichajeEmpleados />} />
 
         {/* Licencias */}
         <Route path="/licencias" element={<LicenciasList />} />

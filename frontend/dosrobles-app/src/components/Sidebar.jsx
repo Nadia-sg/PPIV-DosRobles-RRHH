@@ -30,7 +30,7 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
     "Mi Fichaje": "/fichaje/historial",
     "Mis Documentos": "/nomina/recibos",
     Empleados: "/empleados",
-    "Control Horario": "/fichaje/historial",
+    "Control Horario": "/fichaje/empleados",
     Nómina: "/nomina/calculo",
   };
 
