@@ -1,23 +1,27 @@
 //src/routes/fichajes.routes.js
 
 import express from "express";
-import { iniciarJornada, registrarSalida, registrarPausa, getFichajes, getFichajesPorEmpleado } from "../controllers/fichajes.controller.js";
-
+import {
+  iniciarJornada,
+  registrarSalida,
+  registrarPausa,
+  getFichajes,
+  getFichajesPorEmpleado,
+  getFichajesActivos,
+  cerrarJornada,
+} from "../controllers/fichajes.controller.js";
 
 const router = express.Router();
 
-// Ruta para iniciar jornada
 router.post("/inicio", iniciarJornada);
-
-// Ruta para registrar salida
 router.post("/salida", registrarSalida);
-
-// Ruta para registrar pausa
 router.post("/pausa", registrarPausa);
+router.post("/cerrar", cerrarJornada);
 
-// Rutas GET
 router.get("/", getFichajes);
-
 router.get("/empleado/:empleadoId", getFichajesPorEmpleado);
+router.get("/activos", getFichajesActivos);
 
 export default router;
+
+
