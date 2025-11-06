@@ -1,32 +1,37 @@
+// src/pages/LoginPage.jsx
 import React, { useState } from "react";
 import { Box, Typography, useMediaQuery, Alert } from "@mui/material";
 import TextInput from "../components/ui/TextInput";
 import { LoginButton } from "../components/ui/Buttons";
 import loginImage from "../assets/login.jpg";
 import logoImage from "../assets/Logo4.png";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
+import { loginUser } from "../api/authService"; // 👈 nuevo import
 
 export default function LoginPage() {
   const [user, setUser] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(""); 
+  const [error, setError] = useState("");
   const isMobile = useMediaQuery("(max-width:900px)");
   const navigate = useNavigate();
 
-  // Usuario login de prueba 
-  const validUser = "admin";
-  const validPassword = "123";
+  const handleLogin = async () => {
+    setError("");
 
-  const handleLogin = () => {
-    console.log("Usuario:", user, "Contraseña:", password);
+    try {
+      const data = await loginUser(user, password);
 
-    if (user === validUser && password === validPassword) {
-      setError("");
+      console.log("✅ Login exitoso:", data);
+
+      // Guarda el token o los datos del usuario (si el backend los devuelve)
+      localStorage.setItem("token", data.token);
+      localStorage.setItem("username", data.username);
+
       // Redirige al home
       navigate("/home");
-    } else {
-      // Usuario o contraseña incorrectos
-      setError("Usuario o contraseña incorrectos");
+    } catch (err) {
+      console.error("❌ Error en login:", err);
+      setError(err.message || "Error al iniciar sesión");
     }
   };
 
@@ -41,7 +46,6 @@ export default function LoginPage() {
         flexDirection: isMobile ? "column" : "row",
       }}
     >
-      {/* Imagen de fondo (solo en desktop) */}
       {!isMobile && (
         <Box
           sx={{
@@ -86,7 +90,6 @@ export default function LoginPage() {
         </Box>
       )}
 
-      {/* Panel izquierdo (formulario) */}
       <Box
         sx={{
           position: "relative",
@@ -170,7 +173,6 @@ export default function LoginPage() {
             onChange={(e) => setPassword(e.target.value)}
           />
 
-          {/* Mensaje de error */}
           {error && (
             <Alert severity="error" sx={{ mt: 2 }}>
               {error}

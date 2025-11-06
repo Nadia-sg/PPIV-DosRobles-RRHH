@@ -10,3 +10,5 @@ export const connectDB = async () => {
     process.exit(1); // detiene el servidor si falla la conexión
   }
 };
+
+export default connectDB;
