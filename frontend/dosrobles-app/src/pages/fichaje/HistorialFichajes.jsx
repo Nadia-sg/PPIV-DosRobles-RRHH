@@ -1,51 +1,62 @@
 // src/pages/empleados/HistorialFichajes.jsx
-import React from "react";
-import { Box, Typography } from "@mui/material";
+import React, { useEffect, useState } from "react";
+import { Box, Typography, CircularProgress } from "@mui/material";
 import CustomTable from "../../components/ui/CustomTable";
+import { getFichajesPorEmpleado } from "../../services/fichajesService";
 
 const HistorialFichajes = () => {
-  // 🧩 Definición de columnas
+  const [rows, setRows] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+
+  // ID del empleado logueado
+  const empleadoId = "690a9f5cd37450b870dc39fe";
+
   const columns = ["Fecha", "Hora Ingreso", "Hora Salida", "Hs Trabajadas", "Hs Estimadas"];
 
-  // 🧩 Filas mockeadas
-  const rows = [
-    {
-      fecha: (
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <Typography sx={{ fontWeight: 600 }}>27 Ago</Typography>
-          <Typography variant="body2" sx={{ color: "#808080" }}>Mié</Typography>
-        </Box>
-      ),
-      horaIngreso: "08:05 hs",
-      horaSalida: "17:05 hs",
-      hsTrabajadas: "08:00 hs",
-      hsEstimadas: "08:00 hs",
-    },
-    {
-      fecha: (
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <Typography sx={{ fontWeight: 600 }}>28 Ago</Typography>
-          <Typography variant="body2" sx={{ color: "#808080" }}>Jue</Typography>
-        </Box>
-      ),
-      horaIngreso: "08:10 hs",
-      horaSalida: "17:00 hs",
-      hsTrabajadas: "07:50 hs",
-      hsEstimadas: "08:00 hs",
-    },
-    {
-      fecha: (
-        <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
-          <Typography sx={{ fontWeight: 600 }}>29 Ago</Typography>
-          <Typography variant="body2" sx={{ color: "#808080" }}>Vie</Typography>
-        </Box>
-      ),
-      horaIngreso: "07:55 hs",
-      horaSalida: "16:55 hs",
-      hsTrabajadas: "08:00 hs",
-      hsEstimadas: "08:00 hs",
-    },
-  ];
+  useEffect(() => {
+    const cargarFichajes = async () => {
+      try {
+        const data = await getFichajesPorEmpleado(empleadoId);
+
+        if (Array.isArray(data) && data.length > 0) {
+          const formattedRows = data.map((fichaje) => {
+            const fechaObj = new Date(fichaje.fecha);
+            const opcionesDia = { weekday: "short" };
+            const opcionesMes = { day: "2-digit", month: "short" };
+
+            return {
+              fecha: (
+                <Box sx={{ display: "flex", flexDirection: "column", alignItems: "center" }}>
+                  <Typography sx={{ fontWeight: 600 }}>
+                    {fechaObj.toLocaleDateString("es-AR", opcionesMes)}
+                  </Typography>
+                  <Typography variant="body2" sx={{ color: "#808080" }}>
+                    {fechaObj.toLocaleDateString("es-AR", opcionesDia)}
+                  </Typography>
+                </Box>
+              ),
+              horaIngreso: fichaje.horaEntrada ? `${fichaje.horaEntrada} hs` : "-",
+              horaSalida: fichaje.horaSalida ? `${fichaje.horaSalida} hs` : "-",
+              hsTrabajadas: fichaje.totalTrabajado || "-",
+              hsEstimadas: "08:00 hs", //  ajustar con el dato en backend
+            };
+          });
+
+          setRows(formattedRows);
+        } else {
+          setError("No hay fichajes registrados para este empleado");
+        }
+      } catch (err) {
+        console.error(err);
+        setError("Error al cargar los fichajes");
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    cargarFichajes();
+  }, [empleadoId]);
 
   return (
     <Box sx={{ p: 4 }}>
@@ -59,8 +70,18 @@ const HistorialFichajes = () => {
         </Typography>
       </Box>
 
-      {/* === Tabla de Fichajes === */}
-      <CustomTable columns={columns} rows={rows} />
+      {/* === Contenido Dinámico === */}
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
+          <CircularProgress />
+        </Box>
+      ) : error ? (
+        <Typography sx={{ color: "error.main", mt: 2, textAlign: "center" }}>
+          {error}
+        </Typography>
+      ) : (
+        <CustomTable columns={columns} rows={rows} />
+      )}
     </Box>
   );
 };

@@ -2,6 +2,8 @@
 
 import Fichaje from "../models/Fichaje.js";
 
+
+
 // ===================
 // INICIAR JORNADA
 // ===================
@@ -47,7 +49,12 @@ export const registrarSalida = async (req, res) => {
 
     const [hEntrada, mEntrada] = fichaje.horaEntrada.split(":").map(Number);
     const [hSalida, mSalida] = horaSalida.split(":").map(Number);
+
     let totalMin = (hSalida * 60 + mSalida) - (hEntrada * 60 + mEntrada);
+
+    // restamos los minutos de pausa si existen
+    const totalPausaMin = calcularMinutosPausas(fichaje.pausas);
+    totalMin -= totalPausaMin;
 
     fichaje.totalTrabajado = `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
 
@@ -63,6 +70,7 @@ export const registrarSalida = async (req, res) => {
     res.status(500).json({ message: "Error al registrar salida" });
   }
 };
+
 
 // ===================
 // REGISTRAR PAUSA
@@ -87,6 +95,28 @@ export const registrarPausa = async (req, res) => {
     res.status(500).json({ message: "Error al registrar pausa" });
   }
 };
+
+// =================================
+// CALCULAR MIN TOTALES DE PAUSAS
+// =================================
+
+function calcularMinutosPausas(pausas) {
+  if (!Array.isArray(pausas)) return 0;
+
+  let totalPausasMin = 0;
+
+  pausas.forEach((pausa) => {
+    if (pausa.inicio && pausa.fin) {
+      const [h1, m1] = pausa.inicio.split(":").map(Number);
+      const [h2, m2] = pausa.fin.split(":").map(Number);
+      const minutos = (h2 * 60 + m2) - (h1 * 60 + m1);
+      totalPausasMin += minutos > 0 ? minutos : 0;
+    }
+  });
+
+  return totalPausasMin;
+}
+
 
 // ===================
 // OBTENER TODOS LOS FICHAJES
@@ -152,6 +182,11 @@ export const cerrarJornada = async (req, res) => {
     const [hSalida, mSalida] = horaSalida.split(":").map(Number);
 
     let totalMin = (hSalida * 60 + mSalida) - (hEntrada * 60 + mEntrada);
+
+    // 🔹 Nuevo: restamos las pausas
+    const totalPausaMin = calcularMinutosPausas(fichaje.pausas);
+    totalMin -= totalPausaMin;
+
     fichaje.totalTrabajado = `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
 
     const diffMin = totalMin - 480;

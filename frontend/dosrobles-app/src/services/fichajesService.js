@@ -1,14 +1,18 @@
 // frontend/dosrobles-app/src/services/fichajesService.js
 
-const API_URL = "http://localhost:4000/fichajes";
+const API_URL = 'http://localhost:4000/fichajes';
 
-export const getFichajes = async () => {
+export async function getFichajesPorEmpleado(empleadoId) {
   try {
-    const response = await fetch(API_URL);
-    if (!response.ok) throw new Error("Error al obtener fichajes");
-    return await response.json();
+    const response = await fetch(`${API_URL}/empleado/${empleadoId}`);
+    if (!response.ok) {
+      throw new Error('Error al obtener los fichajes');
+    }
+
+    const data = await response.json();
+    return data;
   } catch (error) {
-    console.error("Error en getFichajes:", error);
+    console.error('Error en getFichajesPorEmpleado:', error);
     throw error;
   }
-};
+}

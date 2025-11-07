@@ -22,6 +22,7 @@ router.get("/", getFichajes);
 router.get("/empleado/:empleadoId", getFichajesPorEmpleado);
 router.get("/activos", getFichajesActivos);
 
+
 export default router;
 
 

@@ -13,26 +13,31 @@ import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import EditCalendarIcon from "@mui/icons-material/EditCalendar";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import CakeIcon from "@mui/icons-material/Cake";
+import StopIcon from "@mui/icons-material/Stop"; // ✅ faltaba este import
 import {
   PrimaryButton,
   SecondaryButton,
   IconNextButton,
 } from "../components/ui/Buttons";
 import { useNavigate } from "react-router-dom";
+import ModalDialog from "../components/ui/ModalDialog";
 
 export default function Home() {
   const isMobile = useMediaQuery("(max-width:900px)");
   const [seconds, setSeconds] = useState(0);
+  const [estadoFichaje, setEstadoFichaje] = useState("inactivo");
+  const [openInicio, setOpenInicio] = useState(false);
+  const [openSalida, setOpenSalida] = useState(false);
 
-  // Simulador de fichaje
+  // ⏱ Simulador de tiempo activo
   useEffect(() => {
+    if (estadoFichaje !== "activo") return;
     const interval = setInterval(() => setSeconds((prev) => prev + 1), 1000);
     return () => clearInterval(interval);
-  }, []);
+  }, [estadoFichaje]);
 
   const totalSeconds = 8 * 3600;
   const progress = Math.min((seconds / totalSeconds) * 100, 100);
-
   const navigate = useNavigate();
 
   const eventos = [
@@ -65,9 +70,9 @@ export default function Home() {
           flexWrap: isMobile ? "wrap" : "nowrap",
         }}
       >
-              {/* ===================
-           CUADRANTE 1 FICHAJE
-          =================== */}
+        {/* ===================
+            CUADRANTE 1 FICHAJE
+            =================== */}
         <Card
           sx={{
             flex: isMobile ? "0 0 100%" : "0 0 50%",
@@ -99,7 +104,7 @@ export default function Home() {
               flexWrap: isMobile ? "wrap" : "nowrap",
             }}
           >
-            {/* Botones */}
+            {/* --- ESTADOS --- */}
             <Box
               sx={{
                 flex: "1 1 50%",
@@ -109,12 +114,38 @@ export default function Home() {
                 marginLeft: 1.5,
               }}
             >
-              <PrimaryButton startIcon={<PlayArrowIcon />}>
-                Fichaje oficina
+              {/* Botón principal */}
+              <PrimaryButton
+                startIcon={
+                  estadoFichaje === "inactivo" ? <PlayArrowIcon /> : <StopIcon />
+                }
+                onClick={() => {
+                  if (estadoFichaje === "inactivo") setOpenInicio(true);
+                  else setOpenSalida(true);
+                }}
+                sx={{
+                  bgcolor: estadoFichaje === "inactivo" ? "#7FC6BA" : "#F28B82",
+                  "&:hover": {
+                    bgcolor: estadoFichaje === "inactivo" ? "#68b0a4" : "#e57373",
+                  },
+                }}
+              >
+                {estadoFichaje === "inactivo" ? "Fichar entrada" : "Registrar salida"}
               </PrimaryButton>
-              <SecondaryButton startIcon={<PlayArrowIcon />}>
-                Fichaje remoto
-              </SecondaryButton>
+
+              {/* Botón Pausar / Reanudar */}
+              {estadoFichaje !== "inactivo" && (
+                <SecondaryButton
+                  onClick={() =>
+                    setEstadoFichaje(
+                      estadoFichaje === "activo" ? "pausado" : "activo"
+                    )
+                  }
+                >
+                  {estadoFichaje === "pausado" ? "Reanudar" : "Pausar"}
+                </SecondaryButton>
+              )}
+
               <Typography
                 sx={{
                   textDecoration: "underline",
@@ -172,11 +203,49 @@ export default function Home() {
               </Box>
             </Box>
           </Box>
+
+          {/* Modal INICIO */}
+          <ModalDialog
+            open={openInicio}
+            onClose={() => setOpenInicio(false)}
+            title="Iniciar jornada"
+            content="¿Querés iniciar tu jornada laboral?"
+            actions={[
+              { label: "Cancelar", variant: "outlined", onClick: () => setOpenInicio(false) },
+              {
+                label: "Iniciar",
+                onClick: () => {
+                  setOpenInicio(false);
+                  setEstadoFichaje("activo");
+                  setSeconds(0);
+                },
+              },
+            ]}
+          />
+
+          {/* Modal SALIDA */}
+          <ModalDialog
+            open={openSalida}
+            onClose={() => setOpenSalida(false)}
+            title="Registrar salida"
+            content="¿Querés registrar tu salida?"
+            actions={[
+              { label: "Cancelar", variant: "outlined", onClick: () => setOpenSalida(false) },
+              {
+                label: "Confirmar",
+                onClick: () => {
+                  setOpenSalida(false);
+                  setEstadoFichaje("inactivo");
+                  setSeconds(0);
+                },
+              },
+            ]}
+          />
         </Card>
 
-         {/* ===========================
-          CUADRANTE 2 ESTADO DEL EQUIPO
-          ============================== */}
+        {/* ===========================
+            CUADRANTE 2 ESTADO DEL EQUIPO
+            ============================== */}
         <Card
           sx={{
             flex: isMobile ? "0 0 100%" : "0 0 50%",
@@ -235,9 +304,7 @@ export default function Home() {
           flexWrap: isMobile ? "wrap" : "nowrap",
         }}
       >
-         {/* ===========================
-          CUADRANTE 3 BANDEJA DE ENTRADA
-          ============================== */}
+        {/* Bandeja de entrada */}
         <Card
           sx={{
             flex: isMobile ? "0 0 100%" : "0 0 50%",
@@ -253,12 +320,11 @@ export default function Home() {
             <Typography variant="h6" fontWeight="bold" color="#808080">
               Bandeja de entrada
             </Typography>
-             <IconNextButton onClick={() => navigate("/bandeja-entrada")}>
+            <IconNextButton onClick={() => navigate("/bandeja-entrada")}>
               <ArrowForwardIosIcon />
             </IconNextButton>
           </Box>
 
-          {/* Mails */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1, flex: 1, overflowY: "auto" }}>
             {[...Array(5)].map((_, i) => (
               <Box
@@ -276,13 +342,14 @@ export default function Home() {
                   "&:hover": { backgroundColor: "#dcdcdc" },
                 }}
               >
-                <Box sx={{
-                  display: "flex",
-                  justifyContent: { xs: "space-between", md: "flex-start" },
-                  width: "100%",
-                  mb: { xs: 0.5, md: 0 },
-                }}>
-
+                <Box
+                  sx={{
+                    display: "flex",
+                    justifyContent: { xs: "space-between", md: "flex-start" },
+                    width: "100%",
+                    mb: { xs: 0.5, md: 0 },
+                  }}
+                >
                   <Typography variant="body2" color="text.secondary">
                     Fecha {i + 1}
                   </Typography>
@@ -293,15 +360,12 @@ export default function Home() {
                 <Typography variant="body2" fontWeight="bold" sx={{ width: "100%" }}>
                   Asunto del mail {i + 1}
                 </Typography>
-                
               </Box>
             ))}
           </Box>
         </Card>
 
-         {/* ===========================
-          CUADRANTE 4 EVENTOS
-          ============================== */}
+        {/* Eventos */}
         <Card
           sx={{
             flex: isMobile ? "0 0 100%" : "0 0 50%",
@@ -309,12 +373,10 @@ export default function Home() {
             boxShadow: "0 4px 12px rgba(0,0,0,0.1)",
             display: "flex",
             flexDirection: "column",
-            justifyContent: "",
             p: 2,
             height: "100%",
           }}
         >
-          {/* Encabezado */}
           <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
             <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight="bold" color="#808080">
               Eventos
@@ -331,7 +393,6 @@ export default function Home() {
             </SecondaryButton>
           </Box>
 
-          {/* Tabla de eventos */}
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
             {eventos.map((evento, i) => (
               <Box
@@ -347,8 +408,15 @@ export default function Home() {
                   "&:hover": { backgroundColor: "#f1f3d6" },
                 }}
               >
-                {/* Fecha + hora */}
-                <Box sx={{ borderRight: "1px solid #ccc", pr: 1, display: "flex", flexDirection: "column", alignItems: "center" }}>
+                <Box
+                  sx={{
+                    borderRight: "1px solid #ccc",
+                    pr: 1,
+                    display: "flex",
+                    flexDirection: "column",
+                    alignItems: "center",
+                  }}
+                >
                   <Typography fontWeight="bold" variant="body2">
                     {evento.fecha}
                   </Typography>
@@ -356,15 +424,11 @@ export default function Home() {
                     {evento.hora}
                   </Typography>
                 </Box>
-
-                {/* Nombre evento */}
                 <Box sx={{ pl: 2, display: "flex", alignItems: "center" }}>
                   <Typography variant="body2" fontWeight="bold">
                     {evento.nombre}
                   </Typography>
                 </Box>
-
-                {/* Icono */}
                 <Box sx={{ display: "flex", justifyContent: "center" }}>
                   {evento.icono}
                 </Box>
