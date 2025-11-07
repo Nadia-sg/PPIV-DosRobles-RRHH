@@ -3,6 +3,7 @@
 import styles from "../styles/Sidebar.module.css";
 import { useNavigate, useLocation } from "react-router-dom";
 import React, { useState, forwardRef, useEffect } from "react";
+import { useUser } from "../context/UserContext";
 
 // MUI Icons
 import HomeIcon from "@mui/icons-material/Home";
@@ -14,7 +15,9 @@ import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import MenuIcon from "@mui/icons-material/Menu";
 
 const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
-  const userName = "Mariana";
+  const { user } = useUser();
+  const userName = user?.nombre || "Usuario";
+  const userInitials = (user?.nombre?.[0] || "U") + (user?.apellido?.[0] || "");
   const [openMenus, setOpenMenus] = useState({}); 
   const [menuOpen, setMenuOpen] = useState(true);
   const [active, setActive] = useState("");
@@ -32,6 +35,7 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
     Empleados: "/empleados",
     "Control Horario": "/fichaje/empleados",
     Nómina: "/nomina/calculo",
+    Solicitudes: "/solicitudes-licencias",
   };
 
   useEffect(() => {
@@ -68,7 +72,7 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
       {menuOpen && (
         <>
           <div className={styles.profile}>
-            <div className={styles.avatar}>MC</div>
+            <div className={styles.avatar}>{userInitials}</div>
             <p className={styles.greeting}>¡Buenos días, {userName}!</p>
           </div>
 
@@ -121,33 +125,35 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
               )}
             </li>
 
-            <li className={styles.dropdown}>
-              <div
-                className={styles.dropdownHeader}
-                onClick={() => toggleMenu("organizacion")}
-              >
-                <PeopleOutlineIcon className={styles.icon} /> <span>Organización</span>
-                {openMenus["organizacion"] ? (
-                  <ArrowDropUpIcon className={styles.arrowIcon} />
-                ) : (
-                  <ArrowDropDownIcon className={styles.arrowIcon} />
-                )}
-              </div>
+            {["gerente", "rrhh", "admin"].includes(user?.rol) && (
+              <li className={styles.dropdown}>
+                <div
+                  className={styles.dropdownHeader}
+                  onClick={() => toggleMenu("organizacion")}
+                >
+                  <PeopleOutlineIcon className={styles.icon} /> <span>Organización</span>
+                  {openMenus["organizacion"] ? (
+                    <ArrowDropUpIcon className={styles.arrowIcon} />
+                  ) : (
+                    <ArrowDropDownIcon className={styles.arrowIcon} />
+                  )}
+                </div>
 
-              {openMenus["organizacion"] && (
-                <ul className={styles.submenu}>
-                  {["Empleados", "Control Horario", "Nómina"].map((item) => (
-                    <li
-                      key={item}
-                      className={active === item ? styles.activeSub : ""}
-                      onClick={() => handleSelect(item)}
-                    >
-                      {item}
-                    </li>
-                  ))}
-                </ul>
-              )}
-            </li>
+                {openMenus["organizacion"] && (
+                  <ul className={styles.submenu}>
+                    {["Empleados", "Control Horario", "Nómina", "Solicitudes"].map((item) => (
+                      <li
+                        key={item}
+                        className={active === item ? styles.activeSub : ""}
+                        onClick={() => handleSelect(item)}
+                      >
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            )}
           </ul>
         </>
       )}

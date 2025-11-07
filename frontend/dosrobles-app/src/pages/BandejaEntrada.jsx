@@ -1,248 +1,516 @@
 // src/pages/BandejaEntrada.jsx
-// Pantalla de Bandeja de Entrada para gerente/administrador
+// Bandeja de Entrada - Sistema general de notificaciones para todos los usuarios
 
-import { useState } from "react";
-import { Box, Typography, Card, CardContent, Collapse, IconButton } from "@mui/material";
-import ExpandMoreIcon from "@mui/icons-material/ExpandMore";
+import { useState, useEffect } from "react";
+import {
+  Box,
+  Typography,
+  Chip,
+  IconButton,
+  CircularProgress,
+  Alert,
+  Badge,
+  Menu,
+  MenuItem,
+} from "@mui/material";
+import DeleteIcon from "@mui/icons-material/Delete";
+import MoreVertIcon from "@mui/icons-material/MoreVert";
+import CheckCircleIcon from "@mui/icons-material/CheckCircle";
+import InfoIcon from "@mui/icons-material/Info";
+import WarningIcon from "@mui/icons-material/Warning";
+import MailIcon from "@mui/icons-material/Mail";
+import EventIcon from "@mui/icons-material/Event";
+import NotificationsIcon from "@mui/icons-material/Notifications";
 import { PrimaryButton, SecondaryButton } from "../components/ui/Buttons";
-import ModalAprobacionLicencia from "../components/licencias/ModalAprobacionLicencia";
+import { notificacionesService } from "../services/notificacionesService";
+import { useUser } from "../context/UserContext";
 
 export default function BandejaEntrada() {
-  const [expandedId, setExpandedId] = useState(null);
-  const [modalAprobacionOpen, setModalAprobacionOpen] = useState(false);
-  const [solicitudSeleccionada, setSolicitudSeleccionada] = useState(null);
+  const { user, loading: userLoading } = useUser();
 
-  const [solicitudes, setSolicitudes] = useState([
-    {
-      id: 1,
-      empleado: "Lautaro Gallo",
-      legajo: "Nº 026",
-      tipo: "Petición de ausencia",
-      tipoAusencia: "Vacaciones",
-      fecha: "27/08",
-      fechaInicio: "22 de Diciembre 2025",
-      fechaFin: "05 de Enero de 2026",
-      comentario: "Vacaciones de verano",
-      mensaje: "Lautaro Gallo ha enviado esta petición de ausencia",
-      estado: "pendiente",
-    },
-    {
-      id: 2,
-      empleado: "Lucas Rodríguez",
-      legajo: "Nº 015",
-      tipo: "Recordatorio: Taller de seguridad",
-      tipoAusencia: "Capacitación",
-      fecha: "15/08",
-      fechaInicio: "20 de Agosto 2025",
-      fechaFin: "20 de Agosto 2025",
-      comentario: "Asistencia obligatoria al taller",
-      mensaje: "Lucas Rodríguez ha solicitado ausencia por capacitación",
-      estado: "pendiente",
-    },
-    {
-      id: 3,
-      empleado: "Luis Jara",
-      legajo: "Nº 042",
-      tipo: "Nuevo proyecto",
-      tipoAusencia: "Asuntos personales",
-      fecha: "01/08",
-      fechaInicio: "10 de Agosto 2025",
-      fechaFin: "10 de Agosto 2025",
-      comentario: "Trámite personal urgente",
-      mensaje: "Luis Jara ha solicitado ausencia por asuntos personales",
-      estado: "pendiente",
-    },
-    {
-      id: 4,
-      empleado: "Tamara Guido",
-      legajo: "Nº 018",
-      tipo: "Consulta recibo de sueldo",
-      tipoAusencia: "Licencia médica",
-      fecha: "28/07",
-      fechaInicio: "02 de Agosto 2025",
-      fechaFin: "03 de Agosto 2025",
-      comentario: "Control médico",
-      mensaje: "Tamara Guido ha solicitado licencia médica",
-      estado: "pendiente",
-    },
-  ]);
+  // Estados
+  const [notificaciones, setNotificaciones] = useState([]);
+  const [cargando, setCargando] = useState(true);
+  const [error, setError] = useState(null);
+  const [filtro, setFiltro] = useState("todas"); // todas, no-leidas, leidas
+  const [anchorEl, setAnchorEl] = useState(null);
+  const [notificacionSeleccionada, setNotificacionSeleccionada] =
+    useState(null);
 
-  const handleToggleExpand = (id) => {
-    setExpandedId(expandedId === id ? null : id);
+  // Determinar si es empleado o gerente
+  const esEmpleado = user?.rol === "empleado";
+  const esGerente = ["gerente", "rrhh", "admin"].includes(user?.rol);
+  const empleadoId = user?.empleadoId;
+
+  // Cargar notificaciones cuando el usuario está disponible
+  useEffect(() => {
+    if (!userLoading && empleadoId) {
+      cargarNotificaciones();
+    }
+  }, [userLoading, empleadoId]);
+
+  const cargarNotificaciones = async () => {
+    try {
+      setCargando(true);
+      setError(null);
+
+      let respuesta;
+
+      // Si es empleado, cargar solo sus notificaciones
+      if (esEmpleado) {
+        respuesta = await notificacionesService.obtenerNotificaciones(empleadoId);
+      }
+      // Si es gerente/admin, cargar todas las notificaciones pero filtrar según corresponda
+      else if (esGerente) {
+        respuesta = await notificacionesService.obtenerTodasLasNotificaciones();
+        // Filtrar notificaciones:
+        // 1. Mostrar todas de "ausencia", "aprobacion", "rechazo" (ignorar otros tipos)
+        // 2. Filtrar solo aquellas donde el gerente es el receptor (empleadoId coincide)
+        const notificacionesFiltradas = (respuesta.data || []).filter(
+          (notif) => {
+            // Convertir empleadoId a string para comparación
+            const receptorId = notif.empleadoId?._id?.toString() || notif.empleadoId?.toString() || notif.empleadoId;
+            const esReceptor = receptorId === empleadoId;
+
+            // Mostrar si es destinada a este gerente Y es uno de estos tipos
+            return esReceptor && (notif.tipo === "ausencia" || notif.tipo === "aprobacion" || notif.tipo === "rechazo");
+          }
+        );
+        respuesta.data = notificacionesFiltradas;
+      }
+
+      setNotificaciones(respuesta.data || []);
+    } catch (err) {
+      console.error("Error al cargar notificaciones:", err);
+      setError(
+        "No se pudieron cargar las notificaciones. Por favor, intenta de nuevo."
+      );
+      setNotificaciones([]);
+    } finally {
+      setCargando(false);
+    }
   };
 
-  const handleResponder = (solicitud) => {
-    setSolicitudSeleccionada(solicitud);
-    setModalAprobacionOpen(true);
+  // Obtener icono según el tipo de notificación
+  const getIconoTipo = (tipo) => {
+    const iconos = {
+      ausencia: <EventIcon sx={{ color: "#7FC6BA" }} />,
+      mensaje: <MailIcon sx={{ color: "#7FC6BA" }} />,
+      alerta: <WarningIcon sx={{ color: "#FF8C42" }} />,
+      aprobacion: <CheckCircleIcon sx={{ color: "#4CAF50" }} />,
+      rechazo: <WarningIcon sx={{ color: "#FF7779" }} />,
+      evento: <EventIcon sx={{ color: "#7FC6BA" }} />,
+      otro: <NotificationsIcon sx={{ color: "#808080" }} />,
+    };
+    return iconos[tipo] || iconos.otro;
   };
 
-  const handleAprobarRechazar = (solicitudId, accion, motivo = "") => {
-    // Actualizar el estado de la solicitud
-    setSolicitudes(
-      solicitudes.map((sol) =>
-        sol.id === solicitudId
-          ? { ...sol, estado: accion, motivoRechazo: motivo }
-          : sol
-      )
-    );
+  // Obtener color del chip según prioridad
+  const getColorPrioridad = (prioridad) => {
+    const colores = {
+      baja: { bg: "#D4E6E2", text: "#2E7D76" },
+      media: { bg: "#FFE8D6", text: "#D97706" },
+      alta: { bg: "#FFD4D4", text: "#991B1B" },
+    };
+    return colores[prioridad] || colores.media;
+  };
+
+  // Marcar notificación como leída
+  const handleMarcarComoLeida = async (notificacionId, leida) => {
+    try {
+      if (!leida) {
+        await notificacionesService.marcarComoLeida(notificacionId);
+        setNotificaciones(
+          notificaciones.map((notif) =>
+            notif._id === notificacionId ? { ...notif, leida: true } : notif
+          )
+        );
+      }
+    } catch (err) {
+      console.error("Error al marcar como leída:", err);
+    }
+  };
+
+  // Eliminar notificación
+  const handleEliminarNotificacion = async (notificacionId) => {
+    try {
+      await notificacionesService.eliminarNotificacion(notificacionId);
+      setNotificaciones(
+        notificaciones.filter((notif) => notif._id !== notificacionId)
+      );
+      setAnchorEl(null);
+    } catch (err) {
+      console.error("Error al eliminar notificación:", err);
+    }
+  };
+
+  // Marcar todas como leídas
+  const handleMarcarTodasComoLeidas = async () => {
+    try {
+      await notificacionesService.marcarTodasComoLeidas(empleadoId);
+      setNotificaciones(
+        notificaciones.map((notif) => ({ ...notif, leida: true }))
+      );
+    } catch (err) {
+      console.error("Error al marcar todas como leídas:", err);
+    }
+  };
+
+  // Eliminar todas las leídas
+  const handleEliminarTodasLasLeidas = async () => {
+    try {
+      await notificacionesService.eliminarNotificacionesLeidas(empleadoId);
+      setNotificaciones(notificaciones.filter((notif) => !notif.leida));
+    } catch (err) {
+      console.error("Error al eliminar leídas:", err);
+    }
+  };
+
+  // Filtrar notificaciones según el filtro seleccionado
+  const notificacionesFiltradas = notificaciones.filter((notif) => {
+    if (filtro === "no-leidas") return !notif.leida;
+    if (filtro === "leidas") return notif.leida;
+    return true; // todas
+  });
+
+  // Contar notificaciones no leídas
+  const noLeidas = notificaciones.filter((notif) => !notif.leida).length;
+
+  // Formatear fecha
+  const formatearFecha = (fecha) => {
+    if (!fecha) return "";
+    try {
+      const date = new Date(fecha);
+      const hoy = new Date();
+      const ayer = new Date(hoy);
+      ayer.setDate(ayer.getDate() - 1);
+
+      if (date.toDateString() === hoy.toDateString()) {
+        return date.toLocaleTimeString("es-AR", {
+          hour: "2-digit",
+          minute: "2-digit",
+        });
+      } else if (date.toDateString() === ayer.toDateString()) {
+        return "Ayer";
+      } else {
+        return date.toLocaleDateString("es-AR", {
+          month: "short",
+          day: "numeric",
+        });
+      }
+    } catch {
+      return fecha;
+    }
   };
 
   return (
     <Box sx={{ p: 4 }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 600, color: "#585858", mb: 1 }}>
-          Bandeja de Entrada
-        </Typography>
+        <Box sx={{ display: "flex", alignItems: "center", gap: 1, mb: 1 }}>
+          <Typography variant="h4" sx={{ fontWeight: 600, color: "#585858" }}>
+            Bandeja de Entrada
+          </Typography>
+          {noLeidas > 0 && (
+            <Badge
+              badgeContent={noLeidas}
+              color="error"
+              sx={{
+                "& .MuiBadge-badge": {
+                  backgroundColor: "#FF6B6B",
+                  color: "#FF6B6B",
+                },
+              }}
+            >
+              <Box />
+            </Badge>
+          )}
+        </Box>
         <Typography variant="body2" sx={{ color: "#808080" }}>
-          Consultá tus mensajes y notificaciones internas
+          Gestiona tus notificaciones y mensajes
         </Typography>
       </Box>
 
-      {/* Título de la tabla */}
-      <Box
-        sx={{
-          backgroundColor: "#817A6F",
-          color: "#FFFFFF",
-          p: 2,
-          borderRadius: "8px 8px 0 0",
-          mb: 0,
-        }}
-      >
-        <Typography sx={{ fontWeight: 600, textAlign: "center" }}>
-          Bandeja De Entrada
-        </Typography>
-      </Box>
+      {/* Mostrar error si existe */}
+      {error && (
+        <Alert severity="error" sx={{ mb: 3 }}>
+          {error}
+        </Alert>
+      )}
 
-      {/* Lista de solicitudes */}
-      <Box sx={{ backgroundColor: "#FFFFFF", borderRadius: "0 0 8px 8px", overflow: "hidden" }}>
-        {solicitudes
-          .filter((sol) => sol.estado === "pendiente")
-          .map((solicitud, index) => (
-            <Box key={solicitud.id}>
-              {/* Fila principal */}
-              <Box
+      {/* Estado de cargando */}
+      {cargando ? (
+        <Box sx={{ display: "flex", justifyContent: "center", py: 4 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <>
+          {/* Controles */}
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 3,
+              flexWrap: "wrap",
+              gap: 2,
+            }}
+          >
+            {/* Filtros */}
+            <Box sx={{ display: "flex", gap: 1 }}>
+              <SecondaryButton
+                onClick={() => setFiltro("todas")}
                 sx={{
-                  display: "flex",
-                  justifyContent: "space-between",
-                  alignItems: "center",
-                  p: 2,
-                  borderBottom:
-                    expandedId === solicitud.id ? "none" : "1px solid #E0E0E0",
-                  cursor: "pointer",
+                  backgroundColor:
+                    filtro === "todas" ? "#7FC6BA" : "transparent",
+                  color: filtro === "todas" ? "#FFFFFF" : "#7FC6BA",
+                  borderColor: "#7FC6BA",
                   "&:hover": {
-                    backgroundColor: "#F5F5F5",
+                    backgroundColor:
+                      filtro === "todas" ? "#6DB5AA" : "#F5F5F5",
                   },
                 }}
-                onClick={() => handleToggleExpand(solicitud.id)}
               >
-                <Box sx={{ display: "flex", gap: 3, flex: 1 }}>
-                  <Typography sx={{ minWidth: 150, color: "#585858", fontWeight: 500 }}>
-                    {solicitud.empleado}
-                  </Typography>
-                  <Typography sx={{ flex: 1, color: "#808080" }}>
-                    {solicitud.tipo}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-                  <Typography sx={{ color: "#808080", minWidth: 50 }}>
-                    {solicitud.fecha}
-                  </Typography>
-                  <IconButton
-                    size="small"
+                Todas
+              </SecondaryButton>
+              <SecondaryButton
+                onClick={() => setFiltro("no-leidas")}
+                sx={{
+                  backgroundColor:
+                    filtro === "no-leidas" ? "#7FC6BA" : "transparent",
+                  color: filtro === "no-leidas" ? "#FFFFFF" : "#7FC6BA",
+                  borderColor: "#7FC6BA",
+                  "&:hover": {
+                    backgroundColor:
+                      filtro === "no-leidas" ? "#6DB5AA" : "#F5F5F5",
+                  },
+                }}
+              >
+                No leídas ({noLeidas})
+              </SecondaryButton>
+              <SecondaryButton
+                onClick={() => setFiltro("leidas")}
+                sx={{
+                  backgroundColor:
+                    filtro === "leidas" ? "#7FC6BA" : "transparent",
+                  color: filtro === "leidas" ? "#FFFFFF" : "#7FC6BA",
+                  borderColor: "#7FC6BA",
+                  "&:hover": {
+                    backgroundColor:
+                      filtro === "leidas" ? "#6DB5AA" : "#F5F5F5",
+                  },
+                }}
+              >
+                Leídas
+              </SecondaryButton>
+            </Box>
+
+            {/* Acciones rápidas */}
+            {noLeidas > 0 && (
+              <PrimaryButton onClick={handleMarcarTodasComoLeidas}>
+                Marcar todas como leídas
+              </PrimaryButton>
+            )}
+          </Box>
+
+          {/* Lista de notificaciones */}
+          <Box sx={{ backgroundColor: "#FFFFFF", borderRadius: 2, overflow: "hidden" }}>
+            {notificacionesFiltradas.length > 0 ? (
+              notificacionesFiltradas.map((notificacion, index) => (
+                <Box
+                  key={notificacion._id || index}
+                  sx={{
+                    display: "flex",
+                    alignItems: "center",
+                    p: 2,
+                    borderBottom:
+                      index < notificacionesFiltradas.length - 1
+                        ? "1px solid #E0E0E0"
+                        : "none",
+                    backgroundColor: notificacion.leida ? "#FFFFFF" : "#FFFBF7",
+                    cursor: "pointer",
+                    transition: "background-color 0.2s",
+                    "&:hover": {
+                      backgroundColor: notificacion.leida
+                        ? "#F5F5F5"
+                        : "#FFFAF5",
+                    },
+                  }}
+                  onClick={() =>
+                    handleMarcarComoLeida(notificacion._id, notificacion.leida)
+                  }
+                >
+                  {/* Icono del tipo */}
+                  <Box
                     sx={{
-                      transform:
-                        expandedId === solicitud.id ? "rotate(180deg)" : "rotate(0deg)",
-                      transition: "transform 0.3s",
+                      display: "flex",
+                      alignItems: "center",
+                      justifyContent: "center",
+                      minWidth: 48,
+                      minHeight: 48,
+                      backgroundColor: "#F0F0F0",
+                      borderRadius: "50%",
+                      mr: 2,
+                      flexShrink: 0,
                     }}
                   >
-                    <ExpandMoreIcon />
+                    {getIconoTipo(notificacion.tipo)}
+                  </Box>
+
+                  {/* Contenido de la notificación */}
+                  <Box sx={{ flex: 1, minWidth: 0 }}>
+                    <Box
+                      sx={{
+                        display: "flex",
+                        alignItems: "center",
+                        gap: 1,
+                        mb: 0.5,
+                      }}
+                    >
+                      <Typography
+                        sx={{
+                          fontWeight: notificacion.leida ? 400 : 600,
+                          color: "#585858",
+                          flex: 1,
+                          overflow: "hidden",
+                          textOverflow: "ellipsis",
+                          whiteSpace: "nowrap",
+                        }}
+                      >
+                        {notificacion.asunto}
+                      </Typography>
+                      {notificacion.prioridad && (
+                        <Chip
+                          label={notificacion.prioridad.toUpperCase()}
+                          size="small"
+                          sx={{
+                            ...getColorPrioridad(notificacion.prioridad),
+                            fontWeight: 600,
+                            fontSize: "0.7rem",
+                            flexShrink: 0,
+                          }}
+                        />
+                      )}
+                    </Box>
+
+                    <Typography
+                      sx={{
+                        fontSize: "0.9rem",
+                        color: "#808080",
+                        overflow: "hidden",
+                        textOverflow: "ellipsis",
+                        display: "-webkit-box",
+                        WebkitLineClamp: 2,
+                        WebkitBoxOrient: "vertical",
+                      }}
+                    >
+                      {notificacion.descripcion}
+                    </Typography>
+
+                    {/* Tipo y fecha */}
+                    <Box
+                      sx={{
+                        display: "flex",
+                        gap: 2,
+                        mt: 0.5,
+                        fontSize: "0.8rem",
+                        color: "#A0A0A0",
+                      }}
+                    >
+                      <Typography sx={{ fontSize: "inherit" }}>
+                        {notificacion.tipo}
+                      </Typography>
+                      <Typography sx={{ fontSize: "inherit" }}>
+                        {formatearFecha(notificacion.createdAt)}
+                      </Typography>
+                    </Box>
+                  </Box>
+
+                  {/* Indicador de no leída */}
+                  {!notificacion.leida && (
+                    <Box
+                      sx={{
+                        width: 12,
+                        height: 12,
+                        borderRadius: "50%",
+                        backgroundColor: "#7FC6BA",
+                        mx: 1,
+                        flexShrink: 0,
+                      }}
+                    />
+                  )}
+
+                  {/* Menú de acciones */}
+                  <IconButton
+                    size="small"
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      setAnchorEl(e.currentTarget);
+                      setNotificacionSeleccionada(notificacion._id);
+                    }}
+                    sx={{ ml: 1 }}
+                  >
+                    <MoreVertIcon sx={{ fontSize: "1.2rem" }} />
                   </IconButton>
                 </Box>
-              </Box>
-
-              {/* Detalle expandido */}
-              <Collapse in={expandedId === solicitud.id}>
-                <Box
-                  sx={{
-                    p: 3,
-                    backgroundColor: "#FAFAFA",
-                    borderBottom: "1px solid #E0E0E0",
-                  }}
-                >
-                  {/* Encabezado con nombre */}
-                  <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-                    <Typography sx={{ fontWeight: 600, fontSize: "1.1rem", color: "#585858" }}>
-                      {solicitud.empleado}
+              ))
+            ) : (
+              <Box sx={{ p: 4, textAlign: "center" }}>
+                {filtro === "no-leidas" ? (
+                  <>
+                    <NotificationsIcon
+                      sx={{ fontSize: "3rem", color: "#D0D0D0", mb: 1 }}
+                    />
+                    <Typography sx={{ color: "#808080" }}>
+                      No tienes notificaciones no leídas
                     </Typography>
-                    <Typography sx={{ color: "#808080" }}>{solicitud.fecha}</Typography>
-                  </Box>
+                  </>
+                ) : (
+                  <>
+                    <InfoIcon sx={{ fontSize: "3rem", color: "#D0D0D0", mb: 1 }} />
+                    <Typography sx={{ color: "#808080" }}>
+                      No tienes notificaciones
+                    </Typography>
+                  </>
+                )}
+              </Box>
+            )}
+          </Box>
 
-                  <Typography sx={{ fontWeight: 600, color: "#585858", mb: 1 }}>
-                    {solicitud.tipo}
-                  </Typography>
-
-                  {/* Mensaje */}
-                  <Typography sx={{ color: "#808080", mb: 2 }}>
-                    Hola Mariana,
-                  </Typography>
-                  <Typography sx={{ color: "#808080", mb: 2 }}>
-                    {solicitud.mensaje}
-                  </Typography>
-
-                  {/* Detalles */}
-                  <Typography sx={{ fontWeight: 600, color: "#585858", mb: 1 }}>
-                    Detalles:
-                  </Typography>
-                  <Typography sx={{ color: "#808080", mb: 1 }}>
-                    {solicitud.tipoAusencia} desde el {solicitud.fechaInicio} hasta el{" "}
-                    {solicitud.fechaFin}.
-                  </Typography>
-
-                  {/* Comentario */}
-                  <Typography sx={{ fontWeight: 600, color: "#585858", mb: 1, mt: 2 }}>
-                    Comentario:
-                  </Typography>
-                  <Typography sx={{ color: "#808080", mb: 3 }}>
-                    {solicitud.comentario}
-                  </Typography>
-
-                  {/* Botón Ver los detalles */}
-                  <Box sx={{ display: "flex", gap: 2, mb: 2 }}>
-                    <PrimaryButton
-                      onClick={() => handleResponder(solicitud)}
-                      sx={{ px: 3 }}
-                    >
-                      Ver los detalles
-                    </PrimaryButton>
-                  </Box>
-
-                  {/* Botones Responder y Reenviar */}
-                  <Box sx={{ display: "flex", gap: 2, justifyContent: "center" }}>
-                    <SecondaryButton
-                      onClick={() => handleResponder(solicitud)}
-                      sx={{ px: 4, minWidth: 150 }}
-                    >
-                      Responder
-                    </SecondaryButton>
-                    <SecondaryButton sx={{ px: 4, minWidth: 150 }}>
-                      Reenviar
-                    </SecondaryButton>
-                  </Box>
-                </Box>
-              </Collapse>
+          {/* Opción para limpiar leídas */}
+          {notificaciones.some((notif) => notif.leida) && (
+            <Box sx={{ mt: 2, textAlign: "right" }}>
+              <Typography
+                sx={{
+                  fontSize: "0.85rem",
+                  color: "#7FC6BA",
+                  cursor: "pointer",
+                  "&:hover": { textDecoration: "underline" },
+                }}
+                onClick={handleEliminarTodasLasLeidas}
+              >
+                Eliminar todas las leídas
+              </Typography>
             </Box>
-          ))}
-      </Box>
+          )}
+        </>
+      )}
 
-      {/* Modal de Aprobación */}
-      <ModalAprobacionLicencia
-        open={modalAprobacionOpen}
-        onClose={() => setModalAprobacionOpen(false)}
-        solicitud={solicitudSeleccionada}
-        onAprobar={(id) => handleAprobarRechazar(id, "aprobado")}
-        onRechazar={(id, motivo) => handleAprobarRechazar(id, "rechazado", motivo)}
-      />
+      {/* Menú de acciones */}
+      <Menu
+        anchorEl={anchorEl}
+        open={Boolean(anchorEl)}
+        onClose={() => setAnchorEl(null)}
+      >
+        <MenuItem
+          onClick={() => {
+            handleEliminarNotificacion(notificacionSeleccionada);
+          }}
+        >
+          <DeleteIcon sx={{ mr: 1, fontSize: "1.2rem" }} />
+          Eliminar
+        </MenuItem>
+      </Menu>
     </Box>
   );
 }

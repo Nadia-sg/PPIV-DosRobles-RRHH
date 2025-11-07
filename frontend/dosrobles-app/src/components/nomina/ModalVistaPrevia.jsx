@@ -9,10 +9,14 @@ import { PrimaryButton } from "../ui/Buttons";
 export default function ModalVistaPrevia({ open, onClose, recibo, onDescargar }) {
   if (!recibo) return null;
 
-  // Calcular totales
-  const totalRemunerativo = recibo.conceptos.remunerativo.reduce((sum, item) => sum + item.total, 0);
-  const totalNoRemunerativo = recibo.conceptos.noRemunerativo.reduce((sum, item) => sum + item.total, 0);
-  const totalDeducciones = recibo.conceptos.deducciones.reduce((sum, item) => sum + item.total, 0);
+  // Usar los datos de haberes y deducciones directamente
+  const haberes = recibo.haberes || {};
+  const deducciones = recibo.deducciones || {};
+
+  // Calcular totales desde los datos de haberes y deducciones
+  const totalRemunerativo = (haberes.sueldoBasico || 0) + (haberes.antiguedad || 0) + (haberes.presentismo || 0) + (haberes.horasExtras || 0);
+  const totalNoRemunerativo = (haberes.viaticos || 0) + (haberes.otrosHaberes || 0);
+  const totalDeducciones = (deducciones.jubilacion || 0) + (deducciones.obraSocial || 0) + (deducciones.ley19032 || 0) + (deducciones.sindicato || 0) + (deducciones.otrosDes || 0);
   const totalHaberes = totalRemunerativo + totalNoRemunerativo;
   const netoAPagar = totalHaberes - totalDeducciones;
 
@@ -25,19 +29,31 @@ export default function ModalVistaPrevia({ open, onClose, recibo, onDescargar })
     }).format(num);
   };
 
+  // Formatear período (2025-10 → Octubre 2025)
+  const formatearPeriodo = (periodo) => {
+    if (!periodo || periodo.length !== 7) return periodo;
+    const [anio, mes] = periodo.split('-');
+    const meses = ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio',
+                   'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre'];
+    const mesIndex = parseInt(mes, 10) - 1;
+    return `${meses[mesIndex]} ${anio}`;
+  };
+
   return (
     <Dialog
       open={open}
       onClose={onClose}
       maxWidth="lg"
       fullWidth
-      PaperProps={{
-        sx: {
-          bgcolor: "#F5F5F5",
-          borderRadius: 3,
-          boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
-          width: "90%",
-          maxWidth: 1000,
+      slotProps={{
+        paper: {
+          sx: {
+            bgcolor: "#F5F5F5",
+            borderRadius: 3,
+            boxShadow: "0 4px 20px rgba(0,0,0,0.15)",
+            width: "90%",
+            maxWidth: 1000,
+          },
         },
       }}
     >
@@ -53,7 +69,7 @@ export default function ModalVistaPrevia({ open, onClose, recibo, onDescargar })
         }}
       >
         <Typography sx={{ fontSize: "1.2rem", fontWeight: 600, color: "#585858" }}>
-          Recibo de Sueldo - {recibo.periodo}
+          Recibo de Sueldo - {formatearPeriodo(recibo.periodo)}
         </Typography>
         <IconButton onClick={onClose} sx={{ color: "#808080" }}>
           <CloseIcon />
@@ -118,105 +134,121 @@ export default function ModalVistaPrevia({ open, onClose, recibo, onDescargar })
 
           <Divider sx={{ my: 2 }} />
 
-          {/* Tabla de Conceptos */}
-          <TableContainer>
-            <Table size="small">
-              <TableHead>
-                <TableRow sx={{ backgroundColor: "#7FC6BA" }}>
-                  <TableCell sx={{ color: "#FFFFFF", fontWeight: 600 }}>Concepto</TableCell>
-                  <TableCell align="center" sx={{ color: "#FFFFFF", fontWeight: 600 }}>Cantidad</TableCell>
-                  <TableCell align="right" sx={{ color: "#FFFFFF", fontWeight: 600 }}>Unitario</TableCell>
-                  <TableCell align="right" sx={{ color: "#FFFFFF", fontWeight: 600 }}>Total</TableCell>
-                </TableRow>
-              </TableHead>
-              <TableBody>
-                {/* Conceptos Remunerativos */}
-                <TableRow>
-                  <TableCell colSpan={4} sx={{ backgroundColor: "#F5F5F5", fontWeight: 600, color: "#585858" }}>
-                    HABERES REMUNERATIVOS
-                  </TableCell>
-                </TableRow>
-                {recibo.conceptos.remunerativo.map((item, idx) => (
-                  <TableRow key={idx} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
-                    <TableCell>{item.concepto}</TableCell>
-                    <TableCell align="center">{item.cantidad}</TableCell>
-                    <TableCell align="right">{formatMonto(item.unitario)}</TableCell>
-                    <TableCell align="right">{formatMonto(item.total)}</TableCell>
+          {/* Tabla de Detalle de Liquidación */}
+          <Box sx={{ backgroundColor: "#FFFFFF", borderRadius: 2, p: 2 }}>
+            <Typography sx={{ fontSize: "1.1rem", fontWeight: 600, color: "#585858", mb: 2 }}>
+              Detalle de Liquidación
+            </Typography>
+
+            <TableContainer>
+              <Table size="small">
+                <TableHead>
+                  <TableRow sx={{ backgroundColor: "#7FC6BA" }}>
+                    <TableCell sx={{ color: "#FFFFFF", fontWeight: 600 }}>Concepto</TableCell>
+                    <TableCell align="right" sx={{ color: "#FFFFFF", fontWeight: 600 }}>Monto</TableCell>
                   </TableRow>
-                ))}
-                <TableRow>
-                  <TableCell colSpan={3} sx={{ fontWeight: 600, color: "#585858" }}>Subtotal Remunerativo</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600, color: "#585858" }}>
-                    {formatMonto(totalRemunerativo)}
-                  </TableCell>
-                </TableRow>
-
-                {/* Conceptos No Remunerativos */}
-                <TableRow>
-                  <TableCell colSpan={4} sx={{ backgroundColor: "#F5F5F5", fontWeight: 600, color: "#585858" }}>
-                    HABERES NO REMUNERATIVOS
-                  </TableCell>
-                </TableRow>
-                {recibo.conceptos.noRemunerativo.map((item, idx) => (
-                  <TableRow key={idx} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
-                    <TableCell>{item.concepto}</TableCell>
-                    <TableCell align="center">{item.cantidad}</TableCell>
-                    <TableCell align="right">{formatMonto(item.unitario)}</TableCell>
-                    <TableCell align="right">{formatMonto(item.total)}</TableCell>
+                </TableHead>
+                <TableBody>
+                  {/* HABERES - Remunerativo */}
+                  <TableRow>
+                    <TableCell colSpan={2} sx={{ backgroundColor: "#E8F5E9", fontWeight: 600, color: "#4CAF50" }}>
+                      HABERES
+                    </TableCell>
                   </TableRow>
-                ))}
-                <TableRow>
-                  <TableCell colSpan={3} sx={{ fontWeight: 600, color: "#585858" }}>Subtotal No Remunerativo</TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 600, color: "#585858" }}>
-                    {formatMonto(totalNoRemunerativo)}
-                  </TableCell>
-                </TableRow>
 
-                {/* Total Haberes */}
-                <TableRow>
-                  <TableCell colSpan={3} sx={{ fontWeight: 700, fontSize: "1rem", color: "#585858", backgroundColor: "#E8F5E9" }}>
-                    TOTAL HABERES
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, fontSize: "1rem", color: "#4CAF50", backgroundColor: "#E8F5E9" }}>
-                    {formatMonto(totalHaberes)}
-                  </TableCell>
-                </TableRow>
-
-                {/* Deducciones */}
-                <TableRow>
-                  <TableCell colSpan={4} sx={{ backgroundColor: "#F5F5F5", fontWeight: 600, color: "#585858" }}>
-                    DEDUCCIONES
-                  </TableCell>
-                </TableRow>
-                {recibo.conceptos.deducciones.map((item, idx) => (
-                  <TableRow key={idx} sx={{ '&:hover': { backgroundColor: '#FAFAFA' } }}>
-                    <TableCell>{item.concepto}</TableCell>
-                    <TableCell align="center">{item.cantidad}</TableCell>
-                    <TableCell align="right">{formatMonto(item.unitario)}</TableCell>
-                    <TableCell align="right">{formatMonto(item.total)}</TableCell>
+                  <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
+                    <TableCell>Sueldo Básico</TableCell>
+                    <TableCell align="right">{formatMonto(haberes.sueldoBasico || 0)}</TableCell>
                   </TableRow>
-                ))}
-                <TableRow>
-                  <TableCell colSpan={3} sx={{ fontWeight: 700, fontSize: "1rem", color: "#585858", backgroundColor: "#FFEBEE" }}>
-                    TOTAL DEDUCCIONES
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, fontSize: "1rem", color: "#FF7779", backgroundColor: "#FFEBEE" }}>
-                    {formatMonto(totalDeducciones)}
-                  </TableCell>
-                </TableRow>
 
-                {/* NETO A PAGAR */}
-                <TableRow>
-                  <TableCell colSpan={3} sx={{ fontWeight: 700, fontSize: "1.1rem", color: "#FFFFFF", backgroundColor: "#7FC6BA" }}>
-                    NETO A PAGAR
-                  </TableCell>
-                  <TableCell align="right" sx={{ fontWeight: 700, fontSize: "1.1rem", color: "#FFFFFF", backgroundColor: "#7FC6BA" }}>
-                    {formatMonto(netoAPagar)}
-                  </TableCell>
-                </TableRow>
-              </TableBody>
-            </Table>
-          </TableContainer>
+                  <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
+                    <TableCell>Antigüedad</TableCell>
+                    <TableCell align="right">{formatMonto(haberes.antiguedad || 0)}</TableCell>
+                  </TableRow>
+
+                  <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
+                    <TableCell>Presentismo</TableCell>
+                    <TableCell align="right">{formatMonto(haberes.presentismo || 0)}</TableCell>
+                  </TableRow>
+
+                  <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
+                    <TableCell>Horas Extras</TableCell>
+                    <TableCell align="right">{formatMonto(haberes.horasExtras || 0)}</TableCell>
+                  </TableRow>
+
+                  <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
+                    <TableCell>Viáticos (No Remunerativo)</TableCell>
+                    <TableCell align="right">{formatMonto(haberes.viaticos || 0)}</TableCell>
+                  </TableRow>
+
+                  <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
+                    <TableCell>Otros Haberes</TableCell>
+                    <TableCell align="right">{formatMonto(haberes.otrosHaberes || 0)}</TableCell>
+                  </TableRow>
+
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700, fontSize: "1rem", color: "#4CAF50" }}>
+                      SUBTOTAL HABERES
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, fontSize: "1rem", color: "#4CAF50" }}>
+                      {formatMonto(totalHaberes)}
+                    </TableCell>
+                  </TableRow>
+
+                  {/* DEDUCCIONES */}
+                  <TableRow>
+                    <TableCell colSpan={2} sx={{ backgroundColor: "#FFEBEE", fontWeight: 600, color: "#FF7779" }}>
+                      DEDUCCIONES
+                    </TableCell>
+                  </TableRow>
+
+                  <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
+                    <TableCell>Jubilación (11%)</TableCell>
+                    <TableCell align="right">{formatMonto(deducciones.jubilacion || 0)}</TableCell>
+                  </TableRow>
+
+                  <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
+                    <TableCell>Obra Social (3%)</TableCell>
+                    <TableCell align="right">{formatMonto(deducciones.obraSocial || 0)}</TableCell>
+                  </TableRow>
+
+                  <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
+                    <TableCell>Ley 19032 (3%)</TableCell>
+                    <TableCell align="right">{formatMonto(deducciones.ley19032 || 0)}</TableCell>
+                  </TableRow>
+
+                  <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
+                    <TableCell>Sindicato</TableCell>
+                    <TableCell align="right">{formatMonto(deducciones.sindicato || 0)}</TableCell>
+                  </TableRow>
+
+                  <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
+                    <TableCell>Otras Deducciones</TableCell>
+                    <TableCell align="right">{formatMonto(deducciones.otrosDes || 0)}</TableCell>
+                  </TableRow>
+
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700, fontSize: "1rem", color: "#FF7779" }}>
+                      SUBTOTAL DEDUCCIONES
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, fontSize: "1rem", color: "#FF7779" }}>
+                      {formatMonto(totalDeducciones)}
+                    </TableCell>
+                  </TableRow>
+
+                  {/* NETO A PAGAR */}
+                  <TableRow>
+                    <TableCell sx={{ fontWeight: 700, fontSize: "1.2rem", color: "#FFFFFF", backgroundColor: "#7FC6BA" }}>
+                      NETO A PAGAR
+                    </TableCell>
+                    <TableCell align="right" sx={{ fontWeight: 700, fontSize: "1.2rem", color: "#FFFFFF", backgroundColor: "#7FC6BA" }}>
+                      {formatMonto(netoAPagar)}
+                    </TableCell>
+                  </TableRow>
+                </TableBody>
+              </Table>
+            </TableContainer>
+          </Box>
 
           {/* Footer */}
           <Box sx={{ mt: 3, pt: 2, borderTop: "1px solid #E0E0E0", textAlign: "center" }}>

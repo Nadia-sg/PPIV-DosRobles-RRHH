@@ -1,23 +1,41 @@
 // src/components/licencias/ModalSolicitudLicencia.jsx
 // Modal para que el empleado solicite una nueva licencia
 
-import { useState } from "react";
-import { Box } from "@mui/material";
+import { useState, useImperativeHandle, forwardRef } from "react";
+import { Box, Typography } from "@mui/material";
+import { DatePicker } from "@mui/x-date-pickers/DatePicker";
+import { LocalizationProvider } from "@mui/x-date-pickers/LocalizationProvider";
+import { AdapterDayjs } from "@mui/x-date-pickers/AdapterDayjs";
+import dayjs from "dayjs";
+import "dayjs/locale/es";
 import ModalCard from "../ui/ModalCard";
 import SelectInput from "../ui/SelectInput";
-import DateField from "../ui/DateField";
 import TextareaInput from "../ui/TextareaInput";
 import ModalConfirmacion from "./ModalConfirmacion";
 
-export default function ModalSolicitudLicencia({ open, onClose, onSubmit }) {
+dayjs.locale("es");
+
+const ModalSolicitudLicencia = forwardRef(function ModalSolicitudLicencia({ open, onClose, onSubmit }, ref) {
   const [formData, setFormData] = useState({
     tipoLicencia: "",
-    fechaInicio: "",
-    fechaFin: "",
+    fechaInicio: null,
+    fechaFin: null,
     motivo: "",
   });
 
   const [modalConfirmacionOpen, setModalConfirmacionOpen] = useState(false);
+
+  // Exponer función reset al componente padre a través de ref
+  useImperativeHandle(ref, () => ({
+    resetForm: () => {
+      setFormData({
+        tipoLicencia: "",
+        fechaInicio: null,
+        fechaFin: null,
+        motivo: "",
+      });
+    },
+  }));
 
   // Opciones de tipo de ausencia según el diseño
   const tiposLicencia = [
@@ -40,23 +58,25 @@ export default function ModalSolicitudLicencia({ open, onClose, onSubmit }) {
       return;
     }
 
+    // Validar que fecha inicio sea anterior a fecha fin
+    if (formData.fechaInicio.isAfter(formData.fechaFin)) {
+      alert("La fecha de inicio debe ser anterior a la fecha de fin");
+      return;
+    }
+
+    // Convertir fechas al formato ISO (YYYY-MM-DD)
+    const fechaInicioConvertida = formData.fechaInicio.format("YYYY-MM-DD");
+    const fechaFinConvertida = formData.fechaFin.format("YYYY-MM-DD");
+
     // Enviar datos al componente padre
+    // El componente padre es responsable de cerrar el modal y mostrar confirmación
     onSubmit({
-      ...formData,
+      tipoLicencia: formData.tipoLicencia,
+      fechaInicio: fechaInicioConvertida,
+      fechaFin: fechaFinConvertida,
+      motivo: formData.motivo,
       estado: "pendiente",
-      fechaSolicitud: new Date().toISOString().split("T")[0],
-    });
-
-    // Cerrar modal de solicitud y mostrar confirmación
-    onClose();
-    setModalConfirmacionOpen(true);
-
-    // Resetear formulario
-    setFormData({
-      tipoLicencia: "",
-      fechaInicio: "",
-      fechaFin: "",
-      motivo: "",
+      fechaSolicitud: dayjs().format("YYYY-MM-DD"),
     });
   };
 
@@ -64,8 +84,8 @@ export default function ModalSolicitudLicencia({ open, onClose, onSubmit }) {
     // Resetear formulario y cerrar
     setFormData({
       tipoLicencia: "",
-      fechaInicio: "",
-      fechaFin: "",
+      fechaInicio: null,
+      fechaFin: null,
       motivo: "",
     });
     onClose();
@@ -91,53 +111,75 @@ export default function ModalSolicitudLicencia({ open, onClose, onSubmit }) {
         },
       ]}
     >
-      <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
-        {/* Tipo de ausencia */}
-        <SelectInput
-          label="Tipo de ausencia"
-          value={formData.tipoLicencia}
-          onChange={(e) => handleChange("tipoLicencia", e.target.value)}
-          options={tiposLicencia}
-          placeholder="Selecciona el tipo de ausencia"
-        />
+      <LocalizationProvider dateAdapter={AdapterDayjs} adapterLocale="es">
+        <Box sx={{ display: "flex", flexDirection: "column", gap: 2.5 }}>
+          {/* Tipo de ausencia */}
+          <SelectInput
+            label="Tipo de ausencia"
+            value={formData.tipoLicencia}
+            onChange={(e) => handleChange("tipoLicencia", e.target.value)}
+            options={tiposLicencia}
+            placeholder="Selecciona el tipo de ausencia"
+          />
 
-        {/* Fechas en una fila */}
-        <Box sx={{ display: "flex", gap: 2 }}>
-          {/* Fecha de Inicio */}
-          <Box sx={{ flex: 1 }}>
-            <DateField
-              label="Inicia"
-              value={formData.fechaInicio}
-              onClick={() => {
-                // En producción, esto abriría un date picker
-                const fecha = prompt("Ingresa la fecha de inicio (DD/MM/YYYY):");
-                if (fecha) handleChange("fechaInicio", fecha);
-              }}
-            />
+          {/* Fechas en una fila */}
+          <Box sx={{ display: "flex", gap: 2 }}>
+            {/* Fecha de Inicio */}
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontSize: "0.9rem", color: "#808080", fontWeight: 600, mb: 1 }}>
+                Inicia
+              </Typography>
+              <DatePicker
+                value={formData.fechaInicio}
+                onChange={(date) => handleChange("fechaInicio", date)}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    sx: {
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "6px",
+                        backgroundColor: "#FFFFFF",
+                      },
+                    },
+                  },
+                }}
+              />
+            </Box>
+
+            {/* Fecha de Fin */}
+            <Box sx={{ flex: 1 }}>
+              <Typography sx={{ fontSize: "0.9rem", color: "#808080", fontWeight: 600, mb: 1 }}>
+                Termina
+              </Typography>
+              <DatePicker
+                value={formData.fechaFin}
+                onChange={(date) => handleChange("fechaFin", date)}
+                minDate={formData.fechaInicio}
+                slotProps={{
+                  textField: {
+                    fullWidth: true,
+                    sx: {
+                      "& .MuiOutlinedInput-root": {
+                        borderRadius: "6px",
+                        backgroundColor: "#FFFFFF",
+                      },
+                    },
+                  },
+                }}
+              />
+            </Box>
           </Box>
 
-          {/* Fecha de Fin */}
-          <Box sx={{ flex: 1 }}>
-            <DateField
-              label="Termina"
-              value={formData.fechaFin}
-              onClick={() => {
-                const fecha = prompt("Ingresa la fecha de fin (DD/MM/YYYY):");
-                if (fecha) handleChange("fechaFin", fecha);
-              }}
-            />
-          </Box>
+          {/* Comentario */}
+          <TextareaInput
+            label="Comentario (opcional)"
+            placeholder="Ingresa un comentario..."
+            value={formData.motivo}
+            onChange={(e) => handleChange("motivo", e.target.value)}
+            maxLength={300}
+          />
         </Box>
-
-        {/* Comentario */}
-        <TextareaInput
-          label="Comentario"
-          placeholder="Ingresa un comentario..."
-          value={formData.motivo}
-          onChange={(e) => handleChange("motivo", e.target.value)}
-          maxLength={300}
-        />
-      </Box>
+      </LocalizationProvider>
     </ModalCard>
 
     {/* Modal de Confirmación */}
@@ -148,4 +190,6 @@ export default function ModalSolicitudLicencia({ open, onClose, onSubmit }) {
     />
     </>
   );
-}
+});
+
+export default ModalSolicitudLicencia;

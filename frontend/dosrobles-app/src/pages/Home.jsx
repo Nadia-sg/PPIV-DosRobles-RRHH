@@ -7,28 +7,88 @@ import {
   Typography,
   useMediaQuery,
   CircularProgress,
+  Chip,
+  Badge,
 } from "@mui/material";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import EditCalendarIcon from "@mui/icons-material/EditCalendar";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import CakeIcon from "@mui/icons-material/Cake";
+import NotificationsIcon from "@mui/icons-material/Notifications";
+import MailIcon from "@mui/icons-material/Mail";
 import {
   PrimaryButton,
   SecondaryButton,
   IconNextButton,
 } from "../components/ui/Buttons";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../context/UserContext";
+import { licenciasService } from "../services/licenciasService";
+import { notificacionesService } from "../services/notificacionesService";
 
 export default function Home() {
   const isMobile = useMediaQuery("(max-width:900px)");
+  const { user, loading: userLoading } = useUser();
   const [seconds, setSeconds] = useState(0);
+  const [notificaciones, setNotificaciones] = useState([]);
+  const [cargandoNotificaciones, setCargandoNotificaciones] = useState(false);
+
+  // Obtener empleadoId del contexto de autenticación
+  const empleadoId = user?.empleadoId;
+  const esEmpleado = user?.rol === "empleado";
+  const esGerente = ["gerente", "rrhh", "admin"].includes(user?.rol);
 
   // Simulador de fichaje
   useEffect(() => {
     const interval = setInterval(() => setSeconds((prev) => prev + 1), 1000);
     return () => clearInterval(interval);
   }, []);
+
+  // Cargar notificaciones no leídas
+  useEffect(() => {
+    if (!userLoading && empleadoId) {
+      cargarNotificacionesNoLeidas();
+    }
+  }, [userLoading, empleadoId]);
+
+  const cargarNotificacionesNoLeidas = async () => {
+    try {
+      setCargandoNotificaciones(true);
+      let respuesta;
+
+      // Si es empleado, cargar solo sus notificaciones no leídas
+      if (esEmpleado) {
+        respuesta = await notificacionesService.obtenerNotificacionesNoLeidas(
+          empleadoId
+        );
+      }
+      // Si es gerente/admin/rrhh, cargar todas las notificaciones pero filtrar según corresponda
+      else if (esGerente) {
+        respuesta = await notificacionesService.obtenerTodasLasNotificaciones();
+        // Filtrar notificaciones:
+        // 1. Mostrar todas de "ausencia", "aprobacion", "rechazo" (ignorar otros tipos)
+        // 2. Filtrar solo aquellas donde el gerente es el receptor (empleadoId coincide)
+        const notificacionesFiltradas = (respuesta.data || []).filter(
+          (notif) => {
+            // Convertir empleadoId a string para comparación
+            const receptorId = notif.empleadoId?._id?.toString() || notif.empleadoId?.toString() || notif.empleadoId;
+            const esReceptor = receptorId === empleadoId;
+
+            // Mostrar si es destinada a este gerente Y es uno de estos tipos
+            return esReceptor && (notif.tipo === "ausencia" || notif.tipo === "aprobacion" || notif.tipo === "rechazo");
+          }
+        );
+        respuesta.data = notificacionesFiltradas;
+      }
+
+      setNotificaciones(respuesta.data || []);
+    } catch (err) {
+      console.error("Error al cargar notificaciones:", err);
+    } finally {
+      setCargandoNotificaciones(false);
+    }
+  };
 
   const totalSeconds = 8 * 3600;
   const progress = Math.min((seconds / totalSeconds) * 100, 100);
@@ -236,7 +296,7 @@ export default function Home() {
         }}
       >
          {/* ===========================
-          CUADRANTE 3 BANDEJA DE ENTRADA
+          CUADRANTE 3 BANDEJA DE ENTRADA (Para todos los usuarios)
           ============================== */}
         <Card
           sx={{
@@ -247,56 +307,115 @@ export default function Home() {
             flexDirection: "column",
             p: 2,
             height: isMobile ? "auto" : "100%",
+            backgroundColor: notificaciones.length > 0 ? "#FFF8F0" : "#FFFFFF",
           }}
         >
-          <Box sx={{ display: "flex", justifyContent: "space-between", mb: 2 }}>
-            <Typography variant="h6" fontWeight="bold" color="#808080">
-              Bandeja de entrada
-            </Typography>
-             <IconNextButton onClick={() => navigate("/bandeja-entrada")}>
+          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
+            <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
+              <Typography variant="h6" fontWeight="bold" color="#808080">
+                Notificaciones
+              </Typography>
+              {notificaciones.length > 0 && (
+                <Badge badgeContent={notificaciones.length} color="error">
+                  <NotificationsIcon sx={{ color: "#FF6B6B" }} />
+                </Badge>
+              )}
+            </Box>
+            <IconNextButton onClick={() => navigate("/bandeja-entrada")}>
               <ArrowForwardIosIcon />
             </IconNextButton>
           </Box>
 
-          {/* Mails */}
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, flex: 1, overflowY: "auto" }}>
-            {[...Array(5)].map((_, i) => (
-              <Box
-                key={i}
-                sx={{
-                  display: "flex",
-                  flexDirection: { xs: "column", md: "row" },
-                  justifyContent: { xs: "flex-start", md: "space-between" },
-                  alignItems: { xs: "flex-start", md: "center" },
-                  backgroundColor: "#E9E9E9",
-                  borderRadius: 1,
-                  p: 1.5,
-                  mb: 1,
-                  cursor: "pointer",
-                  "&:hover": { backgroundColor: "#dcdcdc" },
-                }}
-              >
-                <Box sx={{
-                  display: "flex",
-                  justifyContent: { xs: "space-between", md: "flex-start" },
-                  width: "100%",
-                  mb: { xs: 0.5, md: 0 },
-                }}>
+          {/* Notificaciones */}
+          {cargandoNotificaciones ? (
+            <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+              <CircularProgress size={30} />
+            </Box>
+          ) : notificaciones.length > 0 ? (
+            <Box sx={{ display: "flex", flexDirection: "column", gap: 1, flex: 1, overflowY: "auto" }}>
+              {notificaciones.slice(0, 3).map((notif, i) => {
+                const colorMap = {
+                  ausencia: "#FFE8D6",
+                  mensaje: "#E8F5E9",
+                  alerta: "#FFF3E0",
+                  aprobacion: "#E8F5E9",
+                  rechazo: "#FFEBEE",
+                  evento: "#E3F2FD",
+                  otro: "#F5F5F5",
+                };
+                return (
+                  <Box
+                    key={notif._id || i}
+                    sx={{
+                      display: "flex",
+                      flexDirection: "column",
+                      backgroundColor: colorMap[notif.tipo] || colorMap.otro,
+                      borderRadius: 1,
+                      p: 1.5,
+                      mb: 1,
+                      cursor: "pointer",
+                      borderLeft: "4px solid #7FC6BA",
+                      "&:hover": { opacity: 0.8 },
+                    }}
+                  >
+                    <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "start" }}>
+                      <Typography variant="body2" fontWeight="bold" sx={{ color: "#585858", flex: 1 }}>
+                        {notif.asunto}
+                      </Typography>
+                      {notif.prioridad && (
+                        <Chip
+                          label={notif.prioridad.toUpperCase()}
+                          size="small"
+                          sx={{
+                            fontSize: "0.65rem",
+                            height: "20px",
+                            ml: 1,
+                          }}
+                        />
+                      )}
+                    </Box>
+                    <Typography
+                      variant="caption"
+                      sx={{
+                        color: "#808080",
+                        mt: 0.5,
+                        display: "-webkit-box",
+                        WebkitLineClamp: 1,
+                        WebkitBoxOrient: "vertical",
+                        overflow: "hidden",
+                      }}
+                    >
+                      {notif.descripcion}
+                    </Typography>
+                  </Box>
+                );
+              })}
+            </Box>
+          ) : (
+            <Box sx={{ display: "flex", justifyContent: "center", alignItems: "center", flex: 1 }}>
+              <Typography variant="body2" color="#808080">
+                No tienes notificaciones
+              </Typography>
+            </Box>
+          )}
 
-                  <Typography variant="body2" color="text.secondary">
-                    Fecha {i + 1}
-                  </Typography>
-                  <Typography variant="body2" color="text.secondary">
-                    Remitente {i + 1}
-                  </Typography>
-                </Box>
-                <Typography variant="body2" fontWeight="bold" sx={{ width: "100%" }}>
-                  Asunto del mail {i + 1}
-                </Typography>
-                
-              </Box>
-            ))}
-          </Box>
+          {/* Botón para ver todas */}
+          {notificaciones.length > 3 && (
+            <Box sx={{ mt: 2, textAlign: "center" }}>
+              <Typography
+                variant="caption"
+                sx={{
+                  color: "#7FC6BA",
+                  cursor: "pointer",
+                  fontWeight: 600,
+                  "&:hover": { textDecoration: "underline" },
+                }}
+                onClick={() => navigate("/bandeja-entrada")}
+              >
+                Ver todas ({notificaciones.length})
+              </Typography>
+            </Box>
+          )}
         </Card>
 
          {/* ===========================

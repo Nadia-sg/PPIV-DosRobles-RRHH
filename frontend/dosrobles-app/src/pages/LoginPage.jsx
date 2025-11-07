@@ -1,32 +1,44 @@
-import React, { useState } from "react";
-import { Box, Typography, useMediaQuery, Alert } from "@mui/material";
+import { useState } from "react";
+import { Box, Typography, useMediaQuery, Alert, CircularProgress } from "@mui/material";
 import TextInput from "../components/ui/TextInput";
 import { LoginButton } from "../components/ui/Buttons";
 import loginImage from "../assets/login.jpg";
 import logoImage from "../assets/Logo4.png";
-import { useNavigate } from "react-router-dom"; 
+import { useNavigate } from "react-router-dom";
+import { useUser } from "../context/UserContext";
 
 export default function LoginPage() {
-  const [user, setUser] = useState("");
+  const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
-  const [error, setError] = useState(""); 
+  const [error, setError] = useState("");
+  const [loading, setLoading] = useState(false);
   const isMobile = useMediaQuery("(max-width:900px)");
   const navigate = useNavigate();
+  const { login } = useUser();
 
-  // Usuario login de prueba 
-  const validUser = "admin";
-  const validPassword = "123";
+  const handleLogin = async () => {
+    if (!username || !password) {
+      setError("Por favor ingresa usuario y contraseña");
+      return;
+    }
 
-  const handleLogin = () => {
-    console.log("Usuario:", user, "Contraseña:", password);
-
-    if (user === validUser && password === validPassword) {
+    try {
       setError("");
-      // Redirige al home
+      setLoading(true);
+      await login(username, password);
+      // Si el login es exitoso, redirigir al home
       navigate("/home");
-    } else {
-      // Usuario o contraseña incorrectos
-      setError("Usuario o contraseña incorrectos");
+    } catch (err) {
+      setError(err.message || "Usuario o contraseña incorrectos");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Manejar Enter en los inputs
+  const handleKeyPress = (e) => {
+    if (e.key === "Enter") {
+      handleLogin();
     }
   };
 
@@ -160,14 +172,18 @@ export default function LoginPage() {
         <Box sx={{ width: isMobile ? "85%" : "60%", minWidth: 280 }}>
           <TextInput
             placeholder="Usuario"
-            value={user}
-            onChange={(e) => setUser(e.target.value)}
+            value={username}
+            onChange={(e) => setUsername(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={loading}
           />
           <TextInput
             placeholder="Contraseña"
             type="password"
             value={password}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyPress={handleKeyPress}
+            disabled={loading}
           />
 
           {/* Mensaje de error */}
@@ -179,14 +195,16 @@ export default function LoginPage() {
 
           <LoginButton
             onClick={handleLogin}
+            disabled={loading}
             sx={{
               mt: 2,
               width: "100%",
               fontSize: isMobile ? "0.9rem" : "1rem",
               transition: "all 0.25s ease",
+              position: "relative",
             }}
           >
-            Ingresar
+            {loading ? <CircularProgress size={24} sx={{ color: "white" }} /> : "Ingresar"}
           </LoginButton>
 
           <Typography

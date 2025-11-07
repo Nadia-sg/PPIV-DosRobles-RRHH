@@ -1,13 +1,19 @@
-import React from "react";
+import { useNavigate } from "react-router-dom";
 import styles from "../styles/MainLayout.module.css";
 import logo from "../assets/logo.png";
 import topVector from "../assets/topVector.svg";
-import topVectorMobile from "../assets/topVector-mobile.svg"; 
-import logoutIcon from "../assets/logout.svg"; 
-import { useNavigate } from "react-router-dom";
+import topVectorMobile from "../assets/topVector-mobile.svg";
+import logoutIcon from "../assets/logout.svg";
+import { useUser } from "../context/UserContext";
 
 export default function MainLayout({ children }) {
   const navigate = useNavigate();
+  const { logout } = useUser();
+
+  const handleLogout = () => {
+    logout();
+    navigate("/login");
+  };
 
   return (
     <div className={styles.container}>
@@ -34,7 +40,12 @@ export default function MainLayout({ children }) {
 
         {/* Botón de logout */}
         <div className={styles.logoutContainer}>
-          <button className={styles.logoutBtn} title="Cerrar sesión">
+          <button
+            className={styles.logoutBtn}
+            title="Cerrar sesión"
+            onClick={handleLogout}
+            style={{ cursor: "pointer" }}
+          >
             <img src={logoutIcon} alt="Salir" className={styles.logoutIcon} />
           </button>
         </div>

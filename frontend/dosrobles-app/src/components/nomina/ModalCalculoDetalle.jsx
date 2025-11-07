@@ -10,19 +10,31 @@ import { PrimaryButton } from "../ui/Buttons";
 export default function ModalCalculoDetalle({ open, onClose, empleado, onCalcular, onAprobar }) {
   if (!empleado) return null;
 
+  // Crear estructura por defecto si no existen los detalles de cálculo
+  const calcDetalle = empleado.calculoDetalle || {
+    antiguedad: 0,
+    presentismo: 0,
+    horasExtras: 0,
+    viaticos: 0,
+    jubilacion: 0,
+    obraSocial: 0,
+    ley19032: 0,
+    sindicato: 0,
+  };
+
   // Calcular totales
   const haberes =
     empleado.sueldoBasico +
-    empleado.calculoDetalle.antiguedad +
-    empleado.calculoDetalle.presentismo +
-    empleado.calculoDetalle.horasExtras +
-    empleado.calculoDetalle.viaticos;
+    calcDetalle.antiguedad +
+    calcDetalle.presentismo +
+    calcDetalle.horasExtras +
+    calcDetalle.viaticos;
 
   const deducciones =
-    empleado.calculoDetalle.jubilacion +
-    empleado.calculoDetalle.obraSocial +
-    empleado.calculoDetalle.ley19032 +
-    empleado.calculoDetalle.sindicato;
+    calcDetalle.jubilacion +
+    calcDetalle.obraSocial +
+    calcDetalle.ley19032 +
+    calcDetalle.sindicato;
 
   const neto = haberes - deducciones;
 
@@ -90,25 +102,25 @@ export default function ModalCalculoDetalle({ open, onClose, empleado, onCalcula
             <Grid item xs={6} md={3}>
               <Typography sx={{ fontSize: "0.85rem", color: "#808080" }}>Horas Trabajadas</Typography>
               <Typography sx={{ fontSize: "1rem", fontWeight: 600, color: "#585858" }}>
-                {empleado.horasTrabajadas}h
+                {empleado.horasTrabajadas || 0}h
               </Typography>
             </Grid>
             <Grid item xs={6} md={3}>
               <Typography sx={{ fontSize: "0.85rem", color: "#808080" }}>Horas Extras</Typography>
-              <Typography sx={{ fontSize: "1rem", fontWeight: 600, color: empleado.horasExtras > 0 ? "#7FC6BA" : "#585858" }}>
-                {empleado.horasExtras}h
+              <Typography sx={{ fontSize: "1rem", fontWeight: 600, color: (empleado.horasExtras || 0) > 0 ? "#7FC6BA" : "#585858" }}>
+                {empleado.horasExtras || 0}h
               </Typography>
             </Grid>
             <Grid item xs={6} md={3}>
               <Typography sx={{ fontSize: "0.85rem", color: "#808080" }}>Días Trabajados</Typography>
               <Typography sx={{ fontSize: "1rem", fontWeight: 600, color: "#585858" }}>
-                {empleado.diasTrabajados}
+                {empleado.diasTrabajados || 0}
               </Typography>
             </Grid>
             <Grid item xs={6} md={3}>
               <Typography sx={{ fontSize: "0.85rem", color: "#808080" }}>Días Ausencia</Typography>
-              <Typography sx={{ fontSize: "1rem", fontWeight: 600, color: empleado.diasAusencia > 0 ? "#FF7779" : "#585858" }}>
-                {empleado.diasAusencia}
+              <Typography sx={{ fontSize: "1rem", fontWeight: 600, color: (empleado.diasAusencia || 0) > 0 ? "#FF7779" : "#585858" }}>
+                {empleado.diasAusencia || 0}
               </Typography>
             </Grid>
           </Grid>
@@ -141,7 +153,7 @@ export default function ModalCalculoDetalle({ open, onClose, empleado, onCalcula
                 </TableRow>
                 <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
                   <TableCell>Antigüedad</TableCell>
-                  <TableCell align="right">{formatMonto(empleado.calculoDetalle.antiguedad)}</TableCell>
+                  <TableCell align="right">{formatMonto(calcDetalle.antiguedad)}</TableCell>
                 </TableRow>
                 <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
                   <TableCell>
@@ -152,19 +164,19 @@ export default function ModalCalculoDetalle({ open, onClose, empleado, onCalcula
                       </Typography>
                     )}
                   </TableCell>
-                  <TableCell align="right">{formatMonto(empleado.calculoDetalle.presentismo)}</TableCell>
+                  <TableCell align="right">{formatMonto(calcDetalle.presentismo)}</TableCell>
                 </TableRow>
                 {empleado.horasExtras > 0 && (
                   <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
                     <TableCell>
                       Horas Extras ({empleado.horasExtras}h)
                     </TableCell>
-                    <TableCell align="right">{formatMonto(empleado.calculoDetalle.horasExtras)}</TableCell>
+                    <TableCell align="right">{formatMonto(calcDetalle.horasExtras)}</TableCell>
                   </TableRow>
                 )}
                 <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
                   <TableCell>Viáticos (No Remunerativo)</TableCell>
-                  <TableCell align="right">{formatMonto(empleado.calculoDetalle.viaticos)}</TableCell>
+                  <TableCell align="right">{formatMonto(calcDetalle.viaticos)}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700, fontSize: "1rem", color: "#4CAF50" }}>
@@ -183,19 +195,19 @@ export default function ModalCalculoDetalle({ open, onClose, empleado, onCalcula
                 </TableRow>
                 <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
                   <TableCell>Jubilación (11%)</TableCell>
-                  <TableCell align="right">{formatMonto(empleado.calculoDetalle.jubilacion)}</TableCell>
+                  <TableCell align="right">{formatMonto(calcDetalle.jubilacion)}</TableCell>
                 </TableRow>
                 <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
                   <TableCell>Obra Social (3%)</TableCell>
-                  <TableCell align="right">{formatMonto(empleado.calculoDetalle.obraSocial)}</TableCell>
+                  <TableCell align="right">{formatMonto(calcDetalle.obraSocial)}</TableCell>
                 </TableRow>
                 <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
                   <TableCell>Ley 19032 (3%)</TableCell>
-                  <TableCell align="right">{formatMonto(empleado.calculoDetalle.ley19032)}</TableCell>
+                  <TableCell align="right">{formatMonto(calcDetalle.ley19032)}</TableCell>
                 </TableRow>
                 <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
                   <TableCell>Sindicato</TableCell>
-                  <TableCell align="right">{formatMonto(empleado.calculoDetalle.sindicato)}</TableCell>
+                  <TableCell align="right">{formatMonto(calcDetalle.sindicato)}</TableCell>
                 </TableRow>
                 <TableRow>
                   <TableCell sx={{ fontWeight: 700, fontSize: "1rem", color: "#FF7779" }}>
