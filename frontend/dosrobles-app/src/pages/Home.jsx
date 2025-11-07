@@ -7,13 +7,15 @@ import {
   Typography,
   useMediaQuery,
   CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
 import EditCalendarIcon from "@mui/icons-material/EditCalendar";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import CakeIcon from "@mui/icons-material/Cake";
-import StopIcon from "@mui/icons-material/Stop"; // ✅ faltaba este import
+import StopIcon from "@mui/icons-material/Stop";
 import {
   PrimaryButton,
   SecondaryButton,
@@ -29,21 +31,42 @@ export default function Home() {
   const [openInicio, setOpenInicio] = useState(false);
   const [openSalida, setOpenSalida] = useState(false);
 
-  // ⏱ Simulador de tiempo activo
+  //  Simulador de tiempo activo
   useEffect(() => {
     if (estadoFichaje !== "activo") return;
     const interval = setInterval(() => setSeconds((prev) => prev + 1), 1000);
     return () => clearInterval(interval);
   }, [estadoFichaje]);
 
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
   const totalSeconds = 8 * 3600;
   const progress = Math.min((seconds / totalSeconds) * 100, 100);
   const navigate = useNavigate();
 
   const eventos = [
-    { fecha: "25 Oct", hora: "14:00", nombre: "Cumpleaños Erica", icono: <CakeIcon /> },
-    { fecha: "27 Oct", hora: "09:30", nombre: "Reunión de equipo", icono: <EmojiEventsIcon /> },
-    { fecha: "29 Oct", hora: "16:00", nombre: "Entrega de proyecto", icono: <EmojiEventsIcon /> },
+    {
+      fecha: "25 Oct",
+      hora: "14:00",
+      nombre: "Cumpleaños Erica",
+      icono: <CakeIcon />,
+    },
+    {
+      fecha: "27 Oct",
+      hora: "09:30",
+      nombre: "Reunión de equipo",
+      icono: <EmojiEventsIcon />,
+    },
+    {
+      fecha: "29 Oct",
+      hora: "16:00",
+      nombre: "Entrega de proyecto",
+      icono: <EmojiEventsIcon />,
+    },
   ];
 
   return (
@@ -82,7 +105,8 @@ export default function Home() {
             flexDirection: "column",
             justifyContent: "space-between",
             p: 2,
-            height: isMobile ? "auto" : "90%",
+            height: isMobile ? "auto" : "98%",
+            position: "relative",
           }}
         >
           {/* Encabezado */}
@@ -117,30 +141,61 @@ export default function Home() {
               {/* Botón principal */}
               <PrimaryButton
                 startIcon={
-                  estadoFichaje === "inactivo" ? <PlayArrowIcon /> : <StopIcon />
+                  estadoFichaje === "inactivo" ? (
+                    <PlayArrowIcon />
+                  ) : (
+                    <StopIcon />
+                  )
                 }
                 onClick={() => {
                   if (estadoFichaje === "inactivo") setOpenInicio(true);
-                  else setOpenSalida(true);
+                  else if (estadoFichaje === "activo") setOpenSalida(true);
                 }}
+                disabled={estadoFichaje === "pausado"}
                 sx={{
-                  bgcolor: estadoFichaje === "inactivo" ? "#7FC6BA" : "#F28B82",
+                  bgcolor:
+                    estadoFichaje === "inactivo"
+                      ? "#7FC6BA"
+                      : estadoFichaje === "pausado"
+                      ? "#ccc"
+                      : "#F28B82",
+                  color: estadoFichaje === "pausado" ? "#666" : "white",
                   "&:hover": {
-                    bgcolor: estadoFichaje === "inactivo" ? "#68b0a4" : "#e57373",
+                    bgcolor:
+                      estadoFichaje === "inactivo"
+                        ? "#68b0a4"
+                        : estadoFichaje === "pausado"
+                        ? "#ccc"
+                        : "#e57373",
                   },
+                  transition: "background-color 0.3s ease",
                 }}
               >
-                {estadoFichaje === "inactivo" ? "Fichar entrada" : "Registrar salida"}
+                {estadoFichaje === "inactivo"
+                  ? "Fichar entrada"
+                  : "Registrar salida"}
               </PrimaryButton>
 
               {/* Botón Pausar / Reanudar */}
               {estadoFichaje !== "inactivo" && (
                 <SecondaryButton
-                  onClick={() =>
-                    setEstadoFichaje(
-                      estadoFichaje === "activo" ? "pausado" : "activo"
-                    )
-                  }
+                  onClick={() => {
+                    if (estadoFichaje === "activo") {
+                      setEstadoFichaje("pausado");
+                      setToast({
+                        open: true,
+                        message: "Jornada pausada",
+                        severity: "warning",
+                      });
+                    } else if (estadoFichaje === "pausado") {
+                      setEstadoFichaje("activo");
+                      setToast({
+                        open: true,
+                        message: "Jornada reanudada",
+                        severity: "info",
+                      });
+                    }
+                  }}
                 >
                   {estadoFichaje === "pausado" ? "Reanudar" : "Pausar"}
                 </SecondaryButton>
@@ -202,45 +257,89 @@ export default function Home() {
                 </Box>
               </Box>
             </Box>
+
+            {/* Modal INICIO */}
+            <ModalDialog
+              open={openInicio}
+              onClose={() => setOpenInicio(false)}
+              title="Iniciar jornada"
+              content={
+                <Typography sx={{ whiteSpace: "pre-line" }}>
+                  {
+                    "Estás a punto de iniciar tu jornada laboral.\nEl tiempo comenzará a medirse ahora."
+                  }
+                </Typography>
+              }
+              actions={[
+                {
+                  label: "Cancelar",
+                  variant: "outlined",
+                  onClick: () => setOpenInicio(false),
+                },
+                {
+                  label: "Iniciar",
+                  onClick: () => {
+                    setOpenInicio(false);
+                    setEstadoFichaje("activo");
+                    setToast({
+                      open: true,
+                      message: "Jornada iniciada con éxito",
+                      severity: "info",
+                    });
+                    setSeconds(0);
+                  },
+                },
+              ]}
+            />
+
+            {/* Modal SALIDA */}
+            <ModalDialog
+              open={openSalida}
+              onClose={() => setOpenSalida(false)}
+              title="Registrar salida"
+              content="¿Quieres registrar la salida y finalizar tu jornada laboral?"
+              actions={[
+                {
+                  label: "Cancelar",
+                  variant: "outlined",
+                  onClick: () => setOpenSalida(false),
+                },
+                {
+                  label: "Confirmar",
+                  onClick: () => {
+                    setOpenSalida(false);
+                    setEstadoFichaje("inactivo");
+                    setSeconds(0);
+                    setToast({
+                      open: true,
+                      message: "Jornada finalizada correctamente",
+                      severity: "success",
+                    });
+                  },
+                },
+              ]}
+            />
+
+            <Snackbar 
+              open={toast.open}
+              autoHideDuration={3000}
+              onClose={() => setToast({ ...toast, open: false })}
+              anchorOrigin={{ vertical: "bottom", horizontal: "right" }}
+              sx={{
+                position: "absolute",
+                bottom: 0,
+                right: 16,
+              }}
+            >
+              <Alert
+                onClose={() => setToast({ ...toast, open: false })}
+                severity={toast.severity}
+                sx={{ width: "100%" }}
+              >
+                {toast.message}
+              </Alert>
+            </Snackbar>
           </Box>
-
-          {/* Modal INICIO */}
-          <ModalDialog
-            open={openInicio}
-            onClose={() => setOpenInicio(false)}
-            title="Iniciar jornada"
-            content="¿Querés iniciar tu jornada laboral?"
-            actions={[
-              { label: "Cancelar", variant: "outlined", onClick: () => setOpenInicio(false) },
-              {
-                label: "Iniciar",
-                onClick: () => {
-                  setOpenInicio(false);
-                  setEstadoFichaje("activo");
-                  setSeconds(0);
-                },
-              },
-            ]}
-          />
-
-          {/* Modal SALIDA */}
-          <ModalDialog
-            open={openSalida}
-            onClose={() => setOpenSalida(false)}
-            title="Registrar salida"
-            content="¿Querés registrar tu salida?"
-            actions={[
-              { label: "Cancelar", variant: "outlined", onClick: () => setOpenSalida(false) },
-              {
-                label: "Confirmar",
-                onClick: () => {
-                  setOpenSalida(false);
-                  setEstadoFichaje("inactivo");
-                  setSeconds(0);
-                },
-              },
-            ]}
-          />
         </Card>
 
         {/* ===========================
@@ -255,7 +354,7 @@ export default function Home() {
             flexDirection: "column",
             justifyContent: "flex-start",
             p: 2,
-            height: isMobile ? "auto" : "90%",
+            height: isMobile ? "auto" : "98%",
           }}
         >
           <Box sx={{ display: "flex", justifyContent: "space-between", mb: 1 }}>
@@ -269,7 +368,10 @@ export default function Home() {
               { color: "#FFD0D0", title: "Ausentes", count: 3 },
               { color: "#8EC6BA", title: "Fichados", count: 12 },
             ].map((item, idx) => (
-              <Box key={idx} sx={{ display: "flex", alignItems: "center", gap: 2 }}>
+              <Box
+                key={idx}
+                sx={{ display: "flex", alignItems: "center", gap: 2 }}
+              >
                 <Box
                   sx={{
                     width: 28,
@@ -280,7 +382,11 @@ export default function Home() {
                   }}
                 />
                 <Box>
-                  <Typography variant="subtitle1" fontWeight="bold" color="#808080">
+                  <Typography
+                    variant="subtitle1"
+                    fontWeight="bold"
+                    color="#808080"
+                  >
                     {item.title}
                   </Typography>
                   <Typography variant="body2" color="#A0A0A0">
@@ -325,7 +431,15 @@ export default function Home() {
             </IconNextButton>
           </Box>
 
-          <Box sx={{ display: "flex", flexDirection: "column", gap: 1, flex: 1, overflowY: "auto" }}>
+          <Box
+            sx={{
+              display: "flex",
+              flexDirection: "column",
+              gap: 1,
+              flex: 1,
+              overflowY: "auto",
+            }}
+          >
             {[...Array(5)].map((_, i) => (
               <Box
                 key={i}
@@ -357,7 +471,11 @@ export default function Home() {
                     Remitente {i + 1}
                   </Typography>
                 </Box>
-                <Typography variant="body2" fontWeight="bold" sx={{ width: "100%" }}>
+                <Typography
+                  variant="body2"
+                  fontWeight="bold"
+                  sx={{ width: "100%" }}
+                >
                   Asunto del mail {i + 1}
                 </Typography>
               </Box>
@@ -377,8 +495,19 @@ export default function Home() {
             height: "100%",
           }}
         >
-          <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 2 }}>
-            <Typography variant={isMobile ? "subtitle1" : "h6"} fontWeight="bold" color="#808080">
+          <Box
+            sx={{
+              display: "flex",
+              justifyContent: "space-between",
+              alignItems: "center",
+              mb: 2,
+            }}
+          >
+            <Typography
+              variant={isMobile ? "subtitle1" : "h6"}
+              fontWeight="bold"
+              color="#808080"
+            >
               Eventos
             </Typography>
             <SecondaryButton
