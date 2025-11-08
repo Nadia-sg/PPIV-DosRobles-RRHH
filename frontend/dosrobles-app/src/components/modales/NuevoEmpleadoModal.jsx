@@ -1,7 +1,8 @@
-import React, { useState } from "react";
-import { Box, Stack, Typography, Avatar, Grid } from "@mui/material";
+/* frontend/src/components/modales/NuevoEmpleadoModal.jsx */
+import React, { useState, useEffect } from "react";
+import { Box, Stack, Typography } from "@mui/material";
 import ModalCard from "../ui/ModalCard";
-import { NextButton, SecondaryButton, PrevButton,PrimaryButton } from "../ui/Buttons";
+import { NextButton, SecondaryButton, PrevButton, PrimaryButton } from "../ui/Buttons";
 import BaseInput from "../ui/BaseInput";
 import SelectInput from "../ui/SelectInput";
 import DateField from "../ui/DateField";
@@ -12,7 +13,88 @@ import AddAPhotoIcon from "@mui/icons-material/AddAPhoto";
 
 const NuevoEmpleadoModal = ({ open, onClose }) => {
   const [step, setStep] = useState(1);
+  const [loading, setLoading] = useState(false);
 
+  // Estado para mostrar el próximo número de legajo
+  const [nextLegajo, setNextLegajo] = useState("Cargando...");
+
+  // Cuando se abre el modal, obtener el próximo legajo
+  useEffect(() => {
+    if (open) {
+      const fetchNextLegajo = async () => {
+        try {
+          const response = await fetch("http://localhost:4000/api/empleados/proximo-legajo");
+          const data = await response.json();
+          setNextLegajo(data.proximoLegajo || "Error");
+        } catch (error) {
+          console.error("Error al obtener el próximo legajo:", error);
+          setNextLegajo("Error");
+        }
+      };
+      fetchNextLegajo();
+    }
+  }, [open]);
+
+  // Estado global del formulario
+  const [formData, setFormData] = useState({
+    nombre: "",
+    apellido: "",
+    tipoDocumento: "",
+    numeroDocumento: "",
+    cuil: "",
+    telefono: "",
+    email: "",
+    fechaNacimiento: "",
+    fechaAlta: "",
+    areaTrabajo: "",
+    puesto: "",
+    categoria: "",
+    modalidad: "",
+    jornada: "",
+    horario: "",
+    obraSocial: "",
+    art: "",
+    tipoRemuneracion: "",
+    sueldoBruto: "",
+    banco: "",
+    cbu: "",
+    vencimientoContrato: "",
+    categoriaImpositiva: "",
+  });
+
+  // Actualiza cualquier campo
+  const handleChange = (field, value) => {
+    setFormData((prev) => ({ ...prev, [field]: value }));
+  };
+
+  // Enviar datos al backend
+  const handleSubmit = async () => {
+    setLoading(true);
+    try {
+      const response = await fetch("http://localhost:4000/api/empleados", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(formData),
+      });
+
+      if (!response.ok) {
+        const error = await response.json();
+        throw new Error(error.message || "Error al registrar empleado");
+      }
+
+      const data = await response.json();
+      alert("✅ Empleado registrado con éxito");
+      console.log("Empleado creado:", data.empleado);
+      onClose();
+    } catch (error) {
+      console.error("Error al registrar empleado:", error);
+      alert("❌ Error al registrar el empleado");
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  // Render de pasos
   const renderStep = () => {
     switch (step) {
       // STEP 1 — DATOS PERSONALES
@@ -20,15 +102,7 @@ const NuevoEmpleadoModal = ({ open, onClose }) => {
         return (
           <Box>
             {/* Imagen + Fecha */}
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "space-between",
-                alignItems: "center",
-                mb: 3,
-              }}
-            >
-              {/* Círculo con ícono */}
+            <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Box
                 sx={{
                   width: 100,
@@ -45,151 +119,176 @@ const NuevoEmpleadoModal = ({ open, onClose }) => {
               >
                 <AddAPhotoIcon sx={{ fontSize: 40, color: "#7FC6BA" }} />
               </Box>
-
-              {/* Fecha de nacimiento */}
-              <DateField label="Fecha de nacimiento" />
+              <DateField
+                label="Fecha de nacimiento"
+                value={formData.fechaNacimiento}
+                onChange={(e) => handleChange("fechaNacimiento", e.target.value)}
+              />
             </Box>
 
-            {/* Tarjeta del formulario */}
             <FormCard title="Datos personales" sx={{ p: 3 }}>
               <Stack spacing={2}>
-                {/* Nombre */}
-                <BaseInput label="Nombre" fullWidth />
+                <BaseInput
+                  label="Nombre"
+                  fullWidth
+                  value={formData.nombre}
+                  onChange={(e) => handleChange("nombre", e.target.value)}
+                />
+                <BaseInput
+                  label="Apellido"
+                  fullWidth
+                  value={formData.apellido}
+                  onChange={(e) => handleChange("apellido", e.target.value)}
+                />
 
-                {/* Apellido */}
-                <BaseInput label="Apellido" fullWidth />
-
-                {/* Tipo de Documento + Número */}
                 <Box sx={{ display: "flex", gap: 2 }}>
-                  <Box sx={{ flex: 1 }}>
-                    <SelectInput
-                      label="Tipo de Documento"
-                      options={[
-                        { label: "DNI", value: "dni" },
-                        { label: "Pasaporte", value: "pasaporte" },
-                      ]}
-                      fullWidth
-                    />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <BaseInput label="Número" fullWidth />
-                  </Box>
+                  <SelectInput
+                    label="Tipo de Documento"
+                    options={[
+                      { label: "DNI", value: "dni" },
+                      { label: "Pasaporte", value: "pasaporte" },
+                    ]}
+                    value={formData.tipoDocumento}
+                    onChange={(e) => handleChange("tipoDocumento", e.target.value)}
+                    fullWidth
+                  />
+                  <BaseInput
+                    label="Número"
+                    fullWidth
+                    value={formData.numeroDocumento}
+                    onChange={(e) => handleChange("numeroDocumento", e.target.value)}
+                  />
                 </Box>
-                {/* CUIL */}
-                <BaseInput label="CUIL" fullWidth />
 
-                {/* Teléfono */}
-                <BaseInput label="Teléfono" fullWidth />
-
-                {/* Email */}
-                <BaseInput label="Email" fullWidth />
+                <BaseInput
+                  label="CUIL"
+                  fullWidth
+                  value={formData.cuil}
+                  onChange={(e) => handleChange("cuil", e.target.value)}
+                />
+                <BaseInput
+                  label="Teléfono"
+                  fullWidth
+                  value={formData.telefono}
+                  onChange={(e) => handleChange("telefono", e.target.value)}
+                />
+                <BaseInput
+                  label="Email"
+                  fullWidth
+                  value={formData.email}
+                  onChange={(e) => handleChange("email", e.target.value)}
+                />
               </Stack>
             </FormCard>
-            {/* Botón siguiente */}
+
             <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-              <NextButton
-                onClick={() => setStep(2)}
-                endIcon={<ArrowForwardIcon />}
-              >
+              <NextButton onClick={() => setStep(2)} endIcon={<ArrowForwardIcon />}>
                 Siguiente
               </NextButton>
             </Box>
           </Box>
         );
 
-      //  STEP 2 — DATOS LABORALES
-
+      // STEP 2 — DATOS LABORALES
       case 2:
         return (
           <Box>
-            {/* Fecha alta */}
             <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-              <DateField label="Fecha de Alta" />
+              <DateField
+                label="Fecha de Alta"
+                value={formData.fechaAlta}
+                onChange={(e) => handleChange("fechaAlta", e.target.value)}
+              />
             </Box>
 
-            {/* Formulario dentro de tarjeta */}
             <FormCard title="Datos laborales" sx={{ p: 3 }}>
               <Stack spacing={2}>
-                {/* Área de trabajo / Puesto */}
                 <Box sx={{ display: "flex", gap: 2 }}>
-                  <Box sx={{ flex: 1 }}>
-                    <SelectInput
-                      label="Área de trabajo"
-                      options={[
-                        { label: "Carpintería", value: "carpinteria" },
-                        { label: "Aserradero", value: "aserradero" },
-                        { label: "Instalaciones", value: "instalaciones" },
-                        { label: "Administración", value: "administracion" },
-                        { label: "Recursos Humanos", value: "rrhh" },
-                        { label: "Pintura", value: "pintura" },
-                        { label: "Diseño", value: "diseno" },
-                      ]}
-                      fullWidth
-                    />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <BaseInput label="Puesto o Cargo" fullWidth />
-                  </Box>
+                  <SelectInput
+                    label="Área de trabajo"
+                    options={[
+                      { label: "Carpintería", value: "carpinteria" },
+                      { label: "Aserradero", value: "aserradero" },
+                      { label: "Instalaciones", value: "instalaciones" },
+                      { label: "Administración", value: "administracion" },
+                      { label: "Recursos Humanos", value: "rrhh" },
+                      { label: "Pintura", value: "pintura" },
+                      { label: "Diseño", value: "diseno" },
+                    ]}
+                    value={formData.areaTrabajo}
+                    onChange={(e) => handleChange("areaTrabajo", e.target.value)}
+                    fullWidth
+                  />
+                  <BaseInput
+                    label="Puesto o Cargo"
+                    fullWidth
+                    value={formData.puesto}
+                    onChange={(e) => handleChange("puesto", e.target.value)}
+                  />
                 </Box>
 
-                {/* Categoría */}
-                <BaseInput label="Categoría / Convenio de trabajo" fullWidth />
+                <BaseInput
+                  label="Categoría / Convenio de trabajo"
+                  fullWidth
+                  value={formData.categoria}
+                  onChange={(e) => handleChange("categoria", e.target.value)}
+                />
 
-                {/* Modalidad / Jornada */}
                 <Box sx={{ display: "flex", gap: 2 }}>
-                  <Box sx={{ flex: 1 }}>
-                    <BaseInput label="Modalidad de contratación" fullWidth />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <BaseInput label="Jornada laboral" fullWidth />
-                  </Box>
+                  <BaseInput
+                    label="Modalidad de contratación"
+                    fullWidth
+                    value={formData.modalidad}
+                    onChange={(e) => handleChange("modalidad", e.target.value)}
+                  />
+                  <BaseInput
+                    label="Jornada laboral"
+                    fullWidth
+                    value={formData.jornada}
+                    onChange={(e) => handleChange("jornada", e.target.value)}
+                  />
                 </Box>
 
-                {/* Horario habitual */}
-                <BaseInput label="Horario habitual" fullWidth />
+                <BaseInput
+                  label="Horario habitual"
+                  fullWidth
+                  value={formData.horario}
+                  onChange={(e) => handleChange("horario", e.target.value)}
+                />
 
-                {/* Obra social / ART */}
                 <Box sx={{ display: "flex", gap: 2 }}>
-                  <Box sx={{ flex: 1 }}>
-                    <BaseInput label="Obra social asignada" fullWidth />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <BaseInput label="ART" fullWidth />
-                  </Box>
+                  <BaseInput
+                    label="Obra social asignada"
+                    fullWidth
+                    value={formData.obraSocial}
+                    onChange={(e) => handleChange("obraSocial", e.target.value)}
+                  />
+                  <BaseInput
+                    label="ART"
+                    fullWidth
+                    value={formData.art}
+                    onChange={(e) => handleChange("art", e.target.value)}
+                  />
                 </Box>
               </Stack>
             </FormCard>
-            {/*  Botones de navegación */}
-            <Box
-              sx={{
-                display: "flex",
-                justifyContent: "flex-end",
-                gap: 2,
-                mt: 2,
-              }}
-            >
-              <PrevButton
-                onClick={() => setStep(1)}
-                startIcon={<ArrowBackIcon />}
-              >
+
+            <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}>
+              <PrevButton onClick={() => setStep(1)} startIcon={<ArrowBackIcon />}>
                 Anterior
               </PrevButton>
-              <NextButton
-                onClick={() => setStep(3)}
-                endIcon={<ArrowForwardIcon />}
-              >
+              <NextButton onClick={() => setStep(3)} endIcon={<ArrowForwardIcon />}>
                 Siguiente
               </NextButton>
             </Box>
           </Box>
         );
 
-      // STEP 3 — DATOS DE REMUNERACIÓN (FINAL)
-
+      // STEP 3 — DATOS DE REMUNERACIÓN
       case 3:
         return (
           <Box>
-            {/* Nº de legajo arriba a la derecha */}
+            {/* Nº de legajo */}
             <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
               <Box
                 sx={{
@@ -204,65 +303,65 @@ const NuevoEmpleadoModal = ({ open, onClose }) => {
                 <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
                   Nº de Legajo
                 </Typography>
-                <Typography variant="body1" sx={{ color:"#808080"}}>
-                  000123
+                <Typography variant="body1" sx={{ color: "#808080" }}>
+                  {nextLegajo}
                 </Typography>
               </Box>
             </Box>
 
-            {/* Formulario dentro de FormCard */}
             <FormCard title="Datos de remuneración" sx={{ p: 3 }}>
               <Stack spacing={2.5}>
-                {/* Tipo de remuneración / Sueldo bruto */}
                 <Box sx={{ display: "flex", columnGap: 2 }}>
-                  <Box sx={{ flex: 1 }}>
-                    <SelectInput
-                      label="Tipo de remuneración"
-                      options={[
-                        { label: "Jornada completa", value: "completa" },
-                        { label: "Media jornada", value: "media" },
-                        { label: "Por hora", value: "hora" },
-                        { label: "Por proyecto", value: "proyecto" },
-                      ]}
-                      fullWidth
-                    />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <BaseInput
-                      label="Sueldo bruto acordado"
-                      type="number"
-                      fullWidth
-                    />
-                  </Box>
+                  <SelectInput
+                    label="Tipo de remuneración"
+                    options={[
+                      { label: "Jornada completa", value: "completa" },
+                      { label: "Media jornada", value: "media" },
+                      { label: "Por hora", value: "hora" },
+                      { label: "Por proyecto", value: "proyecto" },
+                    ]}
+                    value={formData.tipoRemuneracion}
+                    onChange={(e) => handleChange("tipoRemuneracion", e.target.value)}
+                    fullWidth
+                  />
+                  <BaseInput
+                    label="Sueldo bruto acordado"
+                    type="number"
+                    fullWidth
+                    value={formData.sueldoBruto}
+                    onChange={(e) => handleChange("sueldoBruto", e.target.value)}
+                  />
                 </Box>
 
-                {/* Banco / CBU */}
                 <Box sx={{ display: "flex", columnGap: 2 }}>
-                  <Box sx={{ flex: 1 }}>
-                    <SelectInput
-                      label="Banco"
-                      options={[
-                        { label: "Banco Nación", value: "nacion" },
-                        { label: "Banco Provincia", value: "provincia" },
-                        { label: "Banco Galicia", value: "galicia" },
-                        { label: "Banco Santander", value: "santander" },
-                        { label: "Banco BBVA", value: "bbva" },
-                      ]}
-                      fullWidth
-                    />
-                  </Box>
-                  <Box sx={{ flex: 1 }}>
-                    <BaseInput label="CBU" fullWidth />
-                  </Box>
+                  <SelectInput
+                    label="Banco"
+                    options={[
+                      { label: "Banco Nación", value: "nacion" },
+                      { label: "Banco Provincia", value: "provincia" },
+                      { label: "Banco Galicia", value: "galicia" },
+                      { label: "Banco Santander", value: "santander" },
+                      { label: "Banco BBVA", value: "bbva" },
+                    ]}
+                    value={formData.banco}
+                    onChange={(e) => handleChange("banco", e.target.value)}
+                    fullWidth
+                  />
+                  <BaseInput
+                    label="CBU"
+                    fullWidth
+                    value={formData.cbu}
+                    onChange={(e) => handleChange("cbu", e.target.value)}
+                  />
                 </Box>
 
-                {/* Fecha de vencimiento del contrato */}
                 <DateField
                   label="Fecha de vencimiento del contrato"
+                  value={formData.vencimientoContrato}
+                  onChange={(e) => handleChange("vencimientoContrato", e.target.value)}
                   fullWidth
                 />
 
-                {/* Categoría impositiva */}
                 <SelectInput
                   label="Categoría impositiva"
                   options={[
@@ -271,43 +370,21 @@ const NuevoEmpleadoModal = ({ open, onClose }) => {
                     { label: "Autónomo", value: "autonomo" },
                     { label: "Honorarios", value: "honorarios" },
                   ]}
+                  value={formData.categoriaImpositiva}
+                  onChange={(e) => handleChange("categoriaImpositiva", e.target.value)}
                   fullWidth
                 />
               </Stack>
             </FormCard>
 
-            {/* Botones de acción */}
-            <Box
-              sx={{
-                display: "flex",
-                alignItems: "center",
-                justifyContent: "space-between",
-                mt: 3,
-              }}
-            >
-              {/* Botón "Anterior" */}
-              <PrevButton
-                onClick={() => setStep(2)}
-                startIcon={<ArrowBackIcon />}
-                sx={{ minWidth: 40, padding: "6px 6px" }}
-              />
-
-              {/* Botones Cancelar / Guardar centrados */}
+            <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 3 }}>
+              <PrevButton onClick={() => setStep(2)} startIcon={<ArrowBackIcon />} sx={{ minWidth: 40, padding: "6px 6px" }} />
               <Box sx={{ display: "flex", gap: 2 }}>
-                <SecondaryButton onClick={onClose}width={120} 
-                  height={40} 
-                  fontWeight="bold" 
-                >Cancelar</SecondaryButton>
-                <PrimaryButton
-                  onClick={() => {
-                    console.log("Empleado guardado!");
-                    onClose();
-                  }}
-                  width={120} 
-                  height={40} 
-                  fontWeight="bold" 
-                >
-                  Guardar
+                <SecondaryButton onClick={onClose} width={120} height={40} fontWeight="bold">
+                  Cancelar
+                </SecondaryButton>
+                <PrimaryButton onClick={handleSubmit} disabled={loading} width={120} height={40} fontWeight="bold">
+                  {loading ? "Guardando..." : "Guardar"}
                 </PrimaryButton>
               </Box>
             </Box>
@@ -317,12 +394,7 @@ const NuevoEmpleadoModal = ({ open, onClose }) => {
   };
 
   return (
-    <ModalCard
-      open={open}
-      onClose={onClose}
-      title="Agregar empleado"
-      width={700}
-    >
+    <ModalCard open={open} onClose={onClose} title="Agregar empleado" width={700}>
       {renderStep()}
     </ModalCard>
   );

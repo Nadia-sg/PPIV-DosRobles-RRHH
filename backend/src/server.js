@@ -4,15 +4,18 @@ import dotenv from "dotenv";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
+import empleadoRoutes from "./routes/empleadoRoutes.js"; 
 
-dotenv.config(); // carga las variables del archivo .env
+dotenv.config();
 
 const app = express();
 
-// Middleware básico
+// Middlewares
 app.use(express.json());
-
-app.use(cors());
+app.use(cors({
+  origin: "http://localhost:5173", 
+  methods: ["GET", "POST", "PUT", "DELETE"],
+}));
 
 // Conectar a MongoDB
 connectDB();
@@ -22,9 +25,11 @@ app.get("/", (req, res) => {
   res.send("Servidor backend de DosRobles en funcionamiento");
 });
 
-// Ruta del login
+// Rutas
 app.use("/api/auth", authRoutes);
+app.use("/api/empleados", empleadoRoutes); 
 
 // Iniciar servidor
 const PORT = process.env.PORT || 4000;
-app.listen(PORT, () => console.log(`Servidor corriendo en puerto ${PORT}`));
+app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));
+

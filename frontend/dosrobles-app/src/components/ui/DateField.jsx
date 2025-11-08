@@ -1,21 +1,22 @@
-import React from "react";
+import React, { useRef } from "react";
 import { Box, Typography } from "@mui/material";
 import { CalendarMonth } from "@mui/icons-material";
 
 /**
- * DateField
- * Campo de fecha con estilo personalizado.
- *
- * Props:
- * - label: string → título del campo (ej: "Fecha de nacimiento")
- * - value: string → fecha seleccionada o texto a mostrar
- * - onClick: function → acción al clickear el ícono (abrir date picker)
+ * DateField funcional con diseño personalizado
+ * Usa un input date invisible que se dispara al hacer clic en el ícono o el texto.
  */
+export default function DateField({ label, value, onChange }) {
+  const inputRef = useRef(null);
 
-export default function DateField({ label, value, onClick }) {
+  const handleOpen = () => {
+    if (inputRef.current) inputRef.current.showPicker?.(); // abre el selector nativo si el navegador lo soporta
+    else inputRef.current?.focus();
+  };
+
   return (
     <Box sx={{ mb: 3, position: "relative" }}>
-      {/* Label sobre la línea superior */}
+      {/* Label */}
       <Typography
         sx={{
           position: "absolute",
@@ -33,6 +34,7 @@ export default function DateField({ label, value, onClick }) {
 
       {/* Contenedor principal */}
       <Box
+        onClick={handleOpen}
         sx={{
           display: "flex",
           alignItems: "center",
@@ -44,6 +46,7 @@ export default function DateField({ label, value, onClick }) {
           py: 1.2,
           mt: 1,
           backgroundColor: "#FFFFFF",
+          cursor: "pointer",
         }}
       >
         {/* Texto o fecha */}
@@ -53,20 +56,31 @@ export default function DateField({ label, value, onClick }) {
             fontSize: "0.95rem",
           }}
         >
-          {value || "Seleccionar fecha"}
+          {value ? new Date(value).toLocaleDateString("es-AR") : "Seleccionar fecha"}
         </Typography>
 
-        {/* Ícono de calendario */}
+        {/* Ícono */}
         <Box
-          onClick={onClick}
           sx={{
-            cursor: "pointer",
             color: "#7FC6BA",
             "&:hover": { color: "#5FA89A" },
           }}
         >
           <CalendarMonth />
         </Box>
+
+        {/* Input real oculto */}
+        <input
+          ref={inputRef}
+          type="date"
+          value={value || ""}
+          onChange={onChange}
+          style={{
+            opacity: 0,
+            position: "absolute",
+            pointerEvents: "none",
+          }}
+        />
       </Box>
     </Box>
   );
