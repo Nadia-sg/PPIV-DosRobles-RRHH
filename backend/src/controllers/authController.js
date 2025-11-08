@@ -3,7 +3,7 @@ import User from "../models/User.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
-// === LOGIN EXISTENTE ===
+// === LOGIN ===
 export const loginUser = async (req, res) => {
   const { username, password } = req.body;
 
@@ -14,8 +14,9 @@ export const loginUser = async (req, res) => {
     const isMatch = await bcrypt.compare(password, user.password);
     if (!isMatch) return res.status(400).json({ message: "Contraseña incorrecta" });
 
+    // Generar token incluyendo el rol
     const token = jwt.sign(
-      { id: user._id, username: user.username },
+      { id: user._id, username: user.username, role: user.role },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -23,7 +24,7 @@ export const loginUser = async (req, res) => {
     res.status(200).json({
       message: "Login exitoso",
       token,
-      user: { id: user._id, username: user.username },
+      user: { id: user._id, username: user.username, role: user.role },
     });
   } catch (error) {
     console.error(error);
@@ -33,7 +34,7 @@ export const loginUser = async (req, res) => {
 
 // === REGISTRO ===
 export const registerUser = async (req, res) => {
-  const { username, password } = req.body;
+  const { username, password, role } = req.body;
 
   try {
     const userExists = await User.findOne({ username });
@@ -43,7 +44,8 @@ export const registerUser = async (req, res) => {
 
     const newUser = new User({
       username,
-      password, 
+      password,
+      role: role || "empleado", // si no se envía, será empleado
     });
 
     await newUser.save();
