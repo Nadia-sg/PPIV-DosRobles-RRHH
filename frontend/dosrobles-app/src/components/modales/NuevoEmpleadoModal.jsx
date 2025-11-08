@@ -1,8 +1,18 @@
 /* frontend/src/components/modales/NuevoEmpleadoModal.jsx */
 import React, { useState, useEffect } from "react";
-import { Box, Stack, Typography } from "@mui/material";
+import {
+  Box,
+  Stack,
+  Typography,
+  CircularProgress
+} from "@mui/material";
 import ModalCard from "../ui/ModalCard";
-import { NextButton, SecondaryButton, PrevButton, PrimaryButton } from "../ui/Buttons";
+import {
+  NextButton,
+  SecondaryButton,
+  PrevButton,
+  PrimaryButton
+} from "../ui/Buttons";
 import BaseInput from "../ui/BaseInput";
 import SelectInput from "../ui/SelectInput";
 import DateField from "../ui/DateField";
@@ -14,11 +24,8 @@ import AddAPhotoIcon from "@mui/icons-material/AddAPhoto";
 const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
-
-  // Estado para mostrar el próximo número de legajo
   const [nextLegajo, setNextLegajo] = useState("Cargando...");
 
-  // Estado global del formulario
   const initialFormData = {
     nombre: "",
     apellido: "",
@@ -47,14 +54,18 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
 
   const [formData, setFormData] = useState(initialFormData);
 
-  // Reinicia formulario y pide nuevo legajo cuando se abre el modal
+  // Imagen seleccionada y vista previa
+  const [imagenPerfil, setImagenPerfil] = useState(null);
+  const [preview, setPreview] = useState(null);
+
+  // Obtener próximo número de legajo
   useEffect(() => {
     if (open) {
-      // Resetear campos y paso
       setFormData(initialFormData);
+      setImagenPerfil(null);
+      setPreview(null);
       setStep(1);
 
-      // Pedir el próximo legajo
       const fetchNextLegajo = async () => {
         try {
           const response = await fetch("http://localhost:4000/api/empleados/proximo-legajo");
@@ -70,32 +81,58 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
     }
   }, [open]);
 
-  // Actualiza cualquier campo
+  // Manejo de inputs
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Enviar datos al backend
+  // Manejo de imagen
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setImagenPerfil(file);
+      setPreview(URL.createObjectURL(file));
+    }
+  };
+
+  // Enviar formulario con imagen al backend
   const handleSubmit = async () => {
     setLoading(true);
     try {
-      const response = await fetch("http://localhost:4000/api/empleados", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(formData),
+      const dataToSend = new FormData();
+
+      // Agregar todos los campos del formulario
+      Object.entries(formData).forEach(([key, value]) => {
+        dataToSend.append(key, value);
       });
 
-      if (!response.ok) {
-        const error = await response.json();
-        throw new Error(error.message || "Error al registrar empleado");
+      // Agregar la imagen solo si existe
+      if (imagenPerfil) {
+        dataToSend.append("imagenPerfil", imagenPerfil);
       }
 
-      const data = await response.json();
-      alert("✅ Empleado registrado con éxito");
-      console.log("Empleado creado:", data.empleado);
+      const response = await fetch("http://localhost:4000/api/empleados", {
+        method: "POST",
+        body: dataToSend,
+      });
 
-      // Cerrar modal y limpiar datos
+      const result = await response.json();
+
+      if (!response.ok) {
+        throw new Error(result.error || "Error al registrar empleado");
+      }
+
+      alert("✅ Empleado registrado con éxito");
+
+      console.log("Empleado creado:", result.empleado);
+
+      // Si hay imagen subida, mostramos su URL
+      if (result.empleado.imagenPerfil) {
+        console.log("Imagen guardada en:", `http://localhost:4000/${result.empleado.imagenPerfil}`);
+      }
+
       if (onEmpleadoGuardado) onEmpleadoGuardado();
+      onClose();
     } catch (error) {
       console.error("Error al registrar empleado:", error);
       alert("❌ Error al registrar el empleado");
@@ -104,14 +141,14 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
     }
   };
 
-  // Render de pasos
+  // Renderizado de pasos
   const renderStep = () => {
     switch (step) {
-      // STEP 1 — DATOS PERSONALES
       case 1:
         return (
           <Box>
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
+              {/* Imagen de perfil */}
               <Box
                 sx={{
                   width: 100,
@@ -123,11 +160,30 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
                   alignItems: "center",
                   justifyContent: "center",
                   cursor: "pointer",
+                  overflow: "hidden",
+                  position: "relative",
                   "&:hover": { backgroundColor: "#E0E0E0" },
                 }}
+                onClick={() => document.getElementById("fileInput").click()}
               >
-                <AddAPhotoIcon sx={{ fontSize: 40, color: "#7FC6BA" }} />
+                {preview ? (
+                  <img
+                    src={preview}
+                    alt="preview"
+                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
+                  />
+                ) : (
+                  <AddAPhotoIcon sx={{ fontSize: 40, color: "#7FC6BA" }} />
+                )}
+                <input
+                  type="file"
+                  id="fileInput"
+                  accept="image/*"
+                  style={{ display: "none" }}
+                  onChange={handleImageChange}
+                />
               </Box>
+
               <DateField
                 label="Fecha de nacimiento"
                 value={formData.fechaNacimiento}
@@ -137,18 +193,8 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
 
             <FormCard title="Datos personales" sx={{ p: 3 }}>
               <Stack spacing={2}>
-                <BaseInput
-                  label="Nombre"
-                  fullWidth
-                  value={formData.nombre}
-                  onChange={(e) => handleChange("nombre", e.target.value)}
-                />
-                <BaseInput
-                  label="Apellido"
-                  fullWidth
-                  value={formData.apellido}
-                  onChange={(e) => handleChange("apellido", e.target.value)}
-                />
+                <BaseInput label="Nombre" value={formData.nombre} onChange={(e) => handleChange("nombre", e.target.value)} fullWidth />
+                <BaseInput label="Apellido" value={formData.apellido} onChange={(e) => handleChange("apellido", e.target.value)} fullWidth />
 
                 <Box sx={{ display: "flex", gap: 2 }}>
                   <SelectInput
@@ -163,30 +209,15 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
                   />
                   <BaseInput
                     label="Número"
-                    fullWidth
                     value={formData.numeroDocumento}
                     onChange={(e) => handleChange("numeroDocumento", e.target.value)}
+                    fullWidth
                   />
                 </Box>
 
-                <BaseInput
-                  label="CUIL"
-                  fullWidth
-                  value={formData.cuil}
-                  onChange={(e) => handleChange("cuil", e.target.value)}
-                />
-                <BaseInput
-                  label="Teléfono"
-                  fullWidth
-                  value={formData.telefono}
-                  onChange={(e) => handleChange("telefono", e.target.value)}
-                />
-                <BaseInput
-                  label="Email"
-                  fullWidth
-                  value={formData.email}
-                  onChange={(e) => handleChange("email", e.target.value)}
-                />
+                <BaseInput label="CUIL" value={formData.cuil} onChange={(e) => handleChange("cuil", e.target.value)} fullWidth />
+                <BaseInput label="Teléfono" value={formData.telefono} onChange={(e) => handleChange("telefono", e.target.value)} fullWidth />
+                <BaseInput label="Email" value={formData.email} onChange={(e) => handleChange("email", e.target.value)} fullWidth />
               </Stack>
             </FormCard>
 

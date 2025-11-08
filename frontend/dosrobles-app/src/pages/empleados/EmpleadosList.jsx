@@ -30,7 +30,7 @@ const EmpleadosList = () => {
   const [empleados, setEmpleados] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔹 Obtener empleados desde el backend
+  // Obtener empleados desde el backend
   const fetchEmpleados = async () => {
     try {
       setLoading(true);
@@ -63,26 +63,33 @@ const EmpleadosList = () => {
     ? ["", "Nombre y Apellido", "Ficha"]
     : ["", "Nombre y Apellido", "Legajo", "Área de Trabajo", "Teléfono", "Ficha"];
 
-  const rows = empleados.map((emp) => ({
-    foto: (
-      <Avatar
-        src={emp.foto || "/src/assets/empleados/default-avatar.png"}
-        alt={`${emp.nombre} ${emp.apellido}`}
-        sx={{ width: 40, height: 40 }}
-      />
-    ),
-    nombre: `${emp.nombre} ${emp.apellido}`,
-    legajo: emp.numeroLegajo || "-", // 🔹 corregido
-    area: emp.areaTrabajo || "-",
-    telefono: emp.telefono || "-",
-    ficha: (
-      <FichaButtonWithIcon
-        icon={DescriptionIcon}
-        label="Ver Ficha"
-        onClick={() => handleVerFicha(emp)}
-      />
-    ),
-  }));
+  // Filas con imagen de perfil desde DB o avatar por defecto
+  const rows = empleados.map((emp) => {
+    const fotoUrl = emp.imagenPerfil
+      ? `http://localhost:4000${emp.imagenPerfil}`
+      : "/src/assets/empleados/default-avatar.png";
+
+    return {
+      foto: (
+        <Avatar
+          src={fotoUrl}
+          alt={`${emp.nombre} ${emp.apellido}`}
+          sx={{ width: 40, height: 40 }}
+        />
+      ),
+      nombre: `${emp.nombre} ${emp.apellido}`,
+      legajo: emp.numeroLegajo || "-", 
+      area: emp.areaTrabajo || "-",
+      telefono: emp.telefono || "-",
+      ficha: (
+        <FichaButtonWithIcon
+          icon={DescriptionIcon}
+          label="Ver Ficha"
+          onClick={() => handleVerFicha(emp)}
+        />
+      ),
+    };
+  });
 
   return (
     <Box sx={{ padding: "2rem" }}>
@@ -159,4 +166,3 @@ const EmpleadosList = () => {
 };
 
 export default EmpleadosList;
-

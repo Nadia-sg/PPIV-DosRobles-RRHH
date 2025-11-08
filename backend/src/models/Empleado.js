@@ -31,10 +31,12 @@ const empleadoSchema = new mongoose.Schema(
 
     numeroLegajo: { type: String, unique: true },
     usuario: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+
+    // Nuevo campo para guardar la imagen
+    imagenPerfil: { type: String }, // Guardará el nombre o ruta del archivo
   },
   { timestamps: true }
 );
 
 const Empleado = mongoose.model("Empleado", empleadoSchema);
 export default Empleado;
-

@@ -12,13 +12,18 @@ const app = express();
 
 // Middlewares
 app.use(express.json());
-app.use(cors({
-  origin: "http://localhost:5173", 
-  methods: ["GET", "POST", "PUT", "DELETE"],
-}));
+app.use(
+  cors({
+    origin: "http://localhost:5173",
+    methods: ["GET", "POST", "PUT", "DELETE"],
+  })
+);
 
 // Conectar a MongoDB
 connectDB();
+
+// Servir las imágenes estáticas (carpeta uploads)
+app.use("/uploads", express.static("src/uploads"));
 
 // Ruta base de prueba
 app.get("/", (req, res) => {
@@ -27,9 +32,8 @@ app.get("/", (req, res) => {
 
 // Rutas
 app.use("/api/auth", authRoutes);
-app.use("/api/empleados", empleadoRoutes); 
+app.use("/api/empleados", empleadoRoutes);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 4000;
 app.listen(PORT, () => console.log(`✅ Servidor corriendo en puerto ${PORT}`));
-
