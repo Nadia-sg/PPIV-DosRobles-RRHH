@@ -1,4 +1,3 @@
-// src/pages/LoginPage.jsx
 import React, { useState } from "react";
 import { Box, Typography, useMediaQuery, Alert } from "@mui/material";
 import TextInput from "../components/ui/TextInput";
@@ -6,7 +5,7 @@ import { LoginButton } from "../components/ui/Buttons";
 import loginImage from "../assets/login.jpg";
 import logoImage from "../assets/Logo4.png";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../api/authService"; // 👈 nuevo import
+import { loginUser } from "../api/authService"; // Importar el servicio
 
 export default function LoginPage() {
   const [user, setUser] = useState("");
@@ -16,21 +15,19 @@ export default function LoginPage() {
   const navigate = useNavigate();
 
   const handleLogin = async () => {
-    setError("");
-
     try {
-      const data = await loginUser(user, password);
+      setError(""); // limpiar errores previos
+      const data = await loginUser(user, password); // llamada al backend
 
-      console.log("✅ Login exitoso:", data);
-
-      // Guarda el token o los datos del usuario (si el backend los devuelve)
+      // Guardar token y usuario en localStorage
       localStorage.setItem("token", data.token);
-      localStorage.setItem("username", data.username);
+      localStorage.setItem("user", JSON.stringify(data.user));
 
-      // Redirige al home
+      console.log("Login exitoso:", data);
+
+      // Redirigir al home
       navigate("/home");
     } catch (err) {
-      console.error("❌ Error en login:", err);
       setError(err.message || "Error al iniciar sesión");
     }
   };
@@ -90,6 +87,7 @@ export default function LoginPage() {
         </Box>
       )}
 
+      {/* Panel izquierdo (formulario) */}
       <Box
         sx={{
           position: "relative",
@@ -97,13 +95,10 @@ export default function LoginPage() {
           width: isMobile ? "100%" : "50%",
           height: "100%",
           bgcolor: "#817A6F",
-          borderTopRightRadius: isMobile ? 0 : "24px",
-          borderBottomRightRadius: isMobile ? 0 : "24px",
           display: "flex",
           flexDirection: "column",
           justifyContent: "center",
           alignItems: "center",
-          boxShadow: isMobile ? "none" : "4px 0 12px rgba(0,0,0,0.2)",
           color: "#FFFFFF",
           textAlign: "center",
           p: isMobile ? 3 : 4,
@@ -125,39 +120,12 @@ export default function LoginPage() {
           />
         )}
 
-        <Typography
-          variant={isMobile ? "h4" : "h3"}
-          sx={{
-            fontWeight: 600,
-            mb: 1,
-            color: "#FCFCFC",
-            letterSpacing: "0.5px",
-            marginBottom: "0",
-          }}
-        >
+        <Typography variant={isMobile ? "h4" : "h3"} sx={{ mb: 1, color: "#FCFCFC" }}>
           Bienvenidos
         </Typography>
 
-        <Typography
-          variant={isMobile ? "h6" : "h5"}
-          sx={{
-            fontWeight: 500,
-            color: "#E0E0E0",
-            marginBottom: "2rem",
-          }}
-        >
+        <Typography variant={isMobile ? "h6" : "h5"} sx={{ mb: 4, color: "#E0E0E0" }}>
           Sistema de Gestión de RRHH
-        </Typography>
-
-        <Typography
-          variant={isMobile ? "h6" : "h5"}
-          sx={{
-            fontWeight: 400,
-            mb: isMobile ? 3 : 4,
-            color: "#E0E0E0",
-          }}
-        >
-          Iniciar sesión
         </Typography>
 
         <Box sx={{ width: isMobile ? "85%" : "60%", minWidth: 280 }}>
@@ -185,20 +153,12 @@ export default function LoginPage() {
               mt: 2,
               width: "100%",
               fontSize: isMobile ? "0.9rem" : "1rem",
-              transition: "all 0.25s ease",
             }}
           >
             Ingresar
           </LoginButton>
 
-          <Typography
-            sx={{
-              mt: 2,
-              fontSize: "0.85rem",
-              color: "#DADADA",
-              textAlign: "center",
-            }}
-          >
+          <Typography sx={{ mt: 2, fontSize: "0.85rem", color: "#DADADA" }}>
             ¿Olvidaste tu contraseña?
           </Typography>
         </Box>

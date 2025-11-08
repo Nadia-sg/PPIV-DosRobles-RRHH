@@ -14,13 +14,16 @@ import ArrowDropUpIcon from "@mui/icons-material/ArrowDropUp";
 import MenuIcon from "@mui/icons-material/Menu";
 
 const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
-  const userName = "Mariana";
-  const [openMenus, setOpenMenus] = useState({}); 
+  const [openMenus, setOpenMenus] = useState({});
   const [menuOpen, setMenuOpen] = useState(true);
   const [active, setActive] = useState("");
-
   const navigate = useNavigate();
   const location = useLocation();
+
+  // ✅ Cargar usuario desde localStorage
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userName = user?.name || "Usuario";
+  const userRole = user?.role || "empleado";
 
   const routes = {
     Inicio: "/home",
@@ -41,11 +44,10 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
     if (currentName) setActive(currentName);
   }, [location.pathname]);
 
-  // toggleMenu solo alterna el estado del menú clickeado
   const toggleMenu = (menuName) => {
     setOpenMenus((prev) => ({
       ...prev,
-      [menuName]: !prev[menuName], // si estaba abierto, se cierra, si estaba cerrado, se abre
+      [menuName]: !prev[menuName],
     }));
   };
 
@@ -68,8 +70,11 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
       {menuOpen && (
         <>
           <div className={styles.profile}>
-            <div className={styles.avatar}>MC</div>
-            <p className={styles.greeting}>¡Buenos días, {userName}!</p>
+            <div className={styles.avatar}>
+              {userName.slice(0, 2).toUpperCase()}
+            </div>
+            <p className={styles.greeting}>¡Hola, {userName}!</p>
+            <p className={styles.role}>({userRole})</p>
           </div>
 
           <ul className={styles.menuList}>
@@ -96,7 +101,8 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
                 className={styles.dropdownHeader}
                 onClick={() => toggleMenu("personal")}
               >
-                <PersonOutlineIcon className={styles.icon} /> <span>Personal</span>
+                <PersonOutlineIcon className={styles.icon} />{" "}
+                <span>Personal</span>
                 {openMenus["personal"] ? (
                   <ArrowDropUpIcon className={styles.arrowIcon} />
                 ) : (
@@ -106,37 +112,12 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
 
               {openMenus["personal"] && (
                 <ul className={styles.submenu}>
-                  {["Mi Ficha", "Ausencias", "Mi Fichaje", "Mis Documentos"].map(
-                    (item) => (
-                      <li
-                        key={item}
-                        className={active === item ? styles.activeSub : ""}
-                        onClick={() => handleSelect(item)}
-                      >
-                        {item}
-                      </li>
-                    )
-                  )}
-                </ul>
-              )}
-            </li>
-
-            <li className={styles.dropdown}>
-              <div
-                className={styles.dropdownHeader}
-                onClick={() => toggleMenu("organizacion")}
-              >
-                <PeopleOutlineIcon className={styles.icon} /> <span>Organización</span>
-                {openMenus["organizacion"] ? (
-                  <ArrowDropUpIcon className={styles.arrowIcon} />
-                ) : (
-                  <ArrowDropDownIcon className={styles.arrowIcon} />
-                )}
-              </div>
-
-              {openMenus["organizacion"] && (
-                <ul className={styles.submenu}>
-                  {["Empleados", "Control Horario", "Nómina"].map((item) => (
+                  {[
+                    "Mi Ficha",
+                    "Ausencias",
+                    "Mi Fichaje",
+                    "Mis Documentos",
+                  ].map((item) => (
                     <li
                       key={item}
                       className={active === item ? styles.activeSub : ""}
@@ -148,6 +129,38 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
                 </ul>
               )}
             </li>
+
+            {/* Solo los admins ven este menú */}
+            {userRole === "admin" && (
+              <li className={styles.dropdown}>
+                <div
+                  className={styles.dropdownHeader}
+                  onClick={() => toggleMenu("organizacion")}
+                >
+                  <PeopleOutlineIcon className={styles.icon} />{" "}
+                  <span>Organización</span>
+                  {openMenus["organizacion"] ? (
+                    <ArrowDropUpIcon className={styles.arrowIcon} />
+                  ) : (
+                    <ArrowDropDownIcon className={styles.arrowIcon} />
+                  )}
+                </div>
+
+                {openMenus["organizacion"] && (
+                  <ul className={styles.submenu}>
+                    {["Empleados", "Control Horario", "Nómina"].map((item) => (
+                      <li
+                        key={item}
+                        className={active === item ? styles.activeSub : ""}
+                        onClick={() => handleSelect(item)}
+                      >
+                        {item}
+                      </li>
+                    ))}
+                  </ul>
+                )}
+              </li>
+            )}
           </ul>
         </>
       )}
@@ -156,3 +169,4 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
 });
 
 export default Sidebar;
+
