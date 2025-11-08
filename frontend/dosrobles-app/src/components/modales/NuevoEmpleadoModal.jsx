@@ -11,32 +11,15 @@ import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
 import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import AddAPhotoIcon from "@mui/icons-material/AddAPhoto";
 
-const NuevoEmpleadoModal = ({ open, onClose }) => {
+const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
 
   // Estado para mostrar el próximo número de legajo
   const [nextLegajo, setNextLegajo] = useState("Cargando...");
 
-  // Cuando se abre el modal, obtener el próximo legajo
-  useEffect(() => {
-    if (open) {
-      const fetchNextLegajo = async () => {
-        try {
-          const response = await fetch("http://localhost:4000/api/empleados/proximo-legajo");
-          const data = await response.json();
-          setNextLegajo(data.proximoLegajo || "Error");
-        } catch (error) {
-          console.error("Error al obtener el próximo legajo:", error);
-          setNextLegajo("Error");
-        }
-      };
-      fetchNextLegajo();
-    }
-  }, [open]);
-
   // Estado global del formulario
-  const [formData, setFormData] = useState({
+  const initialFormData = {
     nombre: "",
     apellido: "",
     tipoDocumento: "",
@@ -60,7 +43,32 @@ const NuevoEmpleadoModal = ({ open, onClose }) => {
     cbu: "",
     vencimientoContrato: "",
     categoriaImpositiva: "",
-  });
+  };
+
+  const [formData, setFormData] = useState(initialFormData);
+
+  // Reinicia formulario y pide nuevo legajo cuando se abre el modal
+  useEffect(() => {
+    if (open) {
+      // Resetear campos y paso
+      setFormData(initialFormData);
+      setStep(1);
+
+      // Pedir el próximo legajo
+      const fetchNextLegajo = async () => {
+        try {
+          const response = await fetch("http://localhost:4000/api/empleados/proximo-legajo");
+          const data = await response.json();
+          setNextLegajo(data.proximoLegajo || "Error");
+        } catch (error) {
+          console.error("Error al obtener el próximo legajo:", error);
+          setNextLegajo("Error");
+        }
+      };
+
+      fetchNextLegajo();
+    }
+  }, [open]);
 
   // Actualiza cualquier campo
   const handleChange = (field, value) => {
@@ -85,7 +93,9 @@ const NuevoEmpleadoModal = ({ open, onClose }) => {
       const data = await response.json();
       alert("✅ Empleado registrado con éxito");
       console.log("Empleado creado:", data.empleado);
-      onClose();
+
+      // Cerrar modal y limpiar datos
+      if (onEmpleadoGuardado) onEmpleadoGuardado();
     } catch (error) {
       console.error("Error al registrar empleado:", error);
       alert("❌ Error al registrar el empleado");
@@ -101,7 +111,6 @@ const NuevoEmpleadoModal = ({ open, onClose }) => {
       case 1:
         return (
           <Box>
-            {/* Imagen + Fecha */}
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               <Box
                 sx={{
