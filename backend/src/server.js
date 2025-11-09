@@ -11,7 +11,7 @@ dotenv.config();
 const app = express();
 
 // Middlewares
-app.use(express.json());
+app.use(express.json({ limit: "10mb" }));
 app.use(
   cors({
     origin: "http://localhost:5173",
@@ -21,9 +21,6 @@ app.use(
 
 // Conectar a MongoDB
 connectDB();
-
-// Servir las imágenes estáticas (carpeta uploads)
-app.use("/uploads", express.static("src/uploads"));
 
 // Ruta base de prueba
 app.get("/", (req, res) => {

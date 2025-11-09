@@ -30,10 +30,14 @@ const empleadoSchema = new mongoose.Schema(
     categoriaImpositiva: { type: String },
 
     numeroLegajo: { type: String, unique: true },
-    usuario: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
 
-    // Nuevo campo para guardar la imagen
-    imagenPerfil: { type: String }, // Guardará el nombre o ruta del archivo
+    // imagenPerfil guardada en la base de datos
+    imagenPerfil: {
+      data: Buffer,
+      contentType: String,
+    },
+
+    usuario: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
   },
   { timestamps: true }
 );

@@ -1,5 +1,4 @@
 // src/pages/empleados/EmpleadosList.jsx
-
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -63,22 +62,22 @@ const EmpleadosList = () => {
     ? ["", "Nombre y Apellido", "Ficha"]
     : ["", "Nombre y Apellido", "Legajo", "Área de Trabajo", "Teléfono", "Ficha"];
 
-  // Filas con imagen de perfil desde DB o avatar por defecto
   const rows = empleados.map((emp) => {
-    const fotoUrl = emp.imagenPerfil
-      ? `http://localhost:4000${emp.imagenPerfil}`
-      : "/src/assets/empleados/default-avatar.png";
+    // URL para servir la imagen desde backend si existe
+    const imageUrl = emp.tieneImagen
+      ? `http://localhost:4000/api/empleados/${emp._id}/imagen`
+      : null;
 
     return {
       foto: (
         <Avatar
-          src={fotoUrl}
+          src={imageUrl || "/src/assets/empleados/default-avatar.png"}
           alt={`${emp.nombre} ${emp.apellido}`}
           sx={{ width: 40, height: 40 }}
         />
       ),
       nombre: `${emp.nombre} ${emp.apellido}`,
-      legajo: emp.numeroLegajo || "-", 
+      legajo: emp.numeroLegajo || "-",
       area: emp.areaTrabajo || "-",
       telefono: emp.telefono || "-",
       ficha: (
@@ -105,15 +104,11 @@ const EmpleadosList = () => {
         }}
       >
         <Box sx={{ mb: 3 }}>
-          <Typography
-            variant="h4"
-            sx={{ fontWeight: 600, color: "#585858", mb: 1 }}
-          >
+          <Typography variant="h4" sx={{ fontWeight: 600, color: "#585858", mb: 1 }}>
             Empleados
           </Typography>
           <Typography variant="body2" sx={{ color: "#808080" }}>
-            Visualizá el listado completo de empleados y accedé a su información
-            detallada
+            Visualizá el listado completo de empleados y accedé a su información detallada
           </Typography>
         </Box>
 
