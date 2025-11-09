@@ -9,7 +9,7 @@ import Fichaje from "../models/Fichaje.js";
 // ===================
 export const iniciarJornada = async (req, res) => {
   try {
-    const { empleadoId, horaEntrada } = req.body;
+    const { empleadoId, horaEntrada, ubicacion, tipoFichaje } = req.body;
 
     if (!empleadoId || !horaEntrada) {
       return res.status(400).json({ message: "Faltan datos requeridos" });
@@ -22,7 +22,14 @@ export const iniciarJornada = async (req, res) => {
       });
     }
 
-    const nuevoFichaje = new Fichaje({ empleadoId, horaEntrada });
+    const nuevoFichaje = new Fichaje({
+      empleadoId,
+      horaEntrada,
+      ubicacion: ubicacion || null,
+      tipoFichaje: tipoFichaje || "remoto",
+      pausas: [],
+    });
+
     await nuevoFichaje.save();
 
     res.status(201).json({
@@ -40,10 +47,15 @@ export const iniciarJornada = async (req, res) => {
 // ===================
 export const registrarSalida = async (req, res) => {
   try {
-    const { fichajeId, horaSalida } = req.body;
+    const { fichajeId, horaSalida, ubicacionSalida } = req.body;
 
     const fichaje = await Fichaje.findById(fichajeId);
     if (!fichaje) return res.status(404).json({ message: "Fichaje no encontrado" });
+
+    // guardamos ubicacionSalida si viene
+    if (ubicacionSalida) {
+      fichaje.ubicacionSalida = ubicacionSalida;
+    }
 
     fichaje.horaSalida = horaSalida;
 
@@ -70,6 +82,7 @@ export const registrarSalida = async (req, res) => {
     res.status(500).json({ message: "Error al registrar salida" });
   }
 };
+
 
 
 // ===================

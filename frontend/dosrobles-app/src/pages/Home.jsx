@@ -38,6 +38,10 @@ export default function Home() {
     return () => clearInterval(interval);
   }, [estadoFichaje]);
 
+  const [fichajeActivo, setFichajeActivo] = useState(null); // guardará el fichaje devuelto por el backend
+
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+
   const [toast, setToast] = useState({
     open: false,
     message: "",
@@ -47,6 +51,138 @@ export default function Home() {
   const totalSeconds = 8 * 3600;
   const progress = Math.min((seconds / totalSeconds) * 100, 100);
   const navigate = useNavigate();
+
+  // id del empleado (temporal: reemplazar por el id real desde el contexto/login)
+  const empleadoId = "690a9f5cd37450b870dc39fe";
+
+  function formatHHMM(date = new Date()) {
+    const hh = String(date.getHours()).padStart(2, "0");
+    const mm = String(date.getMinutes()).padStart(2, "0");
+    return `${hh}:${mm}`;
+  }
+
+  // Usa comparación simple en grados con umbral pequeño (~0.001 => aprox 100m)
+  function determinarTipoFichaje(lat, lon) {
+    const oficinaLat = -34.6259206;
+    const oficinaLon = -58.4549131;
+    const distancia = Math.sqrt(
+      (lat - oficinaLat) ** 2 + (lon - oficinaLon) ** 2
+    );
+    return distancia < 0.001 ? "oficina" : "remoto";
+  }
+
+  async function iniciarJornadaConGeo() {
+    if (!navigator.geolocation) {
+      setToast({
+        open: true,
+        message: "GPS no disponible en este dispositivo",
+        severity: "warning",
+      });
+      return;
+    }
+
+    // pedimos ubicación actual
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const tipoFichaje = determinarTipoFichaje(lat, lon);
+        const horaEntrada = formatHHMM();
+
+        try {
+          const res = await fetch(`${API_BASE}/fichajes/inicio`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              empleadoId,
+              horaEntrada,
+              ubicacion: { lat, lon },
+              tipoFichaje,
+            }),
+          });
+
+          const data = await res.json();
+          if (!res.ok) {
+            throw new Error(data?.message || "Error al iniciar fichaje");
+          }
+
+          // guardamos el fichaje activo (para usar fichaje._id al cerrar)
+          setFichajeActivo(data.data); // asume que backend responde { data: nuevoFichaje }
+          setEstadoFichaje("activo");
+          setToast({
+            open: true,
+            message: "Jornada iniciada con éxito",
+            severity: "info",
+          });
+          setSeconds(0);
+        } catch (err) {
+          console.error(err);
+          setToast({
+            open: true,
+            message: err.message || "Error al iniciar jornada",
+            severity: "error",
+          });
+        }
+      },
+      (err) => {
+        console.error("Geo error:", err);
+        setToast({
+          open: true,
+          message: "No se pudo obtener la ubicación (permiso denegado?)",
+          severity: "warning",
+        });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
+
+  async function registrarSalidaConGeo() {
+  if (!fichajeActivo || !fichajeActivo._id) {
+    setToast({ open: true, message: "No hay fichaje activo para cerrar", severity: "warning" });
+    return;
+  }
+
+  if (!navigator.geolocation) {
+    setToast({ open: true, message: "GPS no disponible", severity: "warning" });
+    return;
+  }
+
+  navigator.geolocation.getCurrentPosition(
+    async (pos) => {
+      const lat = pos.coords.latitude;
+      const lon = pos.coords.longitude;
+      const horaSalida = formatHHMM();
+
+      try {
+        const res = await fetch(`${API_BASE}/fichajes/salida`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify({
+            fichajeId: fichajeActivo._id,
+            horaSalida,
+            ubicacionSalida: { lat, lon },
+          }),
+        });
+
+        const data = await res.json();
+        if (!res.ok) throw new Error(data?.message || "Error al registrar salida");
+
+        setFichajeActivo(null);
+        setEstadoFichaje("inactivo");
+        setToast({ open: true, message: "Jornada finalizada correctamente", severity: "success" });
+        setSeconds(0);
+      } catch (err) {
+        console.error(err);
+        setToast({ open: true, message: err.message || "Error al registrar salida", severity: "error" });
+      }
+    },
+    (err) => {
+      console.error("Geo error:", err);
+      setToast({ open: true, message: "No se pudo obtener la ubicación al salir", severity: "warning" });
+    },
+    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+  );
+}
 
   const eventos = [
     {
@@ -281,6 +417,7 @@ export default function Home() {
                   onClick: () => {
                     setOpenInicio(false);
                     setEstadoFichaje("activo");
+                    iniciarJornadaConGeo();
                     setToast({
                       open: true,
                       message: "Jornada iniciada con éxito",
@@ -308,6 +445,7 @@ export default function Home() {
                   label: "Confirmar",
                   onClick: () => {
                     setOpenSalida(false);
+                    registrarSalidaConGeo();
                     setEstadoFichaje("inactivo");
                     setSeconds(0);
                     setToast({
@@ -320,7 +458,7 @@ export default function Home() {
               ]}
             />
 
-            <Snackbar 
+            <Snackbar
               open={toast.open}
               autoHideDuration={3000}
               onClose={() => setToast({ ...toast, open: false })}
@@ -398,10 +536,9 @@ export default function Home() {
           </Box>
         </Card>
       </Box>
-
-      {/* ===================
-          FILA INFERIOR
-          =================== */}
+  {/* ===========================
+            CUADRANTE 3 BANDEJA DE ENTRADA
+            ============================== */}
       <Box
         sx={{
           display: "flex",
@@ -482,6 +619,10 @@ export default function Home() {
             ))}
           </Box>
         </Card>
+
+          {/* ===========================
+            CUADRANTE 4 EVENTOS
+            ============================== */}
 
         {/* Eventos */}
         <Card

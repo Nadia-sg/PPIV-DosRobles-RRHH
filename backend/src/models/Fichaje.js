@@ -7,6 +7,15 @@ const fichajeSchema = new mongoose.Schema({
   fecha: { type: Date, default: Date.now },
   horaEntrada: { type: String },
   horaSalida: { type: String },
+  ubicacion: {
+    lat: Number,
+    lon: Number,
+  },
+  ubicacionSalida: {
+    lat: Number,
+    lon: Number,
+  },
+  tipoFichaje: { type: String, enum: ["oficina", "remoto"], default: "remoto" },
   pausas: [
     {
       inicio: String,
