@@ -1,6 +1,7 @@
 //src/controllers/fichajes.controller.js
 
 import Fichaje from "../models/Fichaje.js";
+import Empleado from "../models/Empleado.js";
 
 
 
@@ -220,5 +221,40 @@ export const cerrarJornada = async (req, res) => {
   } catch (error) {
     console.error("Error al cerrar jornada:", error);
     res.status(500).json({ message: "Error al cerrar jornada" });
+  }
+};
+
+// ===================
+// ESTADO DEL EQUIPO
+// ===================
+
+export const getEstadoEquipo = async (req, res) => {
+  try {
+    // contamos todos los empleados registrados
+    const totalEmpleados = await Empleado.countDocuments();
+
+    // buscamos fichajes del día actual sin hora de salida
+    const hoy = new Date();
+    hoy.setHours(0, 0, 0, 0);
+    const manana = new Date(hoy);
+    manana.setDate(hoy.getDate() + 1);
+
+    const fichajesActivos = await Fichaje.find({
+      horaSalida: null,
+      createdAt: { $gte: hoy, $lt: manana },
+    });
+
+    const fichados = fichajesActivos.length;
+    const ausentes = Math.max(totalEmpleados - fichados, 0);
+
+    res.status(200).json({
+      fichados,
+      ausentes,
+      totalEmpleados,
+      message: "Estado del equipo obtenido correctamente",
+    });
+  } catch (error) {
+    console.error("Error al obtener estado del equipo:", error);
+    res.status(500).json({ message: "Error al obtener estado del equipo" });
   }
 };

@@ -137,52 +137,91 @@ export default function Home() {
   }
 
   async function registrarSalidaConGeo() {
-  if (!fichajeActivo || !fichajeActivo._id) {
-    setToast({ open: true, message: "No hay fichaje activo para cerrar", severity: "warning" });
-    return;
-  }
+    if (!fichajeActivo || !fichajeActivo._id) {
+      setToast({
+        open: true,
+        message: "No hay fichaje activo para cerrar",
+        severity: "warning",
+      });
+      return;
+    }
 
-  if (!navigator.geolocation) {
-    setToast({ open: true, message: "GPS no disponible", severity: "warning" });
-    return;
-  }
+    if (!navigator.geolocation) {
+      setToast({
+        open: true,
+        message: "GPS no disponible",
+        severity: "warning",
+      });
+      return;
+    }
 
-  navigator.geolocation.getCurrentPosition(
-    async (pos) => {
-      const lat = pos.coords.latitude;
-      const lon = pos.coords.longitude;
-      const horaSalida = formatHHMM();
+    navigator.geolocation.getCurrentPosition(
+      async (pos) => {
+        const lat = pos.coords.latitude;
+        const lon = pos.coords.longitude;
+        const horaSalida = formatHHMM();
 
-      try {
-        const res = await fetch(`${API_BASE}/fichajes/salida`, {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({
-            fichajeId: fichajeActivo._id,
-            horaSalida,
-            ubicacionSalida: { lat, lon },
-          }),
+        try {
+          const res = await fetch(`${API_BASE}/fichajes/salida`, {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              fichajeId: fichajeActivo._id,
+              horaSalida,
+              ubicacionSalida: { lat, lon },
+            }),
+          });
+
+          const data = await res.json();
+          if (!res.ok)
+            throw new Error(data?.message || "Error al registrar salida");
+
+          setFichajeActivo(null);
+          setEstadoFichaje("inactivo");
+          setToast({
+            open: true,
+            message: "Jornada finalizada correctamente",
+            severity: "success",
+          });
+          setSeconds(0);
+        } catch (err) {
+          console.error(err);
+          setToast({
+            open: true,
+            message: err.message || "Error al registrar salida",
+            severity: "error",
+          });
+        }
+      },
+      (err) => {
+        console.error("Geo error:", err);
+        setToast({
+          open: true,
+          message: "No se pudo obtener la ubicación al salir",
+          severity: "warning",
         });
+      },
+      { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
+    );
+  }
 
+  const [estadoEquipo, setEstadoEquipo] = useState({
+    fichados: 0,
+    ausentes: 0,
+  });
+
+  useEffect(() => {
+    async function fetchEstado() {
+      try {
+        const res = await fetch(`${API_BASE}/fichajes/estado`);
         const data = await res.json();
-        if (!res.ok) throw new Error(data?.message || "Error al registrar salida");
-
-        setFichajeActivo(null);
-        setEstadoFichaje("inactivo");
-        setToast({ open: true, message: "Jornada finalizada correctamente", severity: "success" });
-        setSeconds(0);
-      } catch (err) {
-        console.error(err);
-        setToast({ open: true, message: err.message || "Error al registrar salida", severity: "error" });
+        if (res.ok) setEstadoEquipo(data);
+      } catch (error) {
+        console.error("Error al obtener estado del equipo:", error);
       }
-    },
-    (err) => {
-      console.error("Geo error:", err);
-      setToast({ open: true, message: "No se pudo obtener la ubicación al salir", severity: "warning" });
-    },
-    { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
-  );
-}
+    }
+    fetchEstado();
+  }, []);
 
   const eventos = [
     {
@@ -503,8 +542,16 @@ export default function Home() {
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mt: 1 }}>
             {[
-              { color: "#FFD0D0", title: "Ausentes", count: 3 },
-              { color: "#8EC6BA", title: "Fichados", count: 12 },
+              {
+                color: "#FFD0D0",
+                title: "Ausentes",
+                count: estadoEquipo.ausentes,
+              },
+              {
+                color: "#8EC6BA",
+                title: "Fichados",
+                count: estadoEquipo.fichados,
+              },
             ].map((item, idx) => (
               <Box
                 key={idx}
@@ -536,7 +583,7 @@ export default function Home() {
           </Box>
         </Card>
       </Box>
-  {/* ===========================
+      {/* ===========================
             CUADRANTE 3 BANDEJA DE ENTRADA
             ============================== */}
       <Box
@@ -620,7 +667,7 @@ export default function Home() {
           </Box>
         </Card>
 
-          {/* ===========================
+        {/* ===========================
             CUADRANTE 4 EVENTOS
             ============================== */}
 

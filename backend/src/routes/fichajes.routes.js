@@ -9,6 +9,7 @@ import {
   getFichajesPorEmpleado,
   getFichajesActivos,
   cerrarJornada,
+  getEstadoEquipo 
 } from "../controllers/fichajes.controller.js";
 
 const router = express.Router();
@@ -21,6 +22,7 @@ router.post("/cerrar", cerrarJornada);
 router.get("/", getFichajes);
 router.get("/empleado/:empleadoId", getFichajesPorEmpleado);
 router.get("/activos", getFichajesActivos);
+router.get("/estado", getEstadoEquipo);
 
 
 export default router;
