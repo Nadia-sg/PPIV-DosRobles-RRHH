@@ -14,7 +14,7 @@ const FichaEmpleadoBase = ({
   readOnly = true,
   actions = [],
   onChange,
-  onImageChange, // 🔹 nueva prop que viene de FichaEmpleadoEditable
+  onImageChange, 
 }) => {
   const fileInputRef = useRef(null);
 
@@ -33,9 +33,6 @@ const FichaEmpleadoBase = ({
   };
 
   // Determina qué imagen mostrar:
-  // 1️⃣ Si hay una previsualización local (nuevo archivo seleccionado)
-  // 2️⃣ Si hay una URL de imagen (del backend)
-  // 3️⃣ Si no, imagen por defecto
   const fotoURL =
     data.fotoPreview ||
     data.foto ||
@@ -84,7 +81,7 @@ const FichaEmpleadoBase = ({
             type="file"
             accept="image/*"
             ref={fileInputRef}
-            onChange={handleImageChange} // ✅ delega en FichaEmpleadoEditable
+            onChange={handleImageChange} 
             style={{ display: "none" }}
           />
         </Box>

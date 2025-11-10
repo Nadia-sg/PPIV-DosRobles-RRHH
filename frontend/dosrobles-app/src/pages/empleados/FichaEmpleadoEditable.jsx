@@ -82,40 +82,36 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado }) => {
     }
   };
 
-  // Guardar cambios (un solo FormData)
+  // Guardar cambios
   const handleSave = async () => {
     if (!empleadoData?._id) return;
 
     try {
       setSaving(true);
-
-      // Creamos un FormData
       const formData = new FormData();
       for (const [key, value] of Object.entries(empleadoData)) {
-        // no agregamos la URL de la imagen como texto
         if (key !== "foto") {
           formData.append(key, value || "");
         }
       }
+      if (nuevaFoto) formData.append("imagenPerfil", nuevaFoto);
 
-      // Si hay una nueva imagen
-      if (nuevaFoto) {
-        formData.append("imagenPerfil", nuevaFoto);
-      }
-
-      // PUT al backend
-      const res = await fetch(`http://localhost:4000/api/empleados/${empleadoData._id}`, {
-        method: "PUT",
-        body: formData,
-      });
+      const res = await fetch(
+        `http://localhost:4000/api/empleados/${empleadoData._id}`,
+        {
+          method: "PUT",
+          body: formData,
+        }
+      );
 
       if (!res.ok) throw new Error("Error al guardar cambios");
-      const result = await res.json();
 
-      alert("✅ Cambios guardados correctamente");
-
-      // Refrescar datos (para ver la nueva imagen)
-      const refreshed = await fetch(`http://localhost:4000/api/empleados/${empleadoData._id}`);
+      alert("Cambios guardados correctamente");
+      
+      // Refrescar los datos del empleado para ver la nueva imagen
+      const refreshed = await fetch(
+        `http://localhost:4000/api/empleados/${empleadoData._id}`
+      );
       const updated = await refreshed.json();
 
       const empleadoActualizado = {
@@ -136,12 +132,43 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado }) => {
     }
   };
 
+  // 🔹 Cancelar edición
   const handleCancel = () => {
     setEmpleadoData(originalData);
     setEditMode(false);
     setNuevaFoto(null);
   };
 
+  // 🔹 Eliminar empleado con confirmación
+  const handleDelete = async () => {
+    if (!empleadoData?._id) return;
+
+    const confirmar = window.confirm(
+      `¿Estás seguro de que deseas eliminar al empleado ${empleadoData.nombre} ${empleadoData.apellido}?`
+    );
+
+    if (!confirmar) return;
+
+    try {
+      const res = await fetch(
+        `http://localhost:4000/api/empleados/${empleadoData._id}`,
+        {
+          method: "DELETE",
+        }
+      );
+
+      if (!res.ok) throw new Error("Error al eliminar empleado");
+
+      alert("Empleado eliminado correctamente");
+      onClose(); // Cerramos la ficha
+      window.location.reload(); // Refresca la página para actualizar la lista
+    } catch (error) {
+      console.error("❌ Error al eliminar empleado:", error);
+      alert("Error al eliminar el empleado");
+    }
+  };
+
+  // Botones del modal
   const actions = editMode
     ? [
         {
@@ -153,9 +180,21 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado }) => {
         { label: "Cancelar", onClick: handleCancel, variant: "outlined" },
       ]
     : [
-        { label: "Editar", onClick: () => setEditMode(true), variant: "contained" },
-        { label: "Enviar Mensaje", onClick: () => console.log("Mensaje"), variant: "outlined" },
-        { label: "Asignar Tarea", onClick: () => console.log("Asignar tarea"), variant: "outlined" },
+        {
+          label: "Editar",
+          onClick: () => setEditMode(true),
+          variant: "contained",
+        },
+        {
+          label: "Enviar Mensaje",
+          onClick: () => console.log("Mensaje"),
+          variant: "outlined",
+        },
+        {
+          label: "Eliminar empleado",
+          onClick: handleDelete,
+          variant: "outlined",
+        },
       ];
 
   if (!open) return null;
@@ -180,10 +219,13 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado }) => {
           onImageChange={handleImageChange}
         />
       ) : (
-        <Box sx={{ p: 3, textAlign: "center" }}>No se pudo cargar la información del empleado.</Box>
+        <Box sx={{ p: 3, textAlign: "center" }}>
+          No se pudo cargar la información del empleado.
+        </Box>
       )}
     </ModalCard>
   );
 };
 
 export default FichaEmpleadoEditable;
+
