@@ -30,3 +30,50 @@ export const crearEvento = async (req, res) => {
     res.status(500).json({ message: "Error al crear evento" });
   }
 };
+
+// PUT /eventos/:id
+export const actualizarEvento = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { fecha, hora, detalle } = req.body;
+
+    if (!fecha || !hora || !detalle) {
+      return res.status(400).json({ message: "Faltan datos requeridos" });
+    }
+
+    const fechaDate = new Date(fecha);
+
+    const eventoActualizado = await Evento.findByIdAndUpdate(
+      id,
+      { fecha: fechaDate, hora, detalle },
+      { new: true } // retorna el documento actualizado
+    );
+
+    if (!eventoActualizado) {
+      return res.status(404).json({ message: "Evento no encontrado" });
+    }
+
+    res.status(200).json({ message: "Evento actualizado", data: eventoActualizado });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al actualizar evento" });
+  }
+};
+
+// DELETE /eventos/:id
+export const eliminarEvento = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const eventoEliminado = await Evento.findByIdAndDelete(id);
+
+    if (!eventoEliminado) {
+      return res.status(404).json({ message: "Evento no encontrado" });
+    }
+
+    res.status(200).json({ message: "Evento eliminado", data: eventoEliminado });
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error al eliminar evento" });
+  }
+};
