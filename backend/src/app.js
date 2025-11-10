@@ -3,6 +3,7 @@
 import express from "express";
 import fichajesRoutes from "./routes/fichajes.routes.js";
 import empleadosRoutes from "./routes/empleados.routes.js";
+import eventosRoutes from "./routes/eventos.routes.js";
 import cors from 'cors';
 
 const app = express();
@@ -18,6 +19,7 @@ app.use(cors({
 // Rutas
 app.use("/fichajes", fichajesRoutes);
 app.use("/empleados", empleadosRoutes);
+app.use("/eventos", eventosRoutes);
 
 
 

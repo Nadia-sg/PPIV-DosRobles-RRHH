@@ -16,6 +16,10 @@ import EditCalendarIcon from "@mui/icons-material/EditCalendar";
 import EmojiEventsIcon from "@mui/icons-material/EmojiEvents";
 import CakeIcon from "@mui/icons-material/Cake";
 import StopIcon from "@mui/icons-material/Stop";
+import EditIcon from "@mui/icons-material/Edit";
+import DeleteIcon from "@mui/icons-material/Delete";
+import IconButton from "@mui/material/IconButton";
+
 import {
   PrimaryButton,
   SecondaryButton,
@@ -23,6 +27,8 @@ import {
 } from "../components/ui/Buttons";
 import { useNavigate } from "react-router-dom";
 import ModalDialog from "../components/ui/ModalDialog";
+import ModalCard from "../components/ui/ModalCard";
+import TextField from "@mui/material/TextField";
 
 export default function Home() {
   const isMobile = useMediaQuery("(max-width:900px)");
@@ -223,26 +229,141 @@ export default function Home() {
     fetchEstado();
   }, []);
 
-  const eventos = [
-    {
-      fecha: "25 Oct",
-      hora: "14:00",
-      nombre: "Cumpleaños Erica",
-      icono: <CakeIcon />,
-    },
-    {
-      fecha: "27 Oct",
-      hora: "09:30",
-      nombre: "Reunión de equipo",
-      icono: <EmojiEventsIcon />,
-    },
-    {
-      fecha: "29 Oct",
-      hora: "16:00",
-      nombre: "Entrega de proyecto",
-      icono: <EmojiEventsIcon />,
-    },
-  ];
+  // estado de eventos y modal
+  const [eventos, setEventos] = useState([]);
+  const [openModalEvento, setOpenModalEvento] = useState(false);
+  const [editIndex, setEditIndex] = useState(null);
+
+  const [formEvento, setFormEvento] = useState({
+    fecha: "",
+    hora: "",
+    detalle: "",
+  });
+
+  // Cargar eventos al montar
+  useEffect(() => {
+    async function fetchEventos() {
+      try {
+        const res = await fetch(`${API_BASE}/eventos`);
+        const data = await res.json();
+        if (res.ok) setEventos(data.data || []);
+      } catch (err) {
+        console.error("Error cargando eventos", err);
+      }
+    }
+    fetchEventos();
+  }, []);
+
+  // Manejar cambios en formulario
+  function handleChangeForm(e) {
+    const { name, value } = e.target;
+    setFormEvento((prev) => ({ ...prev, [name]: value }));
+  }
+
+  // Guardar o actualizar evento
+  async function handleGuardarEvento() {
+    if (!formEvento.fecha || !formEvento.hora || !formEvento.detalle.trim()) {
+      setToast({
+        open: true,
+        message: "Completa todos los campos",
+        severity: "warning",
+      });
+      return;
+    }
+
+    try {
+      if (editIndex !== null) {
+        // --- MODO EDICIÓN ---
+        const eventoEditado = { ...formEvento, _id: eventos[editIndex]._id };
+        const res = await fetch(`${API_BASE}/eventos/${eventoEditado._id}`, {
+          method: "PUT",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(eventoEditado),
+        });
+
+        const data = await res.json();
+        if (!res.ok)
+          throw new Error(data?.message || "Error al actualizar evento");
+
+        const nuevosEventos = [...eventos];
+        nuevosEventos[editIndex] = data.data;
+        setEventos(nuevosEventos);
+        setEditIndex(null);
+
+        setToast({
+          open: true,
+          message: "Evento actualizado correctamente",
+          severity: "info",
+        });
+      } else {
+        // --- MODO CREACIÓN ---
+        const res = await fetch(`${API_BASE}/eventos`, {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          body: JSON.stringify(formEvento),
+        });
+        const data = await res.json();
+        if (!res.ok)
+          throw new Error(data?.message || "Error al crear el evento");
+
+        setEventos((prev) => [...prev, data.data]);
+        setToast({
+          open: true,
+          message: "Evento agregado correctamente",
+          severity: "success",
+        });
+      }
+
+      // Reset y cerrar modal
+      setFormEvento({ fecha: "", hora: "", detalle: "" });
+      setOpenModalEvento(false);
+    } catch (err) {
+      console.error(err);
+      setToast({
+        open: true,
+        message: err.message || "Error al guardar evento",
+        severity: "error",
+      });
+    }
+  }
+
+  // Editar evento
+  const handleEditarEvento = (index) => {
+    setFormEvento(eventos[index]);
+    setEditIndex(index);
+    setOpenModalEvento(true);
+  };
+
+  // Eliminar evento
+  async function handleEliminarEvento(index) {
+    const eventoAEliminar = eventos[index];
+    const confirmacion = window.confirm(
+      `¿Seguro que deseas eliminar el evento "${eventoAEliminar.detalle}"?`
+    );
+    if (!confirmacion) return;
+
+    try {
+      const res = await fetch(`${API_BASE}/eventos/${eventoAEliminar._id}`, {
+        method: "DELETE",
+      });
+      const data = await res.json();
+      if (!res.ok) throw new Error(data?.message || "Error al eliminar evento");
+
+      setEventos((prev) => prev.filter((_, i) => i !== index));
+      setToast({
+        open: true,
+        message: "Evento eliminado correctamente",
+        severity: "success",
+      });
+    } catch (err) {
+      console.error(err);
+      setToast({
+        open: true,
+        message: err.message || "Error al eliminar evento",
+        severity: "error",
+      });
+    }
+  }
 
   return (
     <Box
@@ -376,17 +497,6 @@ export default function Home() {
                 </SecondaryButton>
               )}
 
-              <Typography
-                sx={{
-                  textDecoration: "underline",
-                  cursor: "pointer",
-                  color: "primary.main",
-                  "&:hover": { color: "primary.dark" },
-                  mt: 1,
-                }}
-              >
-                Solicitar corrección
-              </Typography>
             </Box>
 
             {/* Temporizador */}
@@ -705,54 +815,124 @@ export default function Home() {
                 p: isMobile ? "0.3rem 0.6rem" : "0.4rem 0.8rem",
                 borderRadius: 2,
               }}
+              onClick={() => setOpenModalEvento(true)}
             >
               Añadir evento
             </SecondaryButton>
           </Box>
 
           <Box sx={{ display: "flex", flexDirection: "column", gap: 1 }}>
-            {eventos.map((evento, i) => (
-              <Box
-                key={i}
-                sx={{
-                  display: "grid",
-                  gridTemplateColumns: "60px 1fr 40px",
-                  backgroundColor: "#F7F9E3",
-                  color: "#808080",
-                  borderRadius: 1,
-                  p: 1,
-                  alignItems: "center",
-                  "&:hover": { backgroundColor: "#f1f3d6" },
-                }}
-              >
+            {eventos.map((evento, i) => {
+              const fechaStr = new Date(evento.fecha).toLocaleDateString(
+                undefined,
+                { day: "2-digit", month: "short" }
+              );
+              return (
                 <Box
+                  key={evento._id || i}
                   sx={{
-                    borderRight: "1px solid #ccc",
-                    pr: 1,
-                    display: "flex",
-                    flexDirection: "column",
+                    display: "grid",
+                    gridTemplateColumns: "60px 1fr 40px",
+                    backgroundColor: "#F7F9E3",
+                    color: "#808080",
+                    borderRadius: 1,
+                    p: 1,
                     alignItems: "center",
+                    "&:hover": { backgroundColor: "#f1f3d6" },
                   }}
                 >
-                  <Typography fontWeight="bold" variant="body2">
-                    {evento.fecha}
-                  </Typography>
-                  <Typography variant="caption" color="#808080">
-                    {evento.hora}
-                  </Typography>
+                  <Box
+                    sx={{
+                      borderRight: "1px solid #ccc",
+                      pr: 1,
+                      display: "flex",
+                      flexDirection: "column",
+                      alignItems: "center",
+                    }}
+                  >
+                    <Typography fontWeight="bold" variant="body2">
+                      {fechaStr}
+                    </Typography>
+                    <Typography variant="caption" color="#808080">
+                      {evento.hora}
+                    </Typography>
+                  </Box>
+                  <Box sx={{ pl: 2, display: "flex", alignItems: "center" }}>
+                    <Typography variant="body2" fontWeight="bold">
+                      {evento.detalle}
+                    </Typography>
+                  </Box>
+                  <Box
+                    sx={{ display: "flex", justifyContent: "center", gap: 1 }}
+                  >
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEditarEvento(i)}
+                    >
+                      <EditIcon fontSize="small" sx={{ color: "#808080" }} />
+                    </IconButton>
+                    <IconButton
+                      size="small"
+                      onClick={() => handleEliminarEvento(i)}
+                    >
+                      <DeleteIcon fontSize="small" sx={{ color: "#808080" }} />
+                    </IconButton>
+                  </Box>
                 </Box>
-                <Box sx={{ pl: 2, display: "flex", alignItems: "center" }}>
-                  <Typography variant="body2" fontWeight="bold">
-                    {evento.nombre}
-                  </Typography>
-                </Box>
-                <Box sx={{ display: "flex", justifyContent: "center" }}>
-                  {evento.icono}
-                </Box>
-              </Box>
-            ))}
+              );
+            })}
           </Box>
         </Card>
+        <ModalCard
+          open={openModalEvento}
+          onClose={() => {
+            setOpenModalEvento(false);
+            setEditIndex(null);
+          }}
+          title={editIndex !== null ? "Editar evento" : "Agregar evento"}
+          actions={[
+            {
+              label: "Cancelar",
+              onClick: () => setOpenModalEvento(false),
+              variant: "outlined",
+            },
+            {
+              label: "Guardar",
+              onClick: handleGuardarEvento,
+              variant: "contained",
+            },
+          ]}
+        >
+          <Box
+            component="form"
+            sx={{ display: "flex", flexDirection: "column", gap: 2 }}
+          >
+            <TextField
+              label="Fecha"
+              type="date"
+              name="fecha"
+              value={formEvento.fecha}
+              onChange={handleChangeForm}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Hora"
+              type="time"
+              name="hora"
+              value={formEvento.hora}
+              onChange={handleChangeForm}
+              InputLabelProps={{ shrink: true }}
+            />
+            <TextField
+              label="Detalle"
+              name="detalle"
+              value={formEvento.detalle}
+              onChange={handleChangeForm}
+              multiline
+              rows={3}
+            />
+          </Box>
+        </ModalCard>
       </Box>
     </Box>
   );
