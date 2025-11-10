@@ -114,24 +114,29 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
       if (!formData.tipoDocumento || !formData.numeroDocumento.trim())
         return setErrorMessage("Seleccione tipo y número de documento."), false;
 
-      if (!/^\d{7,9}$/.test(formData.numeroDocumento))
-        return setErrorMessage("Número de documento inválido."), false;
-
+      if (!/^\d+$/.test(formData.numeroDocumento)) 
+        return setErrorMessage("El número de documento debe contener solo dígitos."), false;
+         
       if (!formData.cuil.trim())
         return setErrorMessage("Ingrese CUIL."), false;
 
       if (!/^\d{11}$/.test(formData.cuil))
         return setErrorMessage("El CUIL debe tener 11 dígitos."), false;
 
-      if (formData.telefono && !/^\d{6,15}$/.test(formData.telefono))
-        return setErrorMessage("Teléfono inválido."), false;
-
+      if (formData.telefono && !/^\+?\d{7,15}$/.test(formData.telefono)) 
+        return setErrorMessage("El teléfono debe contener entre 7 y 15 dígitos (puede incluir +)."), false;
+         
       if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
         return setErrorMessage("Formato de email inválido."), false;
 
       if (!formData.fechaNacimiento)
-        return setErrorMessage("Seleccione fecha de nacimiento."), false;
-
+        return setErrorMessage("Debe indicar la fecha de nacimiento."), false;
+         
+      const nacimiento = new Date(formData.fechaNacimiento);
+      const hoy = new Date();
+      if (nacimiento > hoy) 
+        return setErrorMessage("La fecha de nacimiento no puede ser futura."), false;
+         
       return true;
     }
 
@@ -179,6 +184,9 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
       if (!formData.cbu.trim() || !/^\d{22}$/.test(formData.cbu))
         return setErrorMessage("El CBU debe tener 22 dígitos."), false;
 
+      if (!formData.vencimientoContrato)
+        return setErrorMessage("Debe indicar la fecha de vencimiento de contrato."), false;
+
       if (formData.vencimientoContrato && new Date(formData.vencimientoContrato) < new Date(formData.fechaAlta))
         return setErrorMessage("El vencimiento no puede ser anterior a la fecha de alta."), false;
 
@@ -208,9 +216,16 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
     }
   };
 
+   // VALIDACIÓN FINAL GLOBAL
+  const validateFinal = () => {
+    if (!validateStep(1) || !validateStep(2) || !validateStep(3)) return false;
+    return true;
+  };
+
+  // Envío final
   const handleSubmit = async () => {
     setErrorMessage("");
-    if (!validateStep(3)) return;
+    if (!validateFinal()) return;
 
     setLoading(true);
 
@@ -261,7 +276,6 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
     setStep((s) => Math.max(1, s - 1));
     setErrorMessage("");
   };
-
 
   // Render de pasos completo 
   const renderStep = () => {
