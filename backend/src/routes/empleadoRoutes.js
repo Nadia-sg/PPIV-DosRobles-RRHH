@@ -11,6 +11,8 @@ import {
   obtenerProximoLegajo,
   obtenerImagenPerfil,
 } from "../controllers/empleadoController.js";
+import Empleado from "../models/Empleado.js";
+
 
 const router = express.Router();
 
@@ -27,6 +29,27 @@ const upload = multer({
   },
 });
 
+// Verificar duplicado 
+router.get('/verificar-duplicado', async (req, res) => {
+  try {
+    const { numeroDocumento, cuil } = req.query;
+    if (!numeroDocumento && !cuil) {
+      return res.status(400).json({ error: "Debe enviar número de documento o CUIL" });
+    }
+
+    const query = {};
+    if (numeroDocumento) query.numeroDocumento = numeroDocumento;
+    if (cuil) query.cuil = cuil;
+
+    const duplicado = await Empleado.findOne(query);
+    res.json({ duplicado: !!duplicado });
+  } catch (error) {
+    console.error("Error en verificar-duplicado:", error);
+    res.status(500).json({ error: "Error al verificar duplicado" });
+  }
+});
+
+
 // Rutas
 router.get("/proximo-legajo", obtenerProximoLegajo);
 
@@ -38,6 +61,7 @@ router.get("/", obtenerEmpleados);
 
 // servir imagen (debe ir antes de la ruta :id)
 router.get("/:id/imagen", obtenerImagenPerfil);
+
 
 // obtener empleado por id
 router.get("/:id", obtenerEmpleadoPorId);

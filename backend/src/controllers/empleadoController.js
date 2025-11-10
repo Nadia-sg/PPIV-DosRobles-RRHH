@@ -2,16 +2,34 @@
 import Empleado from "../models/Empleado.js";
 
 /* =========================================================
-   CREAR NUEVO EMPLEADO (almacena imagen en MongoDB como Buffer)
+   CREAR NUEVO EMPLEADO (verifica duplicados + guarda imagen)
    ========================================================= */
 export const crearEmpleado = async (req, res) => {
   try {
+    const { numeroDocumento, cuil } = req.body;
+
+    // Verificar duplicados por número de documento o CUIL
+    const duplicado = await Empleado.findOne({
+      $or: [{ numeroDocumento }, { cuil }],
+    });
+
+    if (duplicado) {
+      let mensaje = "Ya existe un empleado con ";
+      if (duplicado.numeroDocumento === numeroDocumento && duplicado.cuil === cuil) {
+        mensaje += "ese número de documento y CUIL.";
+      } else if (duplicado.numeroDocumento === numeroDocumento) {
+        mensaje += "ese número de documento.";
+      } else {
+        mensaje += "ese CUIL.";
+      }
+      return res.status(400).json({ error: mensaje });
+    }
+
     // Buscar último legajo (orden lexicográfico numérico)
     const ultimoEmpleado = await Empleado.findOne().sort({ numeroLegajo: -1 });
 
     let nuevoLegajo = 1;
     if (ultimoEmpleado && ultimoEmpleado.numeroLegajo) {
-      // parseInt por si guardaste como "0001"
       nuevoLegajo = parseInt(ultimoEmpleado.numeroLegajo, 10) + 1;
     }
 
@@ -32,7 +50,7 @@ export const crearEmpleado = async (req, res) => {
     const nuevoEmpleado = new Empleado(empleadoData);
     await nuevoEmpleado.save();
 
-    // No enviamos el buffer en la respuesta (para ahorrar payload)
+    // No enviamos el buffer en la respuesta
     const empleadoResp = nuevoEmpleado.toObject();
     if (empleadoResp.imagenPerfil) {
       delete empleadoResp.imagenPerfil.data;
@@ -53,18 +71,15 @@ export const crearEmpleado = async (req, res) => {
 
 /* =========================================================
    OBTENER TODOS LOS EMPLEADOS
-   - Devuelve lista sin el buffer de imagen (solo metadata)
    ========================================================= */
 export const obtenerEmpleados = async (req, res) => {
   try {
     const empleados = await Empleado.find().sort({ numeroLegajo: 1 }).lean();
 
-    // Para cada empleado, no incluimos data binaria en el JSON
     const safeEmpleados = empleados.map((e) => {
       const copy = { ...e };
       if (copy.imagenPerfil) {
         delete copy.imagenPerfil.data;
-        // Podés opcionalmente devolver un flag para indicar que tiene imagen:
         copy.tieneImagen = true;
       } else {
         copy.tieneImagen = false;
@@ -80,7 +95,7 @@ export const obtenerEmpleados = async (req, res) => {
 };
 
 /* =========================================================
-   OBTENER EMPLEADO POR ID (sin buffer)
+   OBTENER EMPLEADO POR ID
    ========================================================= */
 export const obtenerEmpleadoPorId = async (req, res) => {
   try {
@@ -98,7 +113,6 @@ export const obtenerEmpleadoPorId = async (req, res) => {
 
 /* =========================================================
    SERVIR IMAGEN DE PERFIL
-   GET /api/empleados/:id/imagen
    ========================================================= */
 export const obtenerImagenPerfil = async (req, res) => {
   try {
@@ -116,12 +130,33 @@ export const obtenerImagenPerfil = async (req, res) => {
 };
 
 /* =========================================================
-   ACTUALIZAR EMPLEADO (puede incluir nueva imagen)
+   ACTUALIZAR EMPLEADO
    ========================================================= */
 export const actualizarEmpleado = async (req, res) => {
   try {
-    const dataActualizada = { ...req.body };
+    const { numeroDocumento, cuil } = req.body;
 
+    // Evitar duplicados en actualización (excepto el propio empleado)
+    const duplicado = await Empleado.findOne({
+      $and: [
+        { _id: { $ne: req.params.id } },
+        { $or: [{ numeroDocumento }, { cuil }] },
+      ],
+    });
+
+    if (duplicado) {
+      let mensaje = "Ya existe otro empleado con ";
+      if (duplicado.numeroDocumento === numeroDocumento && duplicado.cuil === cuil) {
+        mensaje += "ese número de documento y CUIL.";
+      } else if (duplicado.numeroDocumento === numeroDocumento) {
+        mensaje += "ese número de documento.";
+      } else {
+        mensaje += "ese CUIL.";
+      }
+      return res.status(400).json({ error: mensaje });
+    }
+
+    const dataActualizada = { ...req.body };
     if (req.file) {
       dataActualizada.imagenPerfil = {
         data: req.file.buffer,

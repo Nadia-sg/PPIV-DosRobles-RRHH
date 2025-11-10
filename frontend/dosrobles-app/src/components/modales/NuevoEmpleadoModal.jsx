@@ -4,14 +4,14 @@ import {
   Box,
   Stack,
   Typography,
-  CircularProgress
+  Alert,
 } from "@mui/material";
 import ModalCard from "../ui/ModalCard";
 import {
   NextButton,
   SecondaryButton,
   PrevButton,
-  PrimaryButton
+  PrimaryButton,
 } from "../ui/Buttons";
 import BaseInput from "../ui/BaseInput";
 import SelectInput from "../ui/SelectInput";
@@ -25,6 +25,7 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
   const [step, setStep] = useState(1);
   const [loading, setLoading] = useState(false);
   const [nextLegajo, setNextLegajo] = useState("Cargando...");
+  const [errorMessage, setErrorMessage] = useState("");
 
   const initialFormData = {
     nombre: "",
@@ -53,18 +54,16 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
   };
 
   const [formData, setFormData] = useState(initialFormData);
-
-  // Imagen seleccionada y vista previa
   const [imagenPerfil, setImagenPerfil] = useState(null);
   const [preview, setPreview] = useState(null);
 
-  // Obtener próximo número de legajo
   useEffect(() => {
     if (open) {
       setFormData(initialFormData);
       setImagenPerfil(null);
       setPreview(null);
       setStep(1);
+      setErrorMessage("");
 
       const fetchNextLegajo = async () => {
         try {
@@ -81,87 +80,197 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
     }
   }, [open]);
 
-  // Manejo de inputs
   const handleChange = (field, value) => {
     setFormData((prev) => ({ ...prev, [field]: value }));
   };
 
-  // Manejo de imagen
   const handleImageChange = (e) => {
-    const file = e.target.files[0];
+    const file = e.target.files?.[0];
     if (file) {
+      if (!file.type.startsWith("image/")) {
+        setErrorMessage("Solo se permiten archivos de imagen.");
+        return;
+      }
       setImagenPerfil(file);
       setPreview(URL.createObjectURL(file));
     }
   };
 
-  
-  // Enviar formulario con imagen al backend
-const handleSubmit = async () => {
-  setLoading(true);
-
-  // Función para evitar el desfase de zona horaria
   const fixLocalDate = (val) => {
-    if (!val) return val;
+    if (!val) return "";
     const date = new Date(val);
-    // compensar el timezone offset
     date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
-    return date.toISOString().split("T")[0]; // devuelve "YYYY-MM-DD"
+    return date.toISOString().split("T")[0];
   };
 
-  try {
-    const dataToSend = new FormData();
+  // Validaciones por paso
+  const validateStep = (s) => {
+    setErrorMessage("");
 
-    // Agregar todos los campos del formulario (ajustando fechas)
-    Object.entries(formData).forEach(([key, value]) => {
-      if (key === "fechaAlta" || key === "vencimientoContrato" || key === "fechaNacimiento") {
-        dataToSend.append(key, fixLocalDate(value));
-      } else {
-        dataToSend.append(key, value);
+    if (s === 1) {
+      if (!formData.nombre.trim() || !formData.apellido.trim())
+        return setErrorMessage("Complete nombre y apellido."), false;
+
+      if (!formData.tipoDocumento || !formData.numeroDocumento.trim())
+        return setErrorMessage("Seleccione tipo y número de documento."), false;
+
+      if (!/^\d{7,9}$/.test(formData.numeroDocumento))
+        return setErrorMessage("Número de documento inválido."), false;
+
+      if (!formData.cuil.trim())
+        return setErrorMessage("Ingrese CUIL."), false;
+
+      if (!/^\d{11}$/.test(formData.cuil))
+        return setErrorMessage("El CUIL debe tener 11 dígitos."), false;
+
+      if (formData.telefono && !/^\d{6,15}$/.test(formData.telefono))
+        return setErrorMessage("Teléfono inválido."), false;
+
+      if (formData.email && !/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(formData.email))
+        return setErrorMessage("Formato de email inválido."), false;
+
+      if (!formData.fechaNacimiento)
+        return setErrorMessage("Seleccione fecha de nacimiento."), false;
+
+      return true;
+    }
+
+    if (s === 2) {
+      if (!formData.fechaAlta)
+        return setErrorMessage("Seleccione fecha de alta."), false;
+
+      if (!formData.areaTrabajo)
+        return setErrorMessage("Seleccione un área de trabajo."), false;
+
+      if (!formData.puesto.trim())
+        return setErrorMessage("Complete el puesto o cargo."), false;
+
+      if (!formData.categoria.trim())
+        return setErrorMessage("Complete la categoría o convenio."), false;
+
+      if (!formData.modalidad.trim())
+        return setErrorMessage("Indique modalidad de contratación."), false;
+
+      if (!formData.jornada.trim())
+        return setErrorMessage("Complete jornada laboral."), false;
+
+      if (!formData.horario.trim())
+        return setErrorMessage("Complete horario habitual."), false;
+
+      if (!formData.obraSocial.trim())
+        return setErrorMessage("Indique la obra social asignada."), false;
+
+      if (!formData.art.trim())
+        return setErrorMessage("Indique la ART."), false;
+
+      return true;
+    }
+
+    if (s === 3) {
+      if (!formData.tipoRemuneracion)
+        return setErrorMessage("Seleccione el tipo de remuneración."), false;
+
+      if (!formData.sueldoBruto || Number(formData.sueldoBruto) <= 0)
+        return setErrorMessage("Ingrese un sueldo bruto válido."), false;
+
+      if (!formData.banco)
+        return setErrorMessage("Seleccione un banco."), false;
+
+      if (!formData.cbu.trim() || !/^\d{22}$/.test(formData.cbu))
+        return setErrorMessage("El CBU debe tener 22 dígitos."), false;
+
+      if (formData.vencimientoContrato && new Date(formData.vencimientoContrato) < new Date(formData.fechaAlta))
+        return setErrorMessage("El vencimiento no puede ser anterior a la fecha de alta."), false;
+
+      if (!formData.categoriaImpositiva)
+        return setErrorMessage("Seleccione categoría impositiva."), false;
+
+      return true;
+    }
+
+    return true;
+  };
+
+  // Verificar duplicado 
+  const verificarDuplicado = async () => {
+    try {
+      const params = new URLSearchParams({
+        numeroDocumento: formData.numeroDocumento || "",
+        cuil: formData.cuil || "",
+      });
+      const res = await fetch(`http://localhost:4000/api/empleados/verificar-duplicado?${params.toString()}`);
+      if (!res.ok) return false;
+      const json = await res.json();
+      return !!json.duplicado;
+    } catch (err) {
+      console.error("Error al verificar duplicado:", err);
+      return false;
+    }
+  };
+
+  const handleSubmit = async () => {
+    setErrorMessage("");
+    if (!validateStep(3)) return;
+
+    setLoading(true);
+
+    // Verificación duplicado
+    const esDuplicado = await verificarDuplicado();
+    if (esDuplicado) {
+      setLoading(false);
+      return setErrorMessage("Ya existe un empleado con ese número de documento o CUIL.");
+    }
+
+    try {
+      const dataToSend = new FormData();
+      for (const [key, value] of Object.entries(formData)) {
+        if (["fechaAlta", "vencimientoContrato", "fechaNacimiento"].includes(key)) {
+          dataToSend.append(key, fixLocalDate(value));
+        } else {
+          dataToSend.append(key, value ?? "");
+        }
       }
-    });
+      if (imagenPerfil) dataToSend.append("imagenPerfil", imagenPerfil);
 
-    // Agregar la imagen solo si existe
-    if (imagenPerfil) {
-      dataToSend.append("imagenPerfil", imagenPerfil);
+      const response = await fetch("http://localhost:4000/api/empleados", {
+        method: "POST",
+        body: dataToSend,
+      });
+
+      const result = await response.json();
+      if (!response.ok) throw new Error(result?.error || "Error al registrar empleado");
+
+      alert("✅ Empleado registrado con éxito");
+      onEmpleadoGuardado?.();
+      onClose();
+    } catch (error) {
+      console.error("Error al registrar empleado:", error);
+      setErrorMessage(error.message);
+    } finally {
+      setLoading(false);
     }
+  };
 
-    const response = await fetch("http://localhost:4000/api/empleados", {
-      method: "POST",
-      body: dataToSend,
-    });
-
-    const result = await response.json();
-
-    if (!response.ok) {
-      throw new Error(result.error || "Error al registrar empleado");
+  const handleNext = () => {
+    if (validateStep(step)) {
+      setStep((s) => s + 1);
+      setErrorMessage("");
     }
-
-    alert("✅ Empleado registrado con éxito");
-
-    console.log("Empleado creado:", result.empleado);
-
-    if (result.empleado.imagenPerfil) {
-      console.log("Imagen guardada en:", `http://localhost:4000/${result.empleado.imagenPerfil}`);
-    }
-
-    if (onEmpleadoGuardado) onEmpleadoGuardado();
-    onClose();
-  } catch (error) {
-    console.error("Error al registrar empleado:", error);
-    alert("❌ Error al registrar el empleado");
-  } finally {
-    setLoading(false);
-  }
-};
+  };
+  const handlePrev = () => {
+    setStep((s) => Math.max(1, s - 1));
+    setErrorMessage("");
+  };
 
 
-  // Renderizado de pasos
+  // Render de pasos completo 
   const renderStep = () => {
     switch (step) {
       case 1:
         return (
           <Box>
+            {errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>}
+
             <Box sx={{ display: "flex", justifyContent: "space-between", alignItems: "center", mb: 3 }}>
               {/* Imagen de perfil */}
               <Box
@@ -182,11 +291,7 @@ const handleSubmit = async () => {
                 onClick={() => document.getElementById("fileInput").click()}
               >
                 {preview ? (
-                  <img
-                    src={preview}
-                    alt="preview"
-                    style={{ width: "100%", height: "100%", objectFit: "cover" }}
-                  />
+                  <img src={preview} alt="preview" style={{ width: "100%", height: "100%", objectFit: "cover" }} />
                 ) : (
                   <AddAPhotoIcon sx={{ fontSize: 40, color: "#7FC6BA" }} />
                 )}
@@ -237,17 +342,16 @@ const handleSubmit = async () => {
             </FormCard>
 
             <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
-              <NextButton onClick={() => setStep(2)} endIcon={<ArrowForwardIcon />}>
-                Siguiente
-              </NextButton>
+              <NextButton onClick={handleNext} endIcon={<ArrowForwardIcon />}>Siguiente</NextButton>
             </Box>
           </Box>
         );
 
-      // STEP 2 — DATOS LABORALES
       case 2:
         return (
           <Box>
+            {errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>}
+
             <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
               <DateField
                 label="Fecha de Alta"
@@ -329,38 +433,21 @@ const handleSubmit = async () => {
             </FormCard>
 
             <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2, mt: 2 }}>
-              <PrevButton onClick={() => setStep(1)} startIcon={<ArrowBackIcon />}>
-                Anterior
-              </PrevButton>
-              <NextButton onClick={() => setStep(3)} endIcon={<ArrowForwardIcon />}>
-                Siguiente
-              </NextButton>
+              <PrevButton onClick={handlePrev} startIcon={<ArrowBackIcon />}>Anterior</PrevButton>
+              <NextButton onClick={handleNext} endIcon={<ArrowForwardIcon />}>Siguiente</NextButton>
             </Box>
           </Box>
         );
 
-      // STEP 3 — DATOS DE REMUNERACIÓN
       case 3:
         return (
           <Box>
-            {/* Nº de legajo */}
+            {errorMessage && <Alert severity="error" sx={{ mb: 2 }}>{errorMessage}</Alert>}
+
             <Box sx={{ display: "flex", justifyContent: "flex-end", mb: 2 }}>
-              <Box
-                sx={{
-                  border: "2px solid #7FC6BA",
-                  borderRadius: 2,
-                  px: 2,
-                  py: 1,
-                  width: "fit-content",
-                  textAlign: "center",
-                }}
-              >
-                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>
-                  Nº de Legajo
-                </Typography>
-                <Typography variant="body1" sx={{ color: "#808080" }}>
-                  {nextLegajo}
-                </Typography>
+              <Box sx={{ border: "2px solid #7FC6BA", borderRadius: 2, px: 2, py: 1, width: "fit-content", textAlign: "center" }}>
+                <Typography variant="subtitle2" sx={{ fontWeight: 600 }}>Nº de Legajo</Typography>
+                <Typography variant="body1" sx={{ color: "#808080" }}>{nextLegajo}</Typography>
               </Box>
             </Box>
 
@@ -402,12 +489,7 @@ const handleSubmit = async () => {
                     onChange={(e) => handleChange("banco", e.target.value)}
                     fullWidth
                   />
-                  <BaseInput
-                    label="CBU"
-                    fullWidth
-                    value={formData.cbu}
-                    onChange={(e) => handleChange("cbu", e.target.value)}
-                  />
+                  <BaseInput label="CBU" fullWidth value={formData.cbu} onChange={(e) => handleChange("cbu", e.target.value)} />
                 </Box>
 
                 <DateField
@@ -433,11 +515,9 @@ const handleSubmit = async () => {
             </FormCard>
 
             <Box sx={{ display: "flex", alignItems: "center", justifyContent: "space-between", mt: 3 }}>
-              <PrevButton onClick={() => setStep(2)} startIcon={<ArrowBackIcon />} sx={{ minWidth: 40, padding: "6px 6px" }} />
+              <PrevButton onClick={handlePrev} startIcon={<ArrowBackIcon />} sx={{ minWidth: 40, padding: "6px 6px" }} />
               <Box sx={{ display: "flex", gap: 2 }}>
-                <SecondaryButton onClick={onClose} width={120} height={40} fontWeight="bold">
-                  Cancelar
-                </SecondaryButton>
+                <SecondaryButton onClick={onClose} width={120} height={40} fontWeight="bold">Cancelar</SecondaryButton>
                 <PrimaryButton onClick={handleSubmit} disabled={loading} width={120} height={40} fontWeight="bold">
                   {loading ? "Guardando..." : "Guardar"}
                 </PrimaryButton>
@@ -445,6 +525,9 @@ const handleSubmit = async () => {
             </Box>
           </Box>
         );
+
+      default:
+        return null;
     }
   };
 
