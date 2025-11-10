@@ -95,51 +95,66 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
     }
   };
 
+  
   // Enviar formulario con imagen al backend
-  const handleSubmit = async () => {
-    setLoading(true);
-    try {
-      const dataToSend = new FormData();
+const handleSubmit = async () => {
+  setLoading(true);
 
-      // Agregar todos los campos del formulario
-      Object.entries(formData).forEach(([key, value]) => {
-        dataToSend.append(key, value);
-      });
-
-      // Agregar la imagen solo si existe
-      if (imagenPerfil) {
-        dataToSend.append("imagenPerfil", imagenPerfil);
-      }
-
-      const response = await fetch("http://localhost:4000/api/empleados", {
-        method: "POST",
-        body: dataToSend,
-      });
-
-      const result = await response.json();
-
-      if (!response.ok) {
-        throw new Error(result.error || "Error al registrar empleado");
-      }
-
-      alert("✅ Empleado registrado con éxito");
-
-      console.log("Empleado creado:", result.empleado);
-
-      // Si hay imagen subida, mostramos su URL
-      if (result.empleado.imagenPerfil) {
-        console.log("Imagen guardada en:", `http://localhost:4000/${result.empleado.imagenPerfil}`);
-      }
-
-      if (onEmpleadoGuardado) onEmpleadoGuardado();
-      onClose();
-    } catch (error) {
-      console.error("Error al registrar empleado:", error);
-      alert("❌ Error al registrar el empleado");
-    } finally {
-      setLoading(false);
-    }
+  // Función para evitar el desfase de zona horaria
+  const fixLocalDate = (val) => {
+    if (!val) return val;
+    const date = new Date(val);
+    // compensar el timezone offset
+    date.setMinutes(date.getMinutes() + date.getTimezoneOffset());
+    return date.toISOString().split("T")[0]; // devuelve "YYYY-MM-DD"
   };
+
+  try {
+    const dataToSend = new FormData();
+
+    // Agregar todos los campos del formulario (ajustando fechas)
+    Object.entries(formData).forEach(([key, value]) => {
+      if (key === "fechaAlta" || key === "vencimientoContrato" || key === "fechaNacimiento") {
+        dataToSend.append(key, fixLocalDate(value));
+      } else {
+        dataToSend.append(key, value);
+      }
+    });
+
+    // Agregar la imagen solo si existe
+    if (imagenPerfil) {
+      dataToSend.append("imagenPerfil", imagenPerfil);
+    }
+
+    const response = await fetch("http://localhost:4000/api/empleados", {
+      method: "POST",
+      body: dataToSend,
+    });
+
+    const result = await response.json();
+
+    if (!response.ok) {
+      throw new Error(result.error || "Error al registrar empleado");
+    }
+
+    alert("✅ Empleado registrado con éxito");
+
+    console.log("Empleado creado:", result.empleado);
+
+    if (result.empleado.imagenPerfil) {
+      console.log("Imagen guardada en:", `http://localhost:4000/${result.empleado.imagenPerfil}`);
+    }
+
+    if (onEmpleadoGuardado) onEmpleadoGuardado();
+    onClose();
+  } catch (error) {
+    console.error("Error al registrar empleado:", error);
+    alert("❌ Error al registrar el empleado");
+  } finally {
+    setLoading(false);
+  }
+};
+
 
   // Renderizado de pasos
   const renderStep = () => {

@@ -115,8 +115,11 @@ const FichaEmpleadoBase = ({
         <Typography sx={{ width: 120 }}>Fecha de Alta:</Typography>
         <Box sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2, ml: 4 }}>
           {data.fechaAlta
-            ? new Date(data.fechaAlta).toLocaleDateString("es-AR")
+            ? new Date(
+                new Date(data.fechaAlta).getTime() + new Date(data.fechaAlta).getTimezoneOffset() * 60000
+              ).toLocaleDateString("es-AR")
             : "-"}
+
         </Box>
       </Box>
 

@@ -7,59 +7,62 @@ import { CalendarMonth } from "@mui/icons-material";
  * - Acepta value en: Date object, "yyyy-MM-dd", ISO string, o "dd/MM/yyyy"
  * - Normaliza internamente a "yyyy-MM-dd" para el <input type="date" />
  * - Muestra fecha en formato local (es-AR) en el área visible
- *
- * Props:
- * - label: string
- * - value: Date | string
- * - onChange: function(event) -> recibe el event original del input (value en yyyy-MM-dd en event.target.value)
  */
 export default function DateField({ label, value, onChange }) {
   const inputRef = useRef(null);
 
-  // Intenta convertir distintos formatos a yyyy-MM-dd (valor que necesita input type=date)
+  // Convierte distintos formatos a yyyy-MM-dd (sin uso de UTC)
   const toISOForInput = (val) => {
     if (!val) return "";
 
-    // Si ya es Date
     if (val instanceof Date) {
       if (isNaN(val)) return "";
-      return val.toISOString().split("T")[0];
+      const year = val.getFullYear();
+      const month = String(val.getMonth() + 1).padStart(2, "0");
+      const day = String(val.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
     }
 
-    // Si es string con formato dd/MM/yyyy -> convertir a yyyy-MM-dd
+    // Si es string dd/MM/yyyy
     const ddmmyyyy = /^(\d{2})\/(\d{2})\/(\d{4})$/;
     const match = String(val).trim().match(ddmmyyyy);
     if (match) {
       const [, dd, mm, yyyy] = match;
-      return `${yyyy}-${mm.padStart(2, "0")}-${dd.padStart(2, "0")}`;
+      return `${yyyy}-${mm}-${dd}`;
     }
 
-    // Si ya es yyyy-MM-dd o ISO
-    // Intento crear Date; si es válido, lo devuelvo en formato yyyy-MM-dd
+    // Si ya viene en formato yyyy-MM-dd
+    const iso = /^\d{4}-\d{2}-\d{2}$/;
+    if (iso.test(val)) return val;
+
+    // Intentar crear fecha desde otro formato (ISO, timestamp)
     const parsed = new Date(val);
     if (!isNaN(parsed)) {
-      return parsed.toISOString().split("T")[0];
+      const year = parsed.getFullYear();
+      const month = String(parsed.getMonth() + 1).padStart(2, "0");
+      const day = String(parsed.getDate()).padStart(2, "0");
+      return `${year}-${month}-${day}`;
     }
 
-    // No se pudo parsear
     return "";
   };
 
-  // Valor que le pasamos al input (yyyy-MM-dd o '')
+  // Valor para el input date (yyyy-MM-dd)
   const inputValue = useMemo(() => toISOForInput(value), [value]);
 
-  // Texto visible (formateado localmente) para mostrar en el box
+  // Texto visible formateado localmente
   const displayText = useMemo(() => {
     if (!inputValue) return "Seleccionar fecha";
-    const d = new Date(inputValue);
+    const parts = inputValue.split("-");
+    if (parts.length !== 3) return "Seleccionar fecha";
+    const [year, month, day] = parts;
+    const d = new Date(year, month - 1, day);
     if (isNaN(d)) return "Seleccionar fecha";
     return d.toLocaleDateString("es-AR");
   }, [inputValue]);
 
   const handleOpen = () => {
-    // intentar abrir picker nativo si existe
     if (inputRef.current) {
-      // algunos navegadores implementan showPicker()
       if (typeof inputRef.current.showPicker === "function") {
         inputRef.current.showPicker();
       } else {
@@ -111,13 +114,12 @@ export default function DateField({ label, value, onChange }) {
           <CalendarMonth />
         </Box>
 
-        {/* input real oculto (controlado) */}
+        {/* Input real oculto */}
         <input
           ref={inputRef}
           type="date"
           value={inputValue}
           onChange={(e) => {
-            // reenviamos el evento al padre: e.target.value será "yyyy-MM-dd"
             if (typeof onChange === "function") onChange(e);
           }}
           style={{
