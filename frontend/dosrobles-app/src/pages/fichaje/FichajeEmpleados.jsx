@@ -2,7 +2,7 @@
 import React, { useState } from "react";
 import { Box, Typography, Avatar, Stack, TextField, MenuItem } from "@mui/material";
 import { NextButton, PrimaryButton } from "../../components/ui/Buttons";
-import CheckBoxInput from "../../components/ui/CheckBoxInput";
+import CheckboxInput from "../../components/ui/CheckboxInput";
 import CustomTable from "../../components/ui/CustomTable";
 import Empleado2 from "../../assets/empleados/empleado2.png";
 import Empleado1 from "../../assets/empleados/empleado1.png";
@@ -30,7 +30,7 @@ const FichajeEmpleados = () => {
 
   const columns = ["", "Empleado", "Hs Previstas", "Hs Trabajadas", "Más Info"];
   const rows = filtered.map(emp => ({
-    check: <CheckBoxInput />,
+    check: <CheckboxInput />,
     empleado: (
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <Avatar src={emp.foto} sx={{ width: 40, height: 40 }} />

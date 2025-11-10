@@ -1,33 +1,23 @@
-// src/pages/licencias/LicenciasList.jsx
-// Pantalla principal de gestión de licencias/ausencias
+// src/pages/licencias/SolicitudesLicencias.jsx
+// Pantalla para gestión de solicitudes de licencias de todos los empleados (solo admin/gerente/rrhh)
 
-import { useState, useEffect, useRef } from "react";
+import { useState, useEffect } from "react";
 import { Box, Typography, CircularProgress, Alert } from "@mui/material";
 import { PrimaryButton } from "../../components/ui/Buttons";
 import CustomTable from "../../components/ui/CustomTable";
 import SearchBar from "../../components/ui/SearchBar";
-import ModalSolicitudLicencia from "../../components/licencias/ModalSolicitudLicencia";
 import ModalDetallesLicencia from "../../components/licencias/ModalDetallesLicencia";
-import ModalConfirmacion from "../../components/licencias/ModalConfirmacion";
-import ModalError from "../../components/licencias/ModalError";
 import { licenciasService } from "../../services/licenciasService";
 import { useUser } from "../../context/UserContext";
 
-export default function LicenciasList() {
+export default function SolicitudesLicencias() {
   const { user, loading: userLoading } = useUser();
-  const modalSolicitudRef = useRef(null);
 
   // Estados para licencias
-  const [modalSolicitudOpen, setModalSolicitudOpen] = useState(false);
   const [modalDetallesOpen, setModalDetallesOpen] = useState(false);
-  const [modalErrorOpen, setModalErrorOpen] = useState(false);
-  const [modalConfirmacionOpen, setModalConfirmacionOpen] = useState(false);
-  const [errorMensaje, setErrorMensaje] = useState("");
   const [licenciaSeleccionada, setLicenciaSeleccionada] = useState(null);
   const [busqueda, setBusqueda] = useState("");
 
-  // Siempre mostrar solo las licencias del usuario logueado
-  const empleadoActualId = user?.empleadoId;
   const [licencias, setLicencias] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);
@@ -79,14 +69,14 @@ export default function LicenciasList() {
     }
   }, [userLoading, user?.empleadoId]);
 
-  // Función para cargar licencias desde la API
+  // Función para cargar todas las licencias desde la API
   const cargarLicencias = async () => {
     try {
       setCargando(true);
       setError(null);
 
-      // Cargar solo las licencias del usuario logueado
-      const respuesta = await licenciasService.obtenerLicencias({ empleadoId: empleadoActualId });
+      // Cargar todas las licencias (sin filtro de empleadoId)
+      const respuesta = await licenciasService.obtenerLicencias({});
 
       // Transformar datos de la API al formato del componente
       const licenciasTransformadas = (respuesta.data || []).map((lic) => {
@@ -119,62 +109,13 @@ export default function LicenciasList() {
     }
   };
 
-  // Manejar nueva solicitud de licencia
-  const handleSolicitudSubmit = async (nuevaLicencia) => {
-    try {
-      // Preparar datos para enviar a la API
-      const datosLicencia = {
-        empleadoId: empleadoActualId, // TODO: Obtener del contexto/autenticación (Pedro)
-        tipoLicencia: nuevaLicencia.tipoLicencia,
-        fechaInicio: nuevaLicencia.fechaInicio,
-        fechaFin: nuevaLicencia.fechaFin,
-        motivo: nuevaLicencia.motivo,
-        descripcion: nuevaLicencia.descripcion || "",
-      };
-
-      const respuesta = await licenciasService.solicitarLicencia(datosLicencia);
-
-      // Agregar la nueva licencia a la lista
-      if (respuesta.data) {
-        const licenciaAgregada = {
-          id: respuesta.data._id,
-          fecha: formatearFecha(respuesta.data.fechaSolicitud),
-          tipoLicencia: respuesta.data.tipoLicencia,
-          tipoTexto: getTipoTexto(respuesta.data.tipoLicencia),
-          estado: respuesta.data.estado,
-          fechaSolicitud: formatearFecha(respuesta.data.fechaSolicitud),
-          fechaInicio: formatearFecha(respuesta.data.fechaInicio),
-          fechaFin: formatearFecha(respuesta.data.fechaFin),
-          motivo: respuesta.data.motivo || "",
-          empleado: "Juan Pérez",
-          diasTotales: respuesta.data.diasTotales,
-        };
-
-        setLicencias([licenciaAgregada, ...licencias]);
-        // Resetear formulario
-        modalSolicitudRef.current?.resetForm();
-        // Cerrar modal de solicitud SOLO si fue exitoso
-        setModalSolicitudOpen(false);
-        // Mostrar modal de confirmación
-        setModalConfirmacionOpen(true);
-      }
-    } catch (err) {
-      console.error("Error al solicitar licencia:", err);
-      // Mostrar el mensaje de error específico del servidor en un modal
-      const mensajeError = err.message || "Error al solicitar la licencia. Por favor, intenta de nuevo.";
-      setErrorMensaje(mensajeError);
-      setModalErrorOpen(true);
-      // NO cerrar el modal de solicitud para que el usuario pueda reintentar
-    }
-  };
-
   // Ver detalles de una licencia
   const handleVerDetalles = (licencia) => {
     setLicenciaSeleccionada(licencia);
     setModalDetallesOpen(true);
   };
 
-  // Aprobar licencia (solo gerente)
+  // Aprobar licencia
   const handleAprobar = async (licenciaId, comentario = "Aprobado") => {
     try {
       const gerenteId = user?.empleadoId;
@@ -192,11 +133,12 @@ export default function LicenciasList() {
       );
     } catch (err) {
       console.error("Error al aprobar licencia:", err);
-      alert("Error al aprobar la licencia. Por favor, intenta de nuevo.");
+      const mensajeError = err.message || "Error al aprobar la licencia. Por favor, intenta de nuevo.";
+      alert(mensajeError);
     }
   };
 
-  // Rechazar licencia (solo gerente)
+  // Rechazar licencia
   const handleRechazar = async (licenciaId, comentario = "") => {
     try {
       const gerenteId = user?.empleadoId;
@@ -216,7 +158,8 @@ export default function LicenciasList() {
       );
     } catch (err) {
       console.error("Error al rechazar licencia:", err);
-      alert("Error al rechazar la licencia. Por favor, intenta de nuevo.");
+      const mensajeError = err.message || "Error al rechazar la licencia. Por favor, intenta de nuevo.";
+      alert(mensajeError);
     }
   };
 
@@ -226,7 +169,8 @@ export default function LicenciasList() {
     return (
       lic.tipoTexto.toLowerCase().includes(searchLower) ||
       lic.fecha.includes(searchLower) ||
-      lic.estado.toLowerCase().includes(searchLower)
+      lic.estado.toLowerCase().includes(searchLower) ||
+      lic.empleado.toLowerCase().includes(searchLower)
     );
   });
 
@@ -246,8 +190,8 @@ export default function LicenciasList() {
     }
   };
 
-  // Columnas: mostrar sin la columna de empleado (son solo las licencias del usuario)
-  const columnas = ["Fecha", "Tipo de Licencia", "Estado", ""];
+  // Columnas: mostrar "Empleado" siempre
+  const columnas = ["Fecha", "Empleado", "Tipo de Licencia", "Estado", ""];
 
   const filas = licenciasFiltradas.map((lic) => {
     const colores = getEstadoColor(lic.estado);
@@ -285,6 +229,7 @@ export default function LicenciasList() {
     // Crear la fila con las claves en el orden exacto de las columnas
     return {
       fecha: lic.fecha,
+      empleado: lic.empleado,
       tipo: lic.tipoTexto,
       estado: estadoChip,
       acciones: botonDetalles,
@@ -313,20 +258,12 @@ export default function LicenciasList() {
             variant="h4"
             sx={{ fontWeight: 600, color: "#585858", mb: 1 }}
           >
-            Ausencias
+            Solicitudes de Ausencias
           </Typography>
           <Typography variant="body2" sx={{ color: "#808080" }}>
-            Historial de licencias y ausencias solicitadas.
+            Gestión de solicitudes de licencias y ausencias de todos los empleados.
           </Typography>
         </Box>
-
-        {/* Botón para solicitar ausencia */}
-        <PrimaryButton
-          onClick={() => setModalSolicitudOpen(true)}
-          sx={{ px: 3, py: 1 }}
-        >
-          Solicitar Ausencia
-        </PrimaryButton>
       </Box>
 
       {/* Mostrar mensajes de error */}
@@ -346,16 +283,16 @@ export default function LicenciasList() {
           {/* Buscador */}
           <Box sx={{ mb: 3, maxWidth: 400 }}>
             <SearchBar
-              placeholder="Buscar..."
+              placeholder="Buscar por empleado, tipo o estado..."
               value={busqueda}
               onChange={(e) => setBusqueda(e.target.value)}
             />
           </Box>
 
-          {/* Tabla de Ausencias */}
+          {/* Tabla de Solicitudes */}
           {licencias.length === 0 ? (
             <Typography sx={{ color: "#808080", textAlign: "center", py: 3 }}>
-              No hay licencias registradas
+              No hay solicitudes de licencias registradas
             </Typography>
           ) : (
             <CustomTable
@@ -368,36 +305,14 @@ export default function LicenciasList() {
         </>
       )}
 
-      {/* Modal de Solicitud de Licencia */}
-      <ModalSolicitudLicencia
-        ref={modalSolicitudRef}
-        open={modalSolicitudOpen}
-        onClose={() => setModalSolicitudOpen(false)}
-        onSubmit={handleSolicitudSubmit}
-      />
-
       {/* Modal de Detalles de Licencia */}
       <ModalDetallesLicencia
         open={modalDetallesOpen}
         onClose={() => setModalDetallesOpen(false)}
         licencia={licenciaSeleccionada}
-        esGerente={false}
+        esGerente={true}
         onAprobar={handleAprobar}
         onRechazar={handleRechazar}
-      />
-
-      {/* Modal de Error */}
-      <ModalError
-        open={modalErrorOpen}
-        onClose={() => setModalErrorOpen(false)}
-        error={errorMensaje}
-      />
-
-      {/* Modal de Confirmación */}
-      <ModalConfirmacion
-        open={modalConfirmacionOpen}
-        onClose={() => setModalConfirmacionOpen(false)}
-        mensaje="Su solicitud ha sido enviada para revisión"
       />
     </Box>
   );
