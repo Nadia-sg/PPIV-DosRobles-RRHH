@@ -1,15 +1,45 @@
 // src/pages/empleados/FichaEmpleadoBase.jsx
 
-import React from "react";
-import { Box, Stack, Avatar, Typography } from "@mui/material";
+import React, { useRef } from "react";
+import { Box, Stack, Avatar, Typography, IconButton } from "@mui/material";
+import { PhotoCamera } from "@mui/icons-material";
 import FormCard from "../../components/ui/FormCard";
 import BaseInput from "../../components/ui/BaseInput";
 import SelectInput from "../../components/ui/SelectInput";
 import DateField from "../../components/ui/DateField";
 import { PrimaryButton } from "../../components/ui/Buttons";
 
-const FichaEmpleadoBase = ({ data, readOnly = true, actions = [], onChange }) => {
-  const { legajo, nombre, apellido, fechaAlta, foto } = data;
+const FichaEmpleadoBase = ({
+  data,
+  readOnly = true,
+  actions = [],
+  onChange,
+  onImageChange, // 🔹 nueva prop que viene de FichaEmpleadoEditable
+}) => {
+  const fileInputRef = useRef(null);
+
+  // Maneja click sobre el avatar o el ícono de cámara
+  const handleImageClick = () => {
+    if (!readOnly) {
+      fileInputRef.current?.click();
+    }
+  };
+
+  // Si no se pasa onImageChange (modo lectura), no hace nada
+  const handleImageChange = (e) => {
+    if (onImageChange) {
+      onImageChange(e);
+    }
+  };
+
+  // Determina qué imagen mostrar:
+  // 1️⃣ Si hay una previsualización local (nuevo archivo seleccionado)
+  // 2️⃣ Si hay una URL de imagen (del backend)
+  // 3️⃣ Si no, imagen por defecto
+  const fotoURL =
+    data.fotoPreview ||
+    data.foto ||
+    "/src/assets/empleados/default-avatar.png";
 
   return (
     <Box sx={{ position: "relative", p: 4 }}>
@@ -24,8 +54,42 @@ const FichaEmpleadoBase = ({ data, readOnly = true, actions = [], onChange }) =>
           width: "100%",
         }}
       >
-        <Avatar src={foto} sx={{ width: 100, height: 100 }} />
+        <Box sx={{ position: "relative", display: "inline-block" }}>
+          <Avatar
+            src={fotoURL}
+            sx={{
+              width: 100,
+              height: 100,
+              cursor: readOnly ? "default" : "pointer",
+              border: readOnly ? "none" : "2px dashed #7FC6BA",
+            }}
+            onClick={handleImageClick}
+          />
+          {!readOnly && (
+            <IconButton
+              sx={{
+                position: "absolute",
+                bottom: 0,
+                right: 0,
+                backgroundColor: "#7FC6BA",
+                color: "white",
+                "&:hover": { backgroundColor: "#5FA89A" },
+              }}
+              onClick={handleImageClick}
+            >
+              <PhotoCamera />
+            </IconButton>
+          )}
+          <input
+            type="file"
+            accept="image/*"
+            ref={fileInputRef}
+            onChange={handleImageChange} // ✅ delega en FichaEmpleadoEditable
+            style={{ display: "none" }}
+          />
+        </Box>
 
+        {/* === BOTONES DE ACCIÓN (editar, guardar, etc.) === */}
         <Box sx={{ display: "flex", flexDirection: "column", gap: 1, mr: 8 }}>
           {actions.map((btn, i) => (
             <PrimaryButton key={i} onClick={btn.onClick} {...btn.props}>
@@ -39,20 +103,22 @@ const FichaEmpleadoBase = ({ data, readOnly = true, actions = [], onChange }) =>
       <Box sx={{ display: "flex", mb: 1, ml: 4, color: "#808080" }}>
         <Typography sx={{ width: 120 }}>Nº de Legajo:</Typography>
         <Box sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2, ml: 4 }}>
-          {legajo}
+          {data.legajo}
         </Box>
       </Box>
+
       <Box sx={{ display: "flex", mb: 1, ml: 4, color: "#808080" }}>
         <Typography sx={{ width: 150 }}>Nombre y Apellido:</Typography>
         <Box sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2 }}>
-          {nombre} {apellido}
+          {data.nombre} {data.apellido}
         </Box>
       </Box>
+
       <Box sx={{ display: "flex", ml: 4, color: "#808080" }}>
         <Typography sx={{ width: 120 }}>Fecha de Alta:</Typography>
         <Box sx={{ border: "1px solid #ccc", px: 2, borderRadius: 2, ml: 4 }}>
-          {fechaAlta
-            ? new Date(fechaAlta).toLocaleDateString("es-AR")
+          {data.fechaAlta
+            ? new Date(data.fechaAlta).toLocaleDateString("es-AR")
             : "-"}
         </Box>
       </Box>

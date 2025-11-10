@@ -1,5 +1,4 @@
 // src/pages/empleados/FichaEmpleadoEditable.jsx
-
 import React, { useEffect, useState } from "react";
 import ModalCard from "../../components/ui/ModalCard";
 import FichaEmpleadoBase from "./FichaEmpleadoBase";
@@ -11,8 +10,9 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado }) => {
   const [loading, setLoading] = useState(false);
   const [editMode, setEditMode] = useState(false);
   const [saving, setSaving] = useState(false);
+  const [nuevaFoto, setNuevaFoto] = useState(null);
 
-  // Obtener datos del empleado
+  // Cargar datos del empleado
   useEffect(() => {
     if (open && empleado?._id) {
       const fetchEmpleado = async () => {
@@ -44,13 +44,15 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado }) => {
             cbu: data.cbu || "",
             vencimientoContrato: data.vencimientoContrato || "",
             categoriaImpositiva: data.categoriaImpositiva || "",
-            foto: data._id
-              ? `http://localhost:4000/api/empleados/${data._id}/imagen`
-              : "/src/assets/empleados/default-avatar.png",
+            foto:
+              data._id
+                ? `http://localhost:4000/api/empleados/${data._id}/imagen?${Date.now()}`
+                : "/src/assets/empleados/default-avatar.png",
           };
 
           setEmpleadoData(empleadoFormateado);
           setOriginalData(empleadoFormateado);
+          setNuevaFoto(null);
         } catch (error) {
           console.error("❌ Error al cargar empleado:", error);
         } finally {
@@ -62,7 +64,7 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado }) => {
     }
   }, [open, empleado]);
 
-  // Maneja cambios en campos del formulario
+  // Maneja cambios de campos
   const handleChange = (field, value) => {
     setEmpleadoData((prev) => ({
       ...prev,
@@ -70,26 +72,62 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado }) => {
     }));
   };
 
-  // Guardar cambios (PUT al backend)
+  // Maneja cambio de imagen
+  const handleImageChange = (e) => {
+    const file = e.target.files[0];
+    if (file) {
+      setNuevaFoto(file);
+      const previewURL = URL.createObjectURL(file);
+      setEmpleadoData((prev) => ({ ...prev, foto: previewURL }));
+    }
+  };
+
+  // Guardar cambios (un solo FormData)
   const handleSave = async () => {
     if (!empleadoData?._id) return;
+
     try {
       setSaving(true);
-      const response = await fetch(`http://localhost:4000/api/empleados/${empleadoData._id}`, {
+
+      // Creamos un FormData
+      const formData = new FormData();
+      for (const [key, value] of Object.entries(empleadoData)) {
+        // no agregamos la URL de la imagen como texto
+        if (key !== "foto") {
+          formData.append(key, value || "");
+        }
+      }
+
+      // Si hay una nueva imagen
+      if (nuevaFoto) {
+        formData.append("imagenPerfil", nuevaFoto);
+      }
+
+      // PUT al backend
+      const res = await fetch(`http://localhost:4000/api/empleados/${empleadoData._id}`, {
         method: "PUT",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(empleadoData),
+        body: formData,
       });
 
-      if (!response.ok) throw new Error("Error al actualizar el empleado");
+      if (!res.ok) throw new Error("Error al guardar cambios");
+      const result = await res.json();
 
-      const updated = await response.json();
       alert("✅ Cambios guardados correctamente");
 
-      const newData = updated.empleado;
-      setEmpleadoData(newData);
-      setOriginalData(newData);
+      // Refrescar datos (para ver la nueva imagen)
+      const refreshed = await fetch(`http://localhost:4000/api/empleados/${empleadoData._id}`);
+      const updated = await refreshed.json();
+
+      const empleadoActualizado = {
+        ...empleadoData,
+        ...updated,
+        foto: `http://localhost:4000/api/empleados/${empleadoData._id}/imagen?${Date.now()}`,
+      };
+
+      setEmpleadoData(empleadoActualizado);
+      setOriginalData(empleadoActualizado);
       setEditMode(false);
+      setNuevaFoto(null);
     } catch (error) {
       console.error("❌ Error al guardar cambios:", error);
       alert("Error al guardar los cambios");
@@ -98,13 +136,12 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado }) => {
     }
   };
 
-  // Cancelar edición
   const handleCancel = () => {
     setEmpleadoData(originalData);
     setEditMode(false);
+    setNuevaFoto(null);
   };
 
-  // Botones inferiores
   const actions = editMode
     ? [
         {
@@ -113,28 +150,12 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado }) => {
           variant: "contained",
           disabled: saving,
         },
-        {
-          label: "Cancelar",
-          onClick: handleCancel,
-          variant: "outlined",
-        },
+        { label: "Cancelar", onClick: handleCancel, variant: "outlined" },
       ]
     : [
-        {
-          label: "Editar",
-          onClick: () => setEditMode(true),
-          variant: "contained",
-        },
-        {
-          label: "Enviar Mensaje",
-          onClick: () => console.log("Mensaje"),
-          variant: "outlined",
-        },
-        {
-          label: "Asignar Tarea",
-          onClick: () => console.log("Asignar tarea"),
-          variant: "outlined",
-        },
+        { label: "Editar", onClick: () => setEditMode(true), variant: "contained" },
+        { label: "Enviar Mensaje", onClick: () => console.log("Mensaje"), variant: "outlined" },
+        { label: "Asignar Tarea", onClick: () => console.log("Asignar tarea"), variant: "outlined" },
       ];
 
   if (!open) return null;
@@ -156,11 +177,10 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado }) => {
           data={empleadoData}
           readOnly={!editMode}
           onChange={handleChange}
+          onImageChange={handleImageChange}
         />
       ) : (
-        <Box sx={{ p: 3, textAlign: "center" }}>
-          No se pudo cargar la información del empleado.
-        </Box>
+        <Box sx={{ p: 3, textAlign: "center" }}>No se pudo cargar la información del empleado.</Box>
       )}
     </ModalCard>
   );
