@@ -1,7 +1,7 @@
 // src/routes/authRoutes.js
 import express from "express";
 import { loginUser, registerUser } from "../controllers/authController.js";
-import User from "../models/User.js";
+import Usuario from "../models/Usuario.js";
 
 const router = express.Router();
 
@@ -15,7 +15,7 @@ router.post("/login", loginUser);
 router.delete("/delete/:username", async (req, res) => {
   try {
     const { username } = req.params;
-    const deletedUser = await User.findOneAndDelete({ username });
+    const deletedUser = await Usuario.findOneAndDelete({ username });
     if (!deletedUser) {
       return res.status(404).json({ message: "Usuario no encontrado" });
     }

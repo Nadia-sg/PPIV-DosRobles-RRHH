@@ -2,7 +2,7 @@
 import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
-const userSchema = new mongoose.Schema({
+const usuarioSchema = new mongoose.Schema({
   username: {
     type: String,
     required: true,
@@ -21,7 +21,7 @@ const userSchema = new mongoose.Schema({
 });
 
 // Middleware para encriptar la contraseña antes de guardar
-userSchema.pre("save", async function (next) {
+usuarioSchema.pre("save", async function (next) {
   if (!this.isModified("password")) return next();
   const salt = await bcrypt.genSalt(10);
   this.password = await bcrypt.hash(this.password, salt);
@@ -29,9 +29,9 @@ userSchema.pre("save", async function (next) {
 });
 
 // Método para comparar contraseñas
-userSchema.methods.comparePassword = async function (password) {
+usuarioSchema.methods.comparePassword = async function (password) {
   return bcrypt.compare(password, this.password);
 };
 
-const User = mongoose.model("User", userSchema);
-export default User;
+const Usuario = mongoose.model("Usuario", usuarioSchema);
+export default Usuario;

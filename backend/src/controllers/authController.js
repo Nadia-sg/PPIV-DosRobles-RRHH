@@ -1,5 +1,5 @@
 // src/controllers/authController.js
-import User from "../models/User.js";
+import Usuario from "../models/Usuario.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
@@ -8,15 +8,15 @@ export const loginUser = async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const user = await User.findOne({ username });
-    if (!user) return res.status(400).json({ message: "Usuario no encontrado" });
+    const usuario = await Usuario.findOne({ username });
+    if (!usuario) return res.status(400).json({ message: "Usuario no encontrado" });
 
-    const isMatch = await bcrypt.compare(password, user.password);
+    const isMatch = await bcrypt.compare(password, usuario.password);
     if (!isMatch) return res.status(400).json({ message: "Contraseña incorrecta" });
 
     // Generar token incluyendo el rol
     const token = jwt.sign(
-      { id: user._id, username: user.username, role: user.role },
+      { id: usuario._id, username: usuario.username, role: usuario.role },
       process.env.JWT_SECRET,
       { expiresIn: "1h" }
     );
@@ -24,7 +24,7 @@ export const loginUser = async (req, res) => {
     res.status(200).json({
       message: "Login exitoso",
       token,
-      user: { id: user._id, username: user.username, role: user.role },
+      user: { id: usuario._id, username: usuario.username, role: usuario.role },
     });
   } catch (error) {
     console.error(error);
@@ -37,12 +37,12 @@ export const registerUser = async (req, res) => {
   const { username, password, role } = req.body;
 
   try {
-    const userExists = await User.findOne({ username });
+    const userExists = await Usuario.findOne({ username });
     if (userExists) {
       return res.status(400).json({ message: "El usuario ya existe" });
     }
 
-    const newUser = new User({
+    const newUser = new Usuario({
       username,
       password,
       role: role || "empleado", // si no se envía, será empleado

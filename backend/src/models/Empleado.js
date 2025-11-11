@@ -37,7 +37,7 @@ const empleadoSchema = new mongoose.Schema(
       contentType: String,
     },
 
-    usuario: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    usuario: { type: mongoose.Schema.Types.ObjectId, ref: "Usuario" },
   },
   { timestamps: true }
 );
