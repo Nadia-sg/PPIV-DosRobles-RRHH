@@ -30,6 +30,8 @@ const empleadoSchema = new mongoose.Schema(
     categoriaImpositiva: { type: String },
 
     numeroLegajo: { type: String, unique: true },
+    //numeroLegajo: { type: String, unique: true, required: true },
+
 
     // imagenPerfil guardada en la base de datos
     imagenPerfil: {

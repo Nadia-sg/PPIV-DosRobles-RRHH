@@ -1,5 +1,6 @@
 // src/controllers/authController.js
 import Usuario from "../models/Usuario.js";
+import Empleado from "../models/Empleado.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
 
@@ -34,7 +35,7 @@ export const loginUser = async (req, res) => {
 
 // === REGISTRO ===
 export const registerUser = async (req, res) => {
-  const { username, password, role } = req.body;
+  const { username, password, role, legajo } = req.body;
 
   try {
     const userExists = await Usuario.findOne({ username });
@@ -42,17 +43,44 @@ export const registerUser = async (req, res) => {
       return res.status(400).json({ message: "El usuario ya existe" });
     }
 
+    // Buscar empleado por número de legajo
+    const empleado = await Empleado.findOne({ numeroLegajo: legajo });
+    if (!empleado) {
+      return res.status(404).json({ message: "Empleado no encontrado con ese número de legajo" });
+    }
+
+    // Verificar si el empleado ya tiene usuario asignado
+    if (empleado.usuario) {
+      return res.status(400).json({ message: "Este empleado ya tiene un usuario asignado" });
+    }
+
+    // Crear nuevo usuario
     const newUser = new Usuario({
       username,
       password,
-      role: role || "empleado", // si no se envía, será empleado
+      role: role || "empleado",
     });
 
     await newUser.save();
 
-    res.status(201).json({ message: "Usuario creado correctamente" });
+    // Vincular usuario al empleado
+    empleado.usuario = newUser._id;
+    await empleado.save();
+
+    res.status(201).json({ message: "Usuario creado y vinculado correctamente al empleado" });
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error en el servidor" });
+  }
+};
+
+// Lista de los usuarios
+export const getAllUsers = async (req, res) => {
+  try {
+    const usuarios = await Usuario.find();
+    res.status(200).json(usuarios);
+  } catch (error) {
+    console.error("Error al obtener usuarios:", error);
+    res.status(500).json({ message: "Error al obtener usuarios" });
   }
 };
