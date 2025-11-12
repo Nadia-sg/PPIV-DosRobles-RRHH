@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import { Box, Typography, useMediaQuery, Alert } from "@mui/material";
 import TextInput from "../components/ui/TextInput";
 import { LoginButton } from "../components/ui/Buttons";
@@ -13,6 +13,9 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const isMobile = useMediaQuery("(max-width:900px)");
   const navigate = useNavigate();
+
+  const userInputRef = useRef(null);
+  const passwordInputRef = useRef(null);
 
   const handleLogin = async () => {
     try {
@@ -120,25 +123,52 @@ export default function LoginPage() {
           />
         )}
 
-        <Typography variant={isMobile ? "h4" : "h3"} sx={{ mb: 1, color: "#FCFCFC" }}>
+        <Typography
+          variant={isMobile ? "h4" : "h3"}
+          sx={{ mb: 1, color: "#FCFCFC" }}
+        >
           Bienvenidos
         </Typography>
 
-        <Typography variant={isMobile ? "h6" : "h5"} sx={{ mb: 4, color: "#E0E0E0" }}>
+        <Typography
+          variant={isMobile ? "h6" : "h5"}
+          sx={{ mb: 4, color: "#E0E0E0" }}
+        >
           Sistema de Gestión de RRHH
         </Typography>
 
-        <Box sx={{ width: isMobile ? "85%" : "60%", minWidth: 280 }}>
+        <form
+          onSubmit={(e) => {
+            e.preventDefault(); // evita recarga
+            handleLogin(); // ejecuta login
+          }}
+          style={{ width: isMobile ? "85%" : "60%", minWidth: 280 }}
+        >
           <TextInput
             placeholder="Usuario"
             value={user}
+            inputRef={userInputRef}
             onChange={(e) => setUser(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                passwordInputRef.current?.focus();
+              }
+            }}
           />
+
           <TextInput
             placeholder="Contraseña"
             type="password"
             value={password}
+            inputRef={passwordInputRef}
             onChange={(e) => setPassword(e.target.value)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter") {
+                e.preventDefault();
+                handleLogin();
+              }
+            }}
           />
 
           {error && (
@@ -148,7 +178,7 @@ export default function LoginPage() {
           )}
 
           <LoginButton
-            onClick={handleLogin}
+            type="submit"
             sx={{
               mt: 2,
               width: "100%",
@@ -161,7 +191,7 @@ export default function LoginPage() {
           <Typography sx={{ mt: 2, fontSize: "0.85rem", color: "#DADADA" }}>
             ¿Olvidaste tu contraseña?
           </Typography>
-        </Box>
+        </form>
       </Box>
     </Box>
   );
