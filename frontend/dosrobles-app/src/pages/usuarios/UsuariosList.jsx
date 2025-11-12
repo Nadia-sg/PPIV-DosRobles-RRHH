@@ -74,7 +74,14 @@ const UsuariosList = () => {
   const rows = usuarios.map((user) => {
     return {
       foto: (
-        <Avatar sx={{ width: 40, height: 40 }}>
+        <Avatar
+          sx={{ width: 40, height: 40 }}
+          src={
+            user.empleado?.imagenPerfil?.data
+            ? `http://localhost:4000/api/empleados/${user.empleado._id}/imagen`
+            : undefined
+          }
+        >
           {user.username.charAt(0).toUpperCase()}
         </Avatar>
       ),
