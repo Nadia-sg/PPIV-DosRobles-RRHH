@@ -17,6 +17,7 @@ import {
   FichaButtonWithIcon,
 } from "../../components/ui/Buttons";
 import NuevoUsuarioModal from "../../components/modales/NuevoUsuarioModal";
+import VerUsuarioModal from "../../components/modales/VerUsuarioModal";
 
 const UsuariosList = () => {
   const theme = useTheme();
@@ -149,36 +150,19 @@ const UsuariosList = () => {
       />
 
       {/* Modal Ver Usuario */}
-      {usuarioSeleccionado && (
-        <Box
-          sx={{
-            mt: 3,
-            p: 3,
-            border: "1px solid #ddd",
-            borderRadius: 2,
-            maxWidth: 400,
-          }}
-        >
-          <Typography variant="h6" sx={{ mb: 2 }}>
-            {usuarioSeleccionado.username}
-          </Typography>
-          <Typography sx={{ mb: 1 }}>Rol: {usuarioSeleccionado.role}</Typography>
-          <Box sx={{ display: "flex", gap: 2, mt: 2 }}>
-            <SecondaryButton onClick={() => setModalOpen(true)} startIcon={<EditIcon />}>
-              Editar
-            </SecondaryButton>
-            <SecondaryButton
-              onClick={() => handleEliminarUsuario(usuarioSeleccionado)}
-              startIcon={<DeleteIcon />}
-              color="error"
-            >
-              Eliminar
-            </SecondaryButton>
-          </Box>
-        </Box>
-      )}
+      <VerUsuarioModal
+        open={!!usuarioSeleccionado}
+        onClose={() => setUsuarioSeleccionado(null)}
+        usuario={usuarioSeleccionado}
+        onEditar={() => {
+          setModalOpen(true);
+          setUsuarioSeleccionado(null);
+        }}
+        onEliminar={() => handleEliminarUsuario(usuarioSeleccionado)}
+      />
     </Box>
   );
 };
 
 export default UsuariosList;
+
