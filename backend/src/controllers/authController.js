@@ -34,50 +34,46 @@ export const loginUser = async (req, res) => {
 };
 
 // === REGISTRO ===
-export const registerUser = async (req, res) => {
-  const { username, password, role, legajo } = req.body;
-
+export const registrarUsuario = async (req, res) => {
   try {
-    const userExists = await Usuario.findOne({ username });
-    if (userExists) {
-      return res.status(400).json({ message: "El usuario ya existe" });
-    }
+    const { legajo, username, password, role } = req.body;
 
     // Buscar empleado por número de legajo
     const empleado = await Empleado.findOne({ numeroLegajo: legajo });
     if (!empleado) {
-      return res.status(404).json({ message: "Empleado no encontrado con ese número de legajo" });
+      return res.status(404).json({ message: "Empleado no encontrado" });
     }
 
-    // Verificar si el empleado ya tiene usuario asignado
+    // Verificar si ya tiene usuario asignado
     if (empleado.usuario) {
       return res.status(400).json({ message: "Este empleado ya tiene un usuario asignado" });
     }
 
-    // Crear nuevo usuario
-    const newUser = new Usuario({
+    // Crear usuario y vincularlo al empleado
+    const nuevoUsuario = new Usuario({
       username,
       password,
-      role: role || "empleado",
+      role,
+      empleado: empleado._id,
     });
 
-    await newUser.save();
+    await nuevoUsuario.save();
 
-    // Vincular usuario al empleado
-    empleado.usuario = newUser._id;
+    // Actualizar el empleado con el ID del usuario
+    empleado.usuario = nuevoUsuario._id;
     await empleado.save();
 
-    res.status(201).json({ message: "Usuario creado y vinculado correctamente al empleado" });
+    res.status(201).json(nuevoUsuario);
   } catch (error) {
-    console.error(error);
-    res.status(500).json({ message: "Error en el servidor" });
+    console.error("Error al registrar usuario:", error);
+    res.status(500).json({ message: "Error al registrar usuario" });
   }
 };
 
 // Lista de los usuarios
-export const getAllUsers = async (req, res) => {
+export const obtenerUsuarios = async (req, res) => {
   try {
-    const usuarios = await Usuario.find();
+    const usuarios = await Usuario.find().populate("empleado");
     res.status(200).json(usuarios);
   } catch (error) {
     console.error("Error al obtener usuarios:", error);

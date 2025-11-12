@@ -13,7 +13,7 @@ const VerUsuarioModal = ({ open, onClose, usuario, onEditar, onEliminar }) => {
     <ModalCard open={open} onClose={onClose} title="Detalle del Usuario" width={500}>
       <Box sx={{ mt: 2 }}>
         <Stack spacing={2}>
-          <BaseInput label="Número de legajo" value={usuario.legajo || "—"} fullWidth disabled />
+          <BaseInput label="Número de legajo" value={usuario.empleado?.numeroLegajo || "—"} fullWidth disabled />
           <BaseInput label="Nombre de usuario" value={usuario.username} fullWidth disabled />
           <SelectInput
             label="Rol"

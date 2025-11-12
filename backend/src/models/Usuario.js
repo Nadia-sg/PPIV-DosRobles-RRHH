@@ -3,22 +3,12 @@ import mongoose from "mongoose";
 import bcrypt from "bcrypt";
 
 const usuarioSchema = new mongoose.Schema({
-  username: {
-    type: String,
-    required: true,
-    unique: true,
-    trim: true
-  },
-  password: {
-    type: String,
-    required: true
-  },
-  role: {
-    type: String,
-    enum: ["admin", "empleado"],
-    default: "empleado"
-  }
+  username: { type: String, required: true, unique: true, trim: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ["admin", "empleado"], default: "empleado" },
+  empleado: { type: mongoose.Schema.Types.ObjectId, ref: "Empleado" }, 
 });
+
 
 // Middleware para encriptar la contraseña antes de guardar
 usuarioSchema.pre("save", async function (next) {

@@ -1,18 +1,18 @@
 // src/routes/authRoutes.js
 import express from "express";
-import { registerUser, loginUser, getAllUsers } from "../controllers/authController.js";
+import { registrarUsuario, loginUser, obtenerUsuarios } from "../controllers/authController.js";
 //import Usuario from "../models/Usuario.js";
 
 const router = express.Router();
 
 // Registro de usuario
-router.post("/register", registerUser);
+router.post("/register", registrarUsuario);
 
 // Login de usuario
 router.post("/login", loginUser);
 
 // Lista de usuarios
-router.get("/", getAllUsers);
+router.get("/", obtenerUsuarios);
 
 // // ⚠️ Ruta temporal para borrar usuario (solo para desarrollo)
 // router.delete("/delete/:username", async (req, res) => {
