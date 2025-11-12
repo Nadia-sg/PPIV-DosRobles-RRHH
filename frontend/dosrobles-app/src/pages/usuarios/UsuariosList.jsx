@@ -72,8 +72,8 @@ const UsuariosList = () => {
   };
 
   const columns = isMobile
-    ? ["", "Usuario", "Rol", "Acción"]
-    : ["", "Usuario", "Rol", "Acción"];
+    ? ["", "Usuario", "Rol", "Ver Detalle"]
+    : ["", "Usuario", "Rol", "Ver Detalle"];
 
   const rows = usuarios.map((user) => {
     return {
