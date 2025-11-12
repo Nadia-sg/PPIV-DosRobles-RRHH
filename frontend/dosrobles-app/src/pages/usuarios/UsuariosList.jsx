@@ -18,6 +18,8 @@ import {
 } from "../../components/ui/Buttons";
 import NuevoUsuarioModal from "../../components/modales/NuevoUsuarioModal";
 import VerUsuarioModal from "../../components/modales/VerUsuarioModal";
+import EditarUsuarioModal from "../../components/modales/EditarUsuarioModal";
+
 
 const UsuariosList = () => {
   const theme = useTheme();
@@ -27,6 +29,8 @@ const UsuariosList = () => {
   const [usuarioSeleccionado, setUsuarioSeleccionado] = useState(null);
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [editarModalOpen, setEditarModalOpen] = useState(false);
+
 
   const fetchUsuarios = async () => {
     try {
@@ -162,11 +166,27 @@ const UsuariosList = () => {
         onClose={() => setUsuarioSeleccionado(null)}
         usuario={usuarioSeleccionado}
         onEditar={() => {
-          setModalOpen(true);
-          setUsuarioSeleccionado(null);
+          setEditarModalOpen(true);
         }}
+
+        // onEditar={() => {
+        //   setModalOpen(true);
+        //   setUsuarioSeleccionado(null);
+        // }}
         onEliminar={() => handleEliminarUsuario(usuarioSeleccionado)}
       />
+
+      <EditarUsuarioModal
+        open={editarModalOpen}
+        onClose={() => setEditarModalOpen(false)}
+        usuario={usuarioSeleccionado}
+        onUsuarioActualizado={() => {
+          fetchUsuarios();
+          setEditarModalOpen(false);
+          setUsuarioSeleccionado(null);
+        }}
+      />
+
     </Box>
   );
 };

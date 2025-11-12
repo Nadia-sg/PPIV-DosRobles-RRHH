@@ -47,12 +47,12 @@ const VerUsuarioModal = ({ open, onClose, usuario, onEditar, onEliminar }) => {
         <Divider sx={{ my: 3 }} />
 
         <Box sx={{ display: "flex", justifyContent: "flex-end", gap: 2 }}>
-          <SecondaryButton onClick={onEliminar} color="error">
-            Eliminar
-          </SecondaryButton>
-          <PrimaryButton onClick={onEditar}>
-            Editar
-          </PrimaryButton>
+            <PrimaryButton onClick={onEditar}>
+                Editar
+            </PrimaryButton>
+            <SecondaryButton onClick={onEliminar} color="error">
+                Eliminar
+            </SecondaryButton>
         </Box>
       </Box>
     </ModalCard>

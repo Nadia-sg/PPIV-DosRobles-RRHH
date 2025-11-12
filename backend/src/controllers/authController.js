@@ -80,3 +80,30 @@ export const obtenerUsuarios = async (req, res) => {
     res.status(500).json({ message: "Error al obtener usuarios" });
   }
 };
+
+// Para editar los datos del usuario creado
+export const actualizarUsuario = async (req, res) => {
+  try {
+    const { username, password, role } = req.body;
+    const usuario = await Usuario.findById(req.params.id);
+    if (!usuario) {
+      return res.status(404).json({ message: "Usuario no encontrado" });
+    }
+
+    // Actualizar campos
+    if (username) usuario.username = username;
+    if (role) usuario.role = role;
+
+    // Si se envía una nueva contraseña, encriptarla
+    if (password && password.trim() !== "") {
+      const salt = await bcrypt.genSalt(10);
+      usuario.password = await bcrypt.hash(password, salt);
+    }
+
+    await usuario.save();
+    res.status(200).json({ message: "Usuario actualizado correctamente" });
+  } catch (error) {
+    console.error("Error al actualizar usuario:", error);
+    res.status(500).json({ message: "Error al actualizar usuario" });
+  }
+};
