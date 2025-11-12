@@ -49,7 +49,7 @@
   font-size: 1.1rem;
 }
 
-.greeting {
+.greeting, .role {
   font-size: 0.95rem;
   color: var(--secondary, #817a6f);
 }

@@ -9,7 +9,7 @@ export const loginUser = async (req, res) => {
   const { username, password } = req.body;
 
   try {
-    const usuario = await Usuario.findOne({ username });
+    const usuario = await Usuario.findOne({ username }).populate("empleado");
     if (!usuario) return res.status(400).json({ message: "Usuario no encontrado" });
 
     const isMatch = await bcrypt.compare(password, usuario.password);
@@ -25,8 +25,14 @@ export const loginUser = async (req, res) => {
     res.status(200).json({
       message: "Login exitoso",
       token,
-      user: { id: usuario._id, username: usuario.username, role: usuario.role },
+      user: {
+        id: usuario._id,
+        username: usuario.username,
+        role: usuario.role,
+        empleado: usuario.empleado, // ← incluye nombre, apellido, imagen, etc.
+      },
     });
+
   } catch (error) {
     console.error(error);
     res.status(500).json({ message: "Error en el servidor" });
