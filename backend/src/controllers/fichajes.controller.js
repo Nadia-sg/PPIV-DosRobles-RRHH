@@ -3,8 +3,6 @@
 import Fichaje from "../models/Fichaje.js";
 import Empleado from "../models/Empleado.js";
 
-
-
 // ===================
 // INICIAR JORNADA
 // ===================
@@ -16,10 +14,14 @@ export const iniciarJornada = async (req, res) => {
       return res.status(400).json({ message: "Faltan datos requeridos" });
     }
 
-    const fichajeActivo = await Fichaje.findOne({ empleadoId, horaSalida: { $exists: false } });
+    const fichajeActivo = await Fichaje.findOne({
+      empleadoId,
+      horaSalida: { $exists: false },
+    });
     if (fichajeActivo) {
       return res.status(400).json({
-        message: "Ya tienes una jornada abierta. Debes registrar la salida antes de iniciar otra.",
+        message:
+          "Ya tienes una jornada abierta. Debes registrar la salida antes de iniciar otra.",
       });
     }
 
@@ -51,7 +53,8 @@ export const registrarSalida = async (req, res) => {
     const { fichajeId, horaSalida, ubicacionSalida } = req.body;
 
     const fichaje = await Fichaje.findById(fichajeId);
-    if (!fichaje) return res.status(404).json({ message: "Fichaje no encontrado" });
+    if (!fichaje)
+      return res.status(404).json({ message: "Fichaje no encontrado" });
 
     // guardamos ubicacionSalida si viene
     if (ubicacionSalida) {
@@ -63,7 +66,7 @@ export const registrarSalida = async (req, res) => {
     const [hEntrada, mEntrada] = fichaje.horaEntrada.split(":").map(Number);
     const [hSalida, mSalida] = horaSalida.split(":").map(Number);
 
-    let totalMin = (hSalida * 60 + mSalida) - (hEntrada * 60 + mEntrada);
+    let totalMin = hSalida * 60 + mSalida - (hEntrada * 60 + mEntrada);
 
     // restamos los minutos de pausa si existen
     const totalPausaMin = calcularMinutosPausas(fichaje.pausas);
@@ -73,7 +76,9 @@ export const registrarSalida = async (req, res) => {
 
     const diffMin = totalMin - 480;
     const sign = diffMin >= 0 ? "+" : "-";
-    fichaje.diferenciaHs = `${sign}${Math.floor(Math.abs(diffMin) / 60)}h ${Math.abs(diffMin) % 60}m`;
+    fichaje.diferenciaHs = `${sign}${Math.floor(Math.abs(diffMin) / 60)}h ${
+      Math.abs(diffMin) % 60
+    }m`;
 
     await fichaje.save();
 
@@ -84,8 +89,6 @@ export const registrarSalida = async (req, res) => {
   }
 };
 
-
-
 // ===================
 // REGISTRAR PAUSA
 // ===================
@@ -94,7 +97,8 @@ export const registrarPausa = async (req, res) => {
     const { fichajeId, inicio, fin } = req.body;
 
     const fichaje = await Fichaje.findById(fichajeId);
-    if (!fichaje) return res.status(404).json({ message: "Fichaje no encontrado" });
+    if (!fichaje)
+      return res.status(404).json({ message: "Fichaje no encontrado" });
 
     if (inicio) fichaje.pausas.push({ inicio, fin: null });
     if (fin) {
@@ -123,14 +127,13 @@ function calcularMinutosPausas(pausas) {
     if (pausa.inicio && pausa.fin) {
       const [h1, m1] = pausa.inicio.split(":").map(Number);
       const [h2, m2] = pausa.fin.split(":").map(Number);
-      const minutos = (h2 * 60 + m2) - (h1 * 60 + m1);
+      const minutos = h2 * 60 + m2 - (h1 * 60 + m1);
       totalPausasMin += minutos > 0 ? minutos : 0;
     }
   });
 
   return totalPausasMin;
 }
-
 
 // ===================
 // OBTENER TODOS LOS FICHAJES
@@ -146,12 +149,14 @@ export const getFichajes = async (req, res) => {
 };
 
 // ===================
-// OBTENER POR EMPLEADO
+// OBTENER FICHAJES POR EMPLEADO (día a día)
 // ===================
 export const getFichajesPorEmpleado = async (req, res) => {
   try {
     const { empleadoId } = req.params;
-    const fichajes = await Fichaje.find({ empleadoId }).populate("empleadoId");
+
+    // Buscar fichajes de este empleado
+    const fichajes = await Fichaje.find({ empleadoId }).sort({ fecha: -1 });
 
     if (!fichajes.length)
       return res.status(404).json({ message: "Este empleado no tiene fichajes registrados" });
@@ -164,11 +169,90 @@ export const getFichajesPorEmpleado = async (req, res) => {
 };
 
 // ===================
+// RESUMEN MENSUAL POR EMPLEADO
+// ===================
+export const getFichajesEmpleados = async (req, res) => {
+  try {
+    const { mes, anio } = req.query;
+
+    if (!mes || !anio)
+      return res.status(400).json({ message: "Debe enviar mes y año" });
+
+    const inicioMes = new Date(anio, mes - 1, 1);
+    const finMes = new Date(anio, mes, 0, 23, 59, 59);
+
+    const empleados = await Empleado.find({ estado: "activo" });
+    const resultados = [];
+
+    for (const emp of empleados) {
+      const fichajes = await Fichaje.find({
+        empleadoId: emp._id,
+        fecha: { $gte: inicioMes, $lte: finMes },
+      });
+
+      // Sumar horas trabajadas
+      let totalMinutos = 0;
+      fichajes.forEach((f) => {
+        if (f.totalTrabajado) {
+          const [h, m] = f.totalTrabajado.split("h");
+          const horas = parseInt(h) || 0;
+          const minutos = parseInt((m || "0").replace("m", "")) || 0;
+          totalMinutos += horas * 60 + minutos;
+        }
+      });
+
+      const hsTrabajadas = `${Math.floor(totalMinutos / 60)}h ${totalMinutos % 60}m`;
+
+      // Horas previstas
+      const diasHabiles = getDiasHabiles(mes, anio);
+      let horasPorDia = 8;
+      if (emp.jornada === "media") horasPorDia = 4;
+      if (emp.jornada === "parcial") horasPorDia = 6;
+
+      const hsPrevistas = `${diasHabiles * horasPorDia}h`;
+
+      resultados.push({
+        idEmpleado: emp._id,
+        nombre: emp.nombre,
+        apellido: emp.apellido,
+        fotoPerfil: emp.fotoPerfil,
+        hsPrevistas,
+        hsTrabajadas,
+      });
+    }
+
+    res.status(200).json(resultados);
+  } catch (error) {
+    console.error(error);
+    res.status(500).json({ message: "Error del servidor" });
+  }
+};
+
+// ==============================
+// FUNCIÓN AUXILIAR DIAS HÁBILES
+// =============================
+
+function getDiasHabiles(mes, anio) {
+  const inicio = new Date(anio, mes - 1, 1);
+  const fin = new Date(anio, mes, 0);
+  let dias = 0;
+  for (let d = new Date(inicio); d <= fin; d.setDate(d.getDate() + 1)) {
+    const day = d.getDay();
+    if (day !== 0 && day !== 6) dias++;
+  }
+  return dias;
+}
+
+
+
+// ===================
 // OBTENER FICHAJES ACTIVOS
 // ===================
 export const getFichajesActivos = async (req, res) => {
   try {
-    const fichajesActivos = await Fichaje.find({ horaSalida: null }).populate("empleadoId");
+    const fichajesActivos = await Fichaje.find({ horaSalida: null }).populate(
+      "empleadoId"
+    );
     res.status(200).json({
       message: "Fichajes activos obtenidos correctamente",
       data: fichajesActivos,
@@ -188,14 +272,16 @@ export const cerrarJornada = async (req, res) => {
 
     const fichaje = await Fichaje.findOne({ empleadoId, horaSalida: null });
     if (!fichaje)
-      return res.status(404).json({ message: "No hay jornada activa para este empleado" });
+      return res
+        .status(404)
+        .json({ message: "No hay jornada activa para este empleado" });
 
     fichaje.horaSalida = horaSalida;
 
     const [hEntrada, mEntrada] = fichaje.horaEntrada.split(":").map(Number);
     const [hSalida, mSalida] = horaSalida.split(":").map(Number);
 
-    let totalMin = (hSalida * 60 + mSalida) - (hEntrada * 60 + mEntrada);
+    let totalMin = hSalida * 60 + mSalida - (hEntrada * 60 + mEntrada);
 
     // 🔹 Nuevo: restamos las pausas
     const totalPausaMin = calcularMinutosPausas(fichaje.pausas);
@@ -205,11 +291,15 @@ export const cerrarJornada = async (req, res) => {
 
     const diffMin = totalMin - 480;
     const sign = diffMin >= 0 ? "+" : "-";
-    fichaje.diferenciaHs = `${sign}${Math.floor(Math.abs(diffMin) / 60)}h ${Math.abs(diffMin) % 60}m`;
+    fichaje.diferenciaHs = `${sign}${Math.floor(Math.abs(diffMin) / 60)}h ${
+      Math.abs(diffMin) % 60
+    }m`;
 
     await fichaje.save();
 
-    const fichajesActivos = await Fichaje.find({ horaSalida: null }).populate("empleadoId");
+    const fichajesActivos = await Fichaje.find({ horaSalida: null }).populate(
+      "empleadoId"
+    );
 
     res.status(200).json({
       message: "Jornada cerrada correctamente",

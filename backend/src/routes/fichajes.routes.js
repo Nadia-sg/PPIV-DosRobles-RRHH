@@ -6,6 +6,7 @@ import {
   registrarSalida,
   registrarPausa,
   getFichajes,
+  getFichajesEmpleados,
   getFichajesPorEmpleado,
   getFichajesActivos,
   cerrarJornada,
@@ -20,9 +21,10 @@ router.post("/pausa", registrarPausa);
 router.post("/cerrar", cerrarJornada);
 
 router.get("/", getFichajes);
-router.get("/empleado/:empleadoId", getFichajesPorEmpleado);
+router.get("/empleados-mes", getFichajesEmpleados);
 router.get("/activos", getFichajesActivos);
 router.get("/estado", getEstadoEquipo);
+router.get("/empleado/:empleadoId", getFichajesPorEmpleado);
 
 
 export default router;

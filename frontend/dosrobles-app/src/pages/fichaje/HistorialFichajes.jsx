@@ -10,7 +10,7 @@ const HistorialFichajes = () => {
   const [error, setError] = useState(null);
 
   // ID del empleado logueado
-  const empleadoId = "690a9f5cd37450b870dc39fe";
+  const empleadoId = "6912a5168034733944baedcb";
 
   const columns = ["Fecha", "Hora Ingreso", "Hora Salida", "Hs Trabajadas", "Hs Estimadas"];
 
@@ -70,6 +70,7 @@ const HistorialFichajes = () => {
         </Typography>
       </Box>
 
+
       {/* === Contenido Dinámico === */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
@@ -80,10 +81,11 @@ const HistorialFichajes = () => {
           {error}
         </Typography>
       ) : (
-        <CustomTable columns={columns} rows={rows} />
-      )}
-    </Box>
+        <CustomTable columns={columns} rows={rows} maxHeight="600px"/>
+      )}</Box>
+
   );
+  
 };
 
 export default HistorialFichajes;

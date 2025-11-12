@@ -35,7 +35,7 @@ export default function FichajeCard() {
   const progress = Math.min((seconds / totalSeconds) * 100, 100);
   const navigate = useNavigate();
 
-  const empleadoId = "690a9f5cd37450b870dc39fe";
+  const empleadoId = "6912a5168034733944baedcb";
 
   useEffect(() => {
     if (estadoFichaje !== "activo") return;

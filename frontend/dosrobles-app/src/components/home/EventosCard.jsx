@@ -202,9 +202,9 @@ export default function EventosCard({ API_BASE }) {
           display: "flex",
           flexDirection: "column",
           gap: 1,
-          maxHeight: 300, // ajusta según lo que quieras mostrar
-          overflowY: "auto", // permite scroll vertical
-          pr: 1, // padding a la derecha para que no tape la scrollbar
+          maxHeight: 300, 
+          overflowY: "auto", 
+          pr: 1, 
         }}
       >
         {eventos.map((evento, i) => {
