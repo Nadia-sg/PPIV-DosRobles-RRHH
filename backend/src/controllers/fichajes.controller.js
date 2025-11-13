@@ -348,3 +348,37 @@ export const getEstadoEquipo = async (req, res) => {
     res.status(500).json({ message: "Error al obtener estado del equipo" });
   }
 };
+
+// === ACTUALIZAR FICHAJE ===
+export const actualizarFichaje = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const updates = req.body;
+
+    const fichaje = await Fichaje.findByIdAndUpdate(id, updates, { new: true });
+    if (!fichaje) {
+      return res.status(404).json({ success: false, message: "Fichaje no encontrado" });
+    }
+
+    res.status(200).json({ success: true, message: "Fichaje actualizado", data: fichaje });
+  } catch (error) {
+    console.error("Error al actualizar fichaje:", error);
+    res.status(500).json({ success: false, message: "Error al actualizar el fichaje" });
+  }
+};
+
+// === ELIMINAR FICHAJE ===
+export const eliminarFichaje = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const fichaje = await Fichaje.findByIdAndDelete(id);
+    if (!fichaje) {
+      return res.status(404).json({ success: false, message: "Fichaje no encontrado" });
+    }
+
+    res.status(200).json({ success: true, message: "Fichaje eliminado" });
+  } catch (error) {
+    console.error("Error al eliminar fichaje:", error);
+    res.status(500).json({ success: false, message: "Error al eliminar el fichaje" });
+  }
+};

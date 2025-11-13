@@ -10,8 +10,11 @@ import {
   getFichajesPorEmpleado,
   getFichajesActivos,
   cerrarJornada,
-  getEstadoEquipo 
+  getEstadoEquipo,
+  actualizarFichaje, 
+  eliminarFichaje
 } from "../controllers/fichajes.controller.js";
+
 
 const router = express.Router();
 
@@ -25,6 +28,9 @@ router.get("/empleados-mes", getFichajesEmpleados);
 router.get("/activos", getFichajesActivos);
 router.get("/estado", getEstadoEquipo);
 router.get("/empleado/:empleadoId", getFichajesPorEmpleado);
+
+router.put("/:id", actualizarFichaje);
+router.delete("/:id", eliminarFichaje);
 
 
 export default router;
