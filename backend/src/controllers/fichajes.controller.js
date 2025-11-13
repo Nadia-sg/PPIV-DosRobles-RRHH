@@ -382,3 +382,47 @@ export const eliminarFichaje = async (req, res) => {
     res.status(500).json({ success: false, message: "Error al eliminar el fichaje" });
   }
 };
+
+// === CREAR FICHAJE MANUAL ===
+export const crearFichaje = async (req, res) => {
+  try {
+    const { empleadoId, horaEntrada, horaSalida, tipoFichaje } = req.body;
+
+    if (!empleadoId || !horaEntrada || !horaSalida || !tipoFichaje) {
+      return res.status(400).json({ message: "Faltan datos requeridos" });
+    }
+
+    // Ubicación según tipo
+    const ubicacion = tipoFichaje.toLowerCase() === "oficina"
+      ? { lat: -34.61, lon: -58.38 }
+      : { lat: null, lon: null };
+
+    const nuevoFichaje = new Fichaje({
+      empleadoId,
+      horaEntrada,
+      horaSalida,
+      tipoFichaje,
+      ubicacion,
+      ubicacionSalida: { lat: null, lon: null },
+      pausas: [],
+    });
+
+    // Calcular total trabajado y diferencia
+    const [hEntrada, mEntrada] = horaEntrada.split(":").map(Number);
+    const [hSalida, mSalida] = horaSalida.split(":").map(Number);
+
+    let totalMin = hSalida * 60 + mSalida - (hEntrada * 60 + mEntrada);
+    nuevoFichaje.totalTrabajado = `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
+
+    const diffMin = totalMin - 480;
+    const sign = diffMin >= 0 ? "+" : "-";
+    nuevoFichaje.diferenciaHs = `${sign}${Math.floor(Math.abs(diffMin)/60)}h ${Math.abs(diffMin)%60}m`;
+
+    await nuevoFichaje.save();
+
+    res.status(201).json({ message: "Fichaje creado correctamente", data: nuevoFichaje });
+  } catch (error) {
+    console.error("Error al crear fichaje:", error);
+    res.status(500).json({ message: "Error al crear fichaje" });
+  }
+};

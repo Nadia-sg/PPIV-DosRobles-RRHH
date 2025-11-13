@@ -12,7 +12,8 @@ import {
   cerrarJornada,
   getEstadoEquipo,
   actualizarFichaje, 
-  eliminarFichaje
+  eliminarFichaje,
+  crearFichaje
 } from "../controllers/fichajes.controller.js";
 
 
@@ -31,6 +32,7 @@ router.get("/empleado/:empleadoId", getFichajesPorEmpleado);
 
 router.put("/:id", actualizarFichaje);
 router.delete("/:id", eliminarFichaje);
+router.post("/crear", crearFichaje);
 
 
 export default router;

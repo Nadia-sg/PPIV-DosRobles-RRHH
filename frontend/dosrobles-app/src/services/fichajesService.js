@@ -31,3 +31,18 @@ export async function deleteFichaje(fichajeId) {
   }
   return res.json();
 }
+
+export async function crearFichaje(payload) {
+  const res = await fetch(`${API_URL}/crear`, {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify(payload),
+  });
+
+  if (!res.ok) {
+    const text = await res.text().catch(() => null);
+    throw new Error(`Error al crear fichaje: ${res.status} ${text || ""}`);
+  }
+
+  return res.json();
+}

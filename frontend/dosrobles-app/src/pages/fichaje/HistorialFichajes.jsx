@@ -1,17 +1,30 @@
 // src/pages/empleados/HistorialFichajes.jsx
 
 import React, { useEffect, useState } from "react";
-import { Box, Typography, CircularProgress, Button, TextField } from "@mui/material";
+import {
+  Box,
+  Typography,
+  CircularProgress,
+  Button,
+  TextField,
+} from "@mui/material";
 import { useParams, useLocation } from "react-router-dom";
 import CustomTable from "../../components/ui/CustomTable";
 import ModalCard from "../../components/ui/ModalCard";
-import { getFichajesPorEmpleado, updateFichaje, deleteFichaje } from "../../services/fichajesService";
+import { PrimaryButton } from "../../components/ui/Buttons";
+import {
+  getFichajesPorEmpleado,
+  updateFichaje,
+  deleteFichaje,
+  crearFichaje,
+} from "../../services/fichajesService";
 
 const HistorialFichajes = () => {
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
   const [empleado, setEmpleado] = useState(null);
+  const [openCreateModal, setOpenCreateModal] = useState(false);
 
   // Modal
   const [openModal, setOpenModal] = useState(false);
@@ -42,7 +55,9 @@ const HistorialFichajes = () => {
 
         const API_BASE =
           import.meta.env.VITE_API_URL || "http://localhost:4000";
-        const empleadoResponse = await fetch(`${API_BASE}/empleados/${idFinal}`);
+        const empleadoResponse = await fetch(
+          `${API_BASE}/empleados/${idFinal}`
+        );
         const empleadoData = await empleadoResponse.json();
 
         console.log("👤 Datos del empleado:", empleadoData);
@@ -167,6 +182,39 @@ const HistorialFichajes = () => {
     }
   };
 
+  const handleCreate = async (e) => {
+  e.preventDefault();
+
+  const tipoFichaje = e.target.tipoFichaje.value.trim().toLowerCase();
+  const horaEntrada = e.target.horaEntrada.value.trim();
+  const horaSalida = e.target.horaSalida.value.trim();
+
+  if (!horaEntrada || !horaSalida) {
+    alert("⚠️ Debes completar las horas de entrada y salida.");
+    return;
+  }
+
+  const nuevoFichaje = {
+    empleadoId: idFinal,
+    horaEntrada,
+    horaSalida,
+    tipoFichaje,
+  };
+
+  try {
+    await crearFichaje(nuevoFichaje);
+    setOpenCreateModal(false);
+
+    // Refrescar tabla
+    const refreshed = await getFichajesPorEmpleado(idFinal);
+    setRows(refreshed.map((f) => formatRow(f)));
+  } catch (err) {
+    console.error("❌ Error al crear fichaje:", err);
+    alert("Error al crear el fichaje. Ver consola para más detalles.");
+  }
+};
+
+
   return (
     <Box sx={{ p: 4 }}>
       {/* === Encabezado === */}
@@ -212,7 +260,6 @@ const HistorialFichajes = () => {
           </Typography>
         )}
       </Box>
-
       {/* === Contenido Dinámico === */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
@@ -225,7 +272,6 @@ const HistorialFichajes = () => {
       ) : (
         <CustomTable columns={columns} rows={rows} maxHeight="600px" />
       )}
-
       {/* === Modal de edición === */}
       {openModal && (
         <ModalCard
@@ -266,6 +312,57 @@ const HistorialFichajes = () => {
           </form>
         </ModalCard>
       )}
+      {/* === Modal de creación === */}
+      {openCreateModal && (
+        <ModalCard
+          open={openCreateModal}
+          onClose={() => setOpenCreateModal(false)}
+          title="Nuevo Fichaje"
+        >
+          <form onSubmit={handleCreate}>
+            <TextField
+              name="horaEntrada"
+              label="Hora de entrada"
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              name="horaSalida"
+              label="Hora de salida"
+              fullWidth
+              margin="normal"
+            />
+            <TextField
+              name="tipoFichaje"
+              label="Tipo de fichaje (oficina / remoto)"
+              defaultValue="remoto"
+              fullWidth
+              margin="normal"
+            />
+            <Box sx={{ display: "flex", justifyContent: "flex-end", mt: 2 }}>
+              <Button onClick={() => setOpenCreateModal(false)} sx={{ mr: 2 }}>
+                Cancelar
+              </Button>
+              <Button type="submit" variant="contained">
+                Guardar
+              </Button>
+            </Box>
+          </form>
+        </ModalCard>
+      )}
+      {/* === Botón Agregar Fichaje === */}{" "}
+      <Box sx={{ mt: 3 }}>
+        {" "}
+        <PrimaryButton
+          fullWidth
+          onClick={() => {
+            setOpenCreateModal(true);
+          }}
+        >
+          {" "}
+          Agregar fichaje{" "}
+        </PrimaryButton>{" "}
+      </Box>
     </Box>
   );
 };
