@@ -28,6 +28,7 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado }) => {
             nombre: data.nombre || "",
             apellido: data.apellido || "",
             fechaAlta: data.fechaAlta || "",
+            numeroDocumento: data.numeroDocumento || "",
             cuil: data.cuil || "",
             telefono: data.telefono || "",
             email: data.email || "",

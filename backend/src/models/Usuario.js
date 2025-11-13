@@ -1,48 +1,27 @@
+// src/models/Usuario.js
 import mongoose from "mongoose";
+import bcrypt from "bcrypt";
 
-const usuarioSchema = new mongoose.Schema(
-  {
-    // Referencia al empleado
-    empleadoId: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Empleado",
-      required: true,
-      unique: true,
-    },
+const usuarioSchema = new mongoose.Schema({
+  username: { type: String, required: true, unique: true, trim: true },
+  password: { type: String, required: true },
+  role: { type: String, enum: ["admin", "empleado"], default: "empleado" },
+  empleado: { type: mongoose.Schema.Types.ObjectId, ref: "Empleado" }, 
+});
 
-    // Credenciales
-    username: {
-      type: String,
-      required: true,
-      unique: true,
-      trim: true,
-      lowercase: true,
-    },
-    password: {
-      type: String,
-      required: true,
-    },
 
-    // Rol de usuario
-    rol: {
-      type: String,
-      enum: ["empleado", "gerente", "rrhh", "admin"],
-      default: "empleado",
-    },
+// Middleware para encriptar la contraseña antes de guardar
+usuarioSchema.pre("save", async function (next) {
+  if (!this.isModified("password")) return next();
+  const salt = await bcrypt.genSalt(10);
+  this.password = await bcrypt.hash(this.password, salt);
+  next();
+});
 
-    // Estado
-    estado: {
-      type: Boolean,
-      default: true,
-    },
-  },
-  {
-    timestamps: true,
-  }
-);
+// Método para comparar contraseñas
+usuarioSchema.methods.comparePassword = async function (password) {
+  return bcrypt.compare(password, this.password);
+};
 
-// Índice para búsquedas rápidas
-usuarioSchema.index({ username: 1 });
-usuarioSchema.index({ empleadoId: 1 });
-
-export default mongoose.model("Usuario", usuarioSchema);
+const Usuario = mongoose.model("Usuario", usuarioSchema);
+export default Usuario;

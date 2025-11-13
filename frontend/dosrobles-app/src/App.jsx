@@ -27,6 +27,9 @@ import BandejaEntrada from "./pages/BandejaEntrada";
 import CalculoHaberes from "./pages/nomina/CalculoHaberes";
 import RecibosDigitales from "./pages/nomina/RecibosDigitales";
 
+// Módulo 5 - Usuarios
+import UsuariosList from "./pages/usuarios/UsuariosList"; // <-- Nueva ruta
+
 // Pruebas de componentes
 import ComponentsDemo from "./pages/ComponentsDemo";
 import FormDemo from "./pages/FormDemo";
@@ -43,11 +46,10 @@ function App() {
 
       {/* Todas las demás rutas con layout */}
       <Route element={<AppLayout />}>
-
         {/* Home */}
         <Route path="/home" element={<Home />} />
 
-         {/* Bandeja de Entrada*/}
+        {/* Bandeja de Entrada */}
         <Route path="/bandeja-entrada" element={<BandejaEntrada />} />
 
         {/* Empleados */}
@@ -88,7 +90,6 @@ function App() {
         />
         <Route path="/licencias/calendario" element={<CalendarioLicencias />} />
 
-
         {/* Nómina */}
         <Route
           path="/nomina/calculo"
@@ -111,10 +112,11 @@ function App() {
         <Route path="/nomina/recibos" element={<RecibosDigitales />} />
         <Route path="/recibos-digitales" element={<RecibosDigitales />} />
 
+        {/* Usuarios */}
+        <Route path="/usuarios" element={<UsuariosList />} /> {/* <-- Nueva ruta */}
+
         {/* Demo componentes */}
         <Route path="/components-demo" element={<ComponentsDemo />} />
-
-        {/* Demo formularios */}
         <Route path="/form-demo" element={<FormDemo />} />
 
         {/* Ruta por defecto */}

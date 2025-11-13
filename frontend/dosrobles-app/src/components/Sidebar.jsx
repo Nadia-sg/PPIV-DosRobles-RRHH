@@ -22,7 +22,7 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
 
   // ✅ Cargar usuario desde localStorage
   const user = JSON.parse(localStorage.getItem("user"));
-  const userName = user?.name || "Usuario";
+  // const userName = user?.name || "Usuario";
   const userRole = user?.role || "empleado";
 
   const routes = {
@@ -35,6 +35,7 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
     Empleados: "/empleados",
     "Control Horario": "/fichaje/empleados",
     Nómina: "/nomina/calculo",
+    Usuarios: "/usuarios", // <-- nueva ruta agregada
   };
 
   useEffect(() => {
@@ -71,10 +72,21 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
         <>
           <div className={styles.profile}>
             <div className={styles.avatar}>
-              {userName.slice(0, 2).toUpperCase()}
+              {user?.empleado?.imagenPerfil?.data ? (
+                <img
+                  src={`http://localhost:4000/api/empleados/${user.empleado._id}/imagen`}
+                  alt="Perfil"
+                  style={{ width: "80px", height: "80px" }}
+                  className={styles.avatarImg}
+                />
+              ) : (
+                user?.username?.slice(0, 2).toUpperCase()
+              )}
             </div>
-            <p className={styles.greeting}>¡Hola, {userName}!</p>
-            <p className={styles.role}>({userRole})</p>
+            <p className={styles.greeting}>
+              ¡Hola, {user?.empleado?.nombre || user?.username}!
+            </p>
+            <p className={styles.role}>({user?.role})</p>
           </div>
 
           <ul className={styles.menuList}>
@@ -148,7 +160,12 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
 
                 {openMenus["organizacion"] && (
                   <ul className={styles.submenu}>
-                    {["Empleados", "Control Horario", "Nómina"].map((item) => (
+                    {[
+                      "Empleados",
+                      "Control Horario",
+                      "Nómina",
+                      "Usuarios", // <-- nueva opción agregada aquí
+                    ].map((item) => (
                       <li
                         key={item}
                         className={active === item ? styles.activeSub : ""}
@@ -169,4 +186,3 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
 });
 
 export default Sidebar;
-

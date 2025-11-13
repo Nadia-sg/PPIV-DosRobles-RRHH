@@ -12,6 +12,8 @@ export default function TextInput({
   error,
   icon,
   type = "text",
+  inputRef,       
+  onKeyDown,      
 }) {
   return (
     <Box sx={{ mb: 3 }}>
@@ -47,6 +49,8 @@ export default function TextInput({
           placeholder={placeholder}
           value={value}
           onChange={onChange}
+          inputRef={inputRef}       
+          onKeyDown={onKeyDown}     
           InputProps={{
             disableUnderline: true,
             sx: {

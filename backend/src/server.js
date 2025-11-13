@@ -43,6 +43,7 @@ app.use("/api/nomina", nominaRoutes);
 app.use("/api/pdf", pdfRoutes);
 app.use("/api/notificaciones", notificacionesRoutes);
 app.use("/api/documentos", documentosRoutes);
+app.use("/api/users", authRoutes);
 
 // Iniciar servidor
 const PORT = process.env.PORT || 4000;

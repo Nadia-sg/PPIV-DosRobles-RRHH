@@ -30,14 +30,14 @@ const empleadoSchema = new mongoose.Schema(
     categoriaImpositiva: { type: String },
 
     numeroLegajo: { type: String, unique: true },
-
+    
     // imagenPerfil guardada en la base de datos
     imagenPerfil: {
       data: Buffer,
       contentType: String,
     },
 
-    usuario: { type: mongoose.Schema.Types.ObjectId, ref: "User" },
+    usuario: { type: mongoose.Schema.Types.ObjectId, ref: "Usuario" },
   },
   { timestamps: true }
 );

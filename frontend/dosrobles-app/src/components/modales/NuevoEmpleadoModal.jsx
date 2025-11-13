@@ -28,6 +28,7 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
   const [errorMessage, setErrorMessage] = useState("");
 
   const initialFormData = {
+    numeroLegajo: "",
     nombre: "",
     apellido: "",
     tipoDocumento: "",
@@ -70,6 +71,8 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
           const response = await fetch("http://localhost:4000/api/empleados/proximo-legajo");
           const data = await response.json();
           setNextLegajo(data.proximoLegajo || "Error");
+          // Guardar el legajo en formData para enviarlo al backend
+          setFormData((prev) => ({ ...prev, numeroLegajo: data.proximoLegajo }));
         } catch (error) {
           console.error("Error al obtener el próximo legajo:", error);
           setNextLegajo("Error");
