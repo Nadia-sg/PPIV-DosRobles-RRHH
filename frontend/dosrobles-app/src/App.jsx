@@ -53,6 +53,7 @@ function App() {
         {/* Fichaje */}
         <Route path="/fichaje/historial" element={<HistorialFichajes />} />
         <Route path="/fichaje/empleados" element={<FichajeEmpleados />} />
+        <Route path="/fichaje/historial/:empleadoId" element={<HistorialFichajes />} />
 
         {/* Licencias */}
         <Route path="/licencias" element={<LicenciasList />} />

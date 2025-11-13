@@ -13,6 +13,7 @@ import CheckBoxInput from "../../components/ui/CheckBoxInput";
 import CustomTable from "../../components/ui/CustomTable";
 import SearchBar from "../../components/ui/SearchBar";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { useNavigate } from "react-router-dom";
 
 const meses = [
   "Enero",
@@ -33,7 +34,7 @@ const FichajeEmpleados = () => {
   // 📅 Fecha actual
   const fechaActual = new Date();
   const mesActual = meses[fechaActual.getMonth()]; // Ej: "Noviembre"
-  const anioActual = fechaActual.getFullYear();    // Ej: 2025
+  const anioActual = fechaActual.getFullYear(); // Ej: 2025
 
   // 🧩 Estados
   const [mes, setMes] = useState(mesActual);
@@ -84,11 +85,15 @@ const FichajeEmpleados = () => {
     hsTrabajadas: f.hsTrabajadas || "—",
     masInfo: (
       <NextButton
-        onClick={() => console.log("Ver detalle", f.idEmpleado)}
+        onClick={() =>
+          navigate(`/fichaje/historial/${f.idEmpleado}?admin=true`)
+        }
         endIcon={<ArrowForwardIcon />}
       />
     ),
   }));
+
+  const navigate = useNavigate();
 
   // 🖥 Render
   return (
@@ -132,15 +137,14 @@ const FichajeEmpleados = () => {
       </Stack>
 
       {/* Tabla */}
-   
-        {loading ? (
-          <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
-            <CircularProgress />
-          </Box>
-        ) : (
-          <CustomTable columns={columns} rows={rows} />
-        )}
 
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <CustomTable columns={columns} rows={rows} />
+      )}
 
       {/* Botón */}
       <Box sx={{ mt: 3 }}>
