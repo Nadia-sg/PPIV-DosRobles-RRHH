@@ -1,5 +1,5 @@
 // src/pages/empleados/HistorialFichajes.jsx
-
+// src/pages/empleados/HistorialFichajes.jsx
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -7,6 +7,8 @@ import {
   CircularProgress,
   Button,
   TextField,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { useParams, useLocation } from "react-router-dom";
 import CustomTable from "../../components/ui/CustomTable";
@@ -35,8 +37,14 @@ const HistorialFichajes = () => {
   const isAdminView =
     new URLSearchParams(location.search).get("admin") === "true";
 
-  // Si no hay ID en la URL, usamos el de Mariana (vista personal)
   const idFinal = empleadoId || "6912a5168034733944baedcb";
+
+  // ===== Toast
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
 
   const columns = [
     "Fecha",
@@ -51,7 +59,6 @@ const HistorialFichajes = () => {
     const cargarDatos = async () => {
       try {
         const data = await getFichajesPorEmpleado(idFinal);
-        console.log("Datos recibidos del backend:", data);
 
         const API_BASE =
           import.meta.env.VITE_API_URL || "http://localhost:4000";
@@ -60,7 +67,6 @@ const HistorialFichajes = () => {
         );
         const empleadoData = await empleadoResponse.json();
 
-        console.log("👤 Datos del empleado:", empleadoData);
         setEmpleado({
           nombre: empleadoData.nombre || "Empleado",
           apellido: empleadoData.apellido || "",
@@ -89,7 +95,7 @@ const HistorialFichajes = () => {
     const opcionesDia = { weekday: "short" };
     const opcionesMes = { day: "2-digit", month: "short" };
 
-    const baseRow = {
+    return {
       fecha: (
         <Box
           sx={{
@@ -110,30 +116,28 @@ const HistorialFichajes = () => {
       horaSalida: fichaje.horaSalida ? `${fichaje.horaSalida} hs` : "-",
       hsTrabajadas: fichaje.totalTrabajado || "-",
       hsEstimadas: "08:00 hs",
+      ...(isAdminView && {
+        acciones: (
+          <Box sx={{ display: "flex", gap: 1 }}>
+            <Button
+              variant="outlined"
+              size="small"
+              onClick={() => handleEdit(fichaje)}
+            >
+              Editar
+            </Button>
+            <Button
+              variant="outlined"
+              color="error"
+              size="small"
+              onClick={() => handleDelete(fichaje._id)}
+            >
+              Eliminar
+            </Button>
+          </Box>
+        ),
+      }),
     };
-
-    if (isAdminView) {
-      baseRow.acciones = (
-        <Box sx={{ display: "flex", gap: 1 }}>
-          <Button
-            variant="outlined"
-            size="small"
-            onClick={() => handleEdit(fichaje)}
-          >
-            Editar
-          </Button>
-          <Button
-            variant="outlined"
-            color="error"
-            size="small"
-            onClick={() => handleDelete(fichaje._id)}
-          >
-            Eliminar
-          </Button>
-        </Box>
-      );
-    }
-    return baseRow;
   };
 
   // === Abrir modal de edición ===
@@ -147,14 +151,18 @@ const HistorialFichajes = () => {
     e.preventDefault();
 
     const updatedData = {
+      fecha: new Date(e.target.fecha?.value + "T00:00:00").toISOString(),
       horaEntrada: e.target.horaEntrada.value.trim(),
       horaSalida: e.target.horaSalida.value.trim(),
       tipoFichaje: e.target.tipoFichaje.value.trim(),
     };
 
-    // Validación mínima
     if (!updatedData.horaEntrada || !updatedData.horaSalida) {
-      alert("⚠️ Debes completar las horas de entrada y salida.");
+      setToast({
+        open: true,
+        message: "Debes completar las horas de entrada y salida.",
+        severity: "warning",
+      });
       return;
     }
 
@@ -162,11 +170,20 @@ const HistorialFichajes = () => {
       await updateFichaje(fichajeEdit._id, updatedData);
       setOpenModal(false);
 
-      // Recargar datos actualizados
       const refreshed = await getFichajesPorEmpleado(idFinal);
       setRows(refreshed.map((f) => formatRow(f)));
+      setToast({
+        open: true,
+        message: "Fichaje actualizado con éxito",
+        severity: "success",
+      });
     } catch (err) {
       console.error("❌ Error al actualizar fichaje:", err);
+      setToast({
+        open: true,
+        message: "Error al actualizar el fichaje",
+        severity: "error",
+      });
     }
   };
 
@@ -176,45 +193,77 @@ const HistorialFichajes = () => {
       try {
         await deleteFichaje(id);
         setRows((prev) => prev.filter((f) => f._id !== id));
+        setToast({
+          open: true,
+          message: "✅ Fichaje eliminado correctamente",
+          severity: "success",
+        });
       } catch (err) {
-        console.error("❌ Error al eliminar fichaje:", err);
+        console.error(err);
+        setToast({
+          open: true,
+          message:
+            "❌ Error al eliminar el fichaje. Ver consola para más detalles.",
+          severity: "error",
+        });
       }
     }
   };
 
+  //=====Crear fichaje manual=====
   const handleCreate = async (e) => {
     e.preventDefault();
 
     const tipoFichaje = e.target.tipoFichaje.value.trim().toLowerCase();
     const horaEntrada = e.target.horaEntrada.value.trim();
     const horaSalida = e.target.horaSalida.value.trim();
-    const fecha = e.target.fecha.value; // YYYY-MM-DD
-
-
+    let fechaInput = e.target.fecha?.value; // formato YYYY-MM-DD
 
     if (!horaEntrada || !horaSalida) {
       alert("⚠️ Debes completar las horas de entrada y salida.");
       return;
     }
 
+    // Ajuste de fecha para que no reste un día
+    const fecha = fechaInput ? new Date(fechaInput + "T00:00:00") : new Date();
+    const fechaISO = fecha.toISOString(); // enviamos ISO al backend
+
+    // Definir ubicación según tipo
+    const ubicacion =
+      tipoFichaje === "oficina"
+        ? { lat: -34.61, lon: -58.38 }
+        : { lat: undefined, lon: undefined };
+
     const nuevoFichaje = {
       empleadoId: idFinal,
+      fecha: fechaISO,
       horaEntrada,
       horaSalida,
       tipoFichaje,
-      fecha,
+      ubicacion,
+      ubicacionSalida: { lat: null, lon: null },
+      pausas: [],
     };
 
     try {
       await crearFichaje(nuevoFichaje);
       setOpenCreateModal(false);
 
-      // Refrescar tabla
       const refreshed = await getFichajesPorEmpleado(idFinal);
       setRows(refreshed.map((f) => formatRow(f)));
+      setError(null);
+      setToast({
+        open: true,
+        message: "Fichaje creado con éxito",
+        severity: "success",
+      });
     } catch (err) {
       console.error("❌ Error al crear fichaje:", err);
-      alert("Error al crear el fichaje. Ver consola para más detalles.");
+      setToast({
+        open: true,
+        message: "Error al crear el fichaje",
+        severity: "error",
+      });
     }
   };
 
@@ -234,7 +283,6 @@ const HistorialFichajes = () => {
               }`
             : "Mis Fichajes"}
         </Typography>
-
         {isAdminView ? (
           <Box
             sx={{
@@ -263,18 +311,20 @@ const HistorialFichajes = () => {
           </Typography>
         )}
       </Box>
+
       {/* === Contenido Dinámico === */}
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
           <CircularProgress />
         </Box>
-      ) : error ? (
-        <Typography sx={{ color: "error.main", mt: 2, textAlign: "center" }}>
-          {error}
-        </Typography>
-      ) : (
+      ) : rows.length > 0 ? (
         <CustomTable columns={columns} rows={rows} maxHeight="600px" />
+      ) : (
+        <Typography sx={{ color: "error.main", mt: 2, textAlign: "center" }}>
+          {error || "No hay fichajes registrados para este empleado."}
+        </Typography>
       )}
+
       {/* === Modal de edición === */}
       {openModal && (
         <ModalCard
@@ -283,6 +333,18 @@ const HistorialFichajes = () => {
           title="Editar Fichaje"
         >
           <form onSubmit={handleSave}>
+            <TextField
+              name="fecha"
+              label="Fecha"
+              type="date"
+              defaultValue={
+                fichajeEdit.fecha
+                  ? new Date(fichajeEdit.fecha).toISOString().split("T")[0]
+                  : new Date().toISOString().split("T")[0]
+              }
+              fullWidth
+              margin="normal"
+            />
             <TextField
               name="horaEntrada"
               label="Hora de entrada"
@@ -315,6 +377,7 @@ const HistorialFichajes = () => {
           </form>
         </ModalCard>
       )}
+
       {/* === Modal de creación === */}
       {openCreateModal && (
         <ModalCard
@@ -327,7 +390,7 @@ const HistorialFichajes = () => {
               name="fecha"
               label="Fecha"
               type="date"
-              defaultValue={new Date().toISOString().split("T")[0]} // fecha actual
+              defaultValue={new Date().toISOString().split("T")[0]}
               fullWidth
               margin="normal"
             />
@@ -346,7 +409,7 @@ const HistorialFichajes = () => {
             <TextField
               name="tipoFichaje"
               label="Tipo de fichaje (oficina / remoto)"
-              defaultValue="remoto"
+              defaultValue="oficina"
               fullWidth
               margin="normal"
             />
@@ -361,19 +424,36 @@ const HistorialFichajes = () => {
           </form>
         </ModalCard>
       )}
-      {/* === Botón Agregar Fichaje === */}{" "}
+
+      {/* === Botón Agregar Fichaje === */}
       <Box sx={{ mt: 3 }}>
-        {" "}
-        <PrimaryButton
-          fullWidth
-          onClick={() => {
-            setOpenCreateModal(true);
-          }}
-        >
-          {" "}
-          Agregar fichaje{" "}
-        </PrimaryButton>{" "}
+        <PrimaryButton fullWidth onClick={() => setOpenCreateModal(true)}>
+          Agregar fichaje
+        </PrimaryButton>
       </Box>
+
+      {/* === Snackbar Toast === */}
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={3000}
+        onClose={() => setToast({ ...toast, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }} // <- aquí
+        sx={{
+          position: "absolute",
+          top: 50,
+          left: "50%",
+          transform: "translateX(-50%)",
+          zIndex: 2000,
+        }}
+      >
+        <Alert
+          onClose={() => setToast({ ...toast, open: false })}
+          severity={toast.severity}
+          sx={{ width: "100%" }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };
