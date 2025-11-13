@@ -386,7 +386,7 @@ export const eliminarFichaje = async (req, res) => {
 // === CREAR FICHAJE MANUAL ===
 export const crearFichaje = async (req, res) => {
   try {
-    const { empleadoId, horaEntrada, horaSalida, tipoFichaje } = req.body;
+    const { empleadoId, horaEntrada, horaSalida, tipoFichaje, fecha } = req.body;
 
     if (!empleadoId || !horaEntrada || !horaSalida || !tipoFichaje) {
       return res.status(400).json({ message: "Faltan datos requeridos" });
@@ -405,6 +405,7 @@ export const crearFichaje = async (req, res) => {
       ubicacion,
       ubicacionSalida: { lat: null, lon: null },
       pausas: [],
+      fecha: fecha ? new Date(fecha) : undefined,
     });
 
     // Calcular total trabajado y diferencia

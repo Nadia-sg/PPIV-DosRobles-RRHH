@@ -183,37 +183,40 @@ const HistorialFichajes = () => {
   };
 
   const handleCreate = async (e) => {
-  e.preventDefault();
+    e.preventDefault();
 
-  const tipoFichaje = e.target.tipoFichaje.value.trim().toLowerCase();
-  const horaEntrada = e.target.horaEntrada.value.trim();
-  const horaSalida = e.target.horaSalida.value.trim();
+    const tipoFichaje = e.target.tipoFichaje.value.trim().toLowerCase();
+    const horaEntrada = e.target.horaEntrada.value.trim();
+    const horaSalida = e.target.horaSalida.value.trim();
+    const fecha = e.target.fecha.value; // YYYY-MM-DD
 
-  if (!horaEntrada || !horaSalida) {
-    alert("⚠️ Debes completar las horas de entrada y salida.");
-    return;
-  }
 
-  const nuevoFichaje = {
-    empleadoId: idFinal,
-    horaEntrada,
-    horaSalida,
-    tipoFichaje,
+
+    if (!horaEntrada || !horaSalida) {
+      alert("⚠️ Debes completar las horas de entrada y salida.");
+      return;
+    }
+
+    const nuevoFichaje = {
+      empleadoId: idFinal,
+      horaEntrada,
+      horaSalida,
+      tipoFichaje,
+      fecha,
+    };
+
+    try {
+      await crearFichaje(nuevoFichaje);
+      setOpenCreateModal(false);
+
+      // Refrescar tabla
+      const refreshed = await getFichajesPorEmpleado(idFinal);
+      setRows(refreshed.map((f) => formatRow(f)));
+    } catch (err) {
+      console.error("❌ Error al crear fichaje:", err);
+      alert("Error al crear el fichaje. Ver consola para más detalles.");
+    }
   };
-
-  try {
-    await crearFichaje(nuevoFichaje);
-    setOpenCreateModal(false);
-
-    // Refrescar tabla
-    const refreshed = await getFichajesPorEmpleado(idFinal);
-    setRows(refreshed.map((f) => formatRow(f)));
-  } catch (err) {
-    console.error("❌ Error al crear fichaje:", err);
-    alert("Error al crear el fichaje. Ver consola para más detalles.");
-  }
-};
-
 
   return (
     <Box sx={{ p: 4 }}>
@@ -320,6 +323,14 @@ const HistorialFichajes = () => {
           title="Nuevo Fichaje"
         >
           <form onSubmit={handleCreate}>
+            <TextField
+              name="fecha"
+              label="Fecha"
+              type="date"
+              defaultValue={new Date().toISOString().split("T")[0]} // fecha actual
+              fullWidth
+              margin="normal"
+            />
             <TextField
               name="horaEntrada"
               label="Hora de entrada"
