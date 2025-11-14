@@ -1,5 +1,6 @@
 import Licencia from "../models/Licencia.js";
 import Empleado from "../models/Empleado.js";
+import Usuario from "../models/Usuario.js";
 import { Notificacion } from "../models/Notificacion.js";
 
 // Calcular días entre dos fechas
@@ -35,14 +36,24 @@ const verificarSolapamiento = async (empleadoId, fechaInicio, fechaFin, licencia
 // Obtener todas las licencias
 export const obtenerLicencias = async (req, res) => {
   try {
-    const { empleadoId, estado, desde, hasta } = req.query;
+    const { empleadoId, estado, desde, hasta, todas } = req.query;
 
     // Construir filtro
     const filtro = {};
 
-    if (empleadoId) {
+    // Por defecto, cada usuario ve solo sus propias licencias
+    // El parámetro "todas" permite a admin ver todas (usado en /solicitudes-licencias)
+    if (req.user.role === "empleado") {
+      // Los empleados siempre ven solo sus licencias
+      filtro.empleadoId = req.user.empleadoId;
+    } else if (req.user.role === "admin" && todas !== "true") {
+      // Los admins ven solo sus licencias UNLESS se especifica todas=true
+      filtro.empleadoId = req.user.empleadoId;
+    } else if (req.user.role === "admin" && todas === "true" && empleadoId) {
+      // Admin solicitó todas pero especificó un empleadoId (filtrar por uno específico)
       filtro.empleadoId = empleadoId;
     }
+    // Si es admin con todas=true y sin empleadoId, devuelve TODAS (sin filtro)
 
     if (estado) {
       filtro.estado = estado;
@@ -94,6 +105,17 @@ export const obtenerLicenciaById = async (req, res) => {
       });
     }
 
+    // Validar permisos: empleado solo puede ver sus propias licencias
+    if (
+      req.user.role === "empleado" &&
+      licencia.empleadoId._id.toString() !== req.user.empleadoId.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para ver esta licencia",
+      });
+    }
+
     res.json({
       success: true,
       data: licencia,
@@ -110,10 +132,13 @@ export const obtenerLicenciaById = async (req, res) => {
 // Solicitar nueva licencia
 export const solicitarLicencia = async (req, res) => {
   try {
-    const { empleadoId, tipoLicencia, fechaInicio, fechaFin, motivo, descripcion } = req.body;
+    const { tipoLicencia, fechaInicio, fechaFin, motivo, descripcion } = req.body;
+
+    // Todos (empleado o admin) solicitan solo su propia licencia
+    const empleadoId = req.user.empleadoId;
 
     // Validaciones
-    if (!empleadoId || !tipoLicencia || !fechaInicio || !fechaFin) {
+    if (!tipoLicencia || !fechaInicio || !fechaFin) {
       return res.status(400).json({
         success: false,
         message: "Faltan campos requeridos",
@@ -151,7 +176,7 @@ export const solicitarLicencia = async (req, res) => {
 
     // Crear licencia
     const nuevaLicencia = new Licencia({
-      empleadoId,
+      empleadoId: empleadoId,
       tipoLicencia,
       fechaInicio,
       fechaFin,
@@ -183,13 +208,13 @@ export const solicitarLicencia = async (req, res) => {
 
     const tipoLicenciaTexto = tiposLicenciaMap[tipoLicencia] || tipoLicencia;
 
-    // Crear notificaciones automáticas para los gerentes, rrhh y admin
-    // TODO: En producción, obtener los gerentes del departamento del empleado
-    const gerentesIds = await Empleado.find({ rol: { $in: ["gerente", "rrhh", "admin"] } }).select("_id");
+    // Crear notificaciones automáticas para los admins
+    // Los admins son quienes aprueban/rechazan las licencias
+    const adminsIds = await Usuario.find({ role: "admin" }).select("empleado");
 
-    for (const gerente of gerentesIds) {
+    for (const admin of adminsIds) {
       await Notificacion.create({
-        empleadoId: gerente._id,
+        empleadoId: admin.empleado,
         tipo: "ausencia",
         asunto: `Nueva solicitud de ausencia de ${empleado.nombre} ${empleado.apellido}`,
         descripcion: `${empleado.nombre} ${empleado.apellido} ha solicitado ${tipoLicenciaTexto} desde el ${new Date(fechaInicio).toLocaleDateString("es-AR")} hasta el ${new Date(fechaFin).toLocaleDateString("es-AR")}.`,
@@ -214,18 +239,21 @@ export const solicitarLicencia = async (req, res) => {
   }
 };
 
-// Aprobar licencia (solo gerente)
+// Aprobar licencia (solo admin)
 export const aprobarLicencia = async (req, res) => {
   try {
     const { id } = req.params;
-    const { gerenteId, comentarioGerente } = req.body;
+    const { comentarioGerente } = req.body;
 
-    // Validar que el gerente existe
-    const gerente = await Empleado.findById(gerenteId);
-    if (!gerente) {
+    // El admin que aprueba es quien está autenticado
+    const adminEmpleadoId = req.user.empleadoId;
+
+    // Validar que el admin existe
+    const admin = await Empleado.findById(adminEmpleadoId);
+    if (!admin) {
       return res.status(404).json({
         success: false,
-        message: "Gerente no encontrado",
+        message: "Admin no encontrado",
       });
     }
 
@@ -248,7 +276,7 @@ export const aprobarLicencia = async (req, res) => {
 
     // Actualizar licencia
     licencia.estado = "aprobado";
-    licencia.gerenteId = gerenteId;
+    licencia.gerenteId = adminEmpleadoId;
     licencia.comentarioGerente = comentarioGerente || "";
     licencia.fechaResolucion = new Date();
 
@@ -277,16 +305,23 @@ export const aprobarLicencia = async (req, res) => {
     const tipoLicenciaTexto = tiposLicenciaMap[licencia.tipoLicencia] || licencia.tipoLicencia;
 
     // Crear notificación automática para el empleado
-    await Notificacion.create({
+    console.log("📢 [aprobarLicencia] Creando notificación de aprobación...");
+    console.log("   - empleadoId:", licencia.empleadoId._id);
+    console.log("   - tipo: aprobacion");
+    console.log("   - remitenteId:", adminEmpleadoId);
+
+    const notificacionCreada = await Notificacion.create({
       empleadoId: licencia.empleadoId._id,
       tipo: "aprobacion",
       asunto: "Tu solicitud de ausencia ha sido aprobada",
-      descripcion: `Tu solicitud de ${tipoLicenciaTexto} ha sido aprobada por ${gerente.nombre} ${gerente.apellido}.${comentarioGerente ? ` Comentario: ${comentarioGerente}` : ""}`,
+      descripcion: `Tu solicitud de ${tipoLicenciaTexto} ha sido aprobada por ${admin.nombre} ${admin.apellido}.${comentarioGerente ? ` Comentario: ${comentarioGerente}` : ""}`,
       prioridad: "media",
       referenciaId: licencia._id.toString(),
       tipoReferencia: "licencia",
-      remitenteId: gerenteId,
+      remitenteId: adminEmpleadoId,
     });
+
+    console.log("✅ [aprobarLicencia] Notificación creada:", notificacionCreada._id);
 
     res.json({
       success: true,
@@ -406,6 +441,17 @@ export const actualizarLicencia = async (req, res) => {
       });
     }
 
+    // Validar permisos: empleado solo puede editar sus propias licencias
+    if (
+      req.user.role === "empleado" &&
+      licencia.empleadoId.toString() !== req.user.empleadoId.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para editar esta licencia",
+      });
+    }
+
     // Validar que la licencia esté en estado pendiente
     if (licencia.estado !== "pendiente") {
       return res.status(400).json({
@@ -472,6 +518,17 @@ export const cancelarLicencia = async (req, res) => {
       return res.status(404).json({
         success: false,
         message: "Licencia no encontrada",
+      });
+    }
+
+    // Validar permisos: empleado solo puede cancelar sus propias licencias
+    if (
+      req.user.role === "empleado" &&
+      licencia.empleadoId.toString() !== req.user.empleadoId.toString()
+    ) {
+      return res.status(403).json({
+        success: false,
+        message: "No tienes permiso para cancelar esta licencia",
       });
     }
 

@@ -194,6 +194,37 @@ export const eliminarEmpleado = async (req, res) => {
 };
 
 /* =========================================================
+   DESACTIVAR EMPLEADO
+   ========================================================= */
+export const desactivarEmpleado = async (req, res) => {
+  try {
+    const { id } = req.params;
+
+    const empleado = await Empleado.findByIdAndUpdate(
+      id,
+      { estado: "inactivo" },
+      { new: true }
+    );
+
+    if (!empleado) {
+      return res.status(404).json({
+        error: "Empleado no encontrado",
+      });
+    }
+
+    res.json({
+      message: "Empleado desactivado",
+      empleado,
+    });
+  } catch (error) {
+    console.error("Error al desactivar empleado:", error);
+    res.status(500).json({
+      error: "Error al desactivar empleado",
+    });
+  }
+};
+
+/* =========================================================
    OBTENER PRÓXIMO NÚMERO DE LEGAJO
    ========================================================= */
 export const obtenerProximoLegajo = async (req, res) => {

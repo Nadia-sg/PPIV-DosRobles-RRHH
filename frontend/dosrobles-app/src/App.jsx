@@ -58,7 +58,7 @@ function App() {
           element={
             <ProtectedRoute
               element={<EmpleadosList />}
-              requiredRole={["gerente", "rrhh", "admin"]}
+              requiredRole={["admin"]}
             />
           }
         />
@@ -71,7 +71,7 @@ function App() {
           element={
             <ProtectedRoute
               element={<FichajeEmpleados />}
-              requiredRole={["gerente", "rrhh", "admin"]}
+              requiredRole={["admin"]}
             />
           }
         />
@@ -84,7 +84,7 @@ function App() {
           element={
             <ProtectedRoute
               element={<SolicitudesLicencias />}
-              requiredRole={["gerente", "rrhh", "admin"]}
+              requiredRole={["admin"]}
             />
           }
         />
@@ -96,7 +96,7 @@ function App() {
           element={
             <ProtectedRoute
               element={<CalculoHaberes />}
-              requiredRole={["gerente", "rrhh", "admin"]}
+              requiredRole={["admin"]}
             />
           }
         />
@@ -105,7 +105,7 @@ function App() {
           element={
             <ProtectedRoute
               element={<CalculoHaberes />}
-              requiredRole={["gerente", "rrhh", "admin"]}
+              requiredRole={["admin"]}
             />
           }
         />

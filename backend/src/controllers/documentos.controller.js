@@ -142,6 +142,12 @@ export const crearDocumento = async (req, res) => {
       });
     }
 
+    // Crear directorio si no existe
+    if (!fs.existsSync(UPLOAD_DIR)) {
+      fs.mkdirSync(UPLOAD_DIR, { recursive: true });
+      console.log("📁 Directorio creado:", UPLOAD_DIR);
+    }
+
     // Generar nombre único para el archivo
     const nombreUnico = `${Date.now()}_${archivo.originalname}`;
     const rutaArchivo = path.join(UPLOAD_DIR, nombreUnico);
@@ -234,10 +240,15 @@ export const descargarDocumento = async (req, res) => {
 
     // Configurar headers para descarga
     res.setHeader("Content-Type", "application/pdf");
+
+    // Usar el nombre original con encoding UTF-8
+    const nombreEncodeado = encodeURIComponent(documento.nombreArchivo);
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename="${documento.nombreArchivo}"`
+      `attachment; filename*=UTF-8''${nombreEncodeado}`
     );
+
+    console.log("📥 [descargarDocumento] Content-Disposition:", `attachment; filename*=UTF-8''${nombreEncodeado}`);
 
     // Leer y enviar el archivo
     const fileStream = fs.createReadStream(documento.rutaArchivo);

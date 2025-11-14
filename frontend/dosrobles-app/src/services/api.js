@@ -8,9 +8,22 @@ const API_BASE_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api"
  * @returns {Promise<object>} Respuesta de la API
  */
 export const apiCall = async (endpoint, options = {}) => {
+  console.log("📡 [API] Llamada a:", `${API_BASE_URL}${endpoint}`, "Método:", options.method || "GET");
+
+  // Obtener token del localStorage
+  const token = localStorage.getItem("token");
+
   const defaultHeaders = {
     "Content-Type": "application/json",
   };
+
+  // Si existe token, agregarlo al header Authorization
+  if (token) {
+    defaultHeaders.Authorization = `Bearer ${token}`;
+    console.log("📡 [API] Token enviado:", token.substring(0, 30) + "...");
+  } else {
+    console.warn("⚠️ [API] No hay token en localStorage");
+  }
 
   const config = {
     headers: { ...defaultHeaders, ...options.headers },
@@ -19,9 +32,22 @@ export const apiCall = async (endpoint, options = {}) => {
 
   try {
     const response = await fetch(`${API_BASE_URL}${endpoint}`, config);
+    console.log("📡 [API] Respuesta recibida, status:", response.status);
 
     // Si la respuesta no es exitosa, lanzar error
     if (!response.ok) {
+      // Si es 401 (no autenticado) o 403 (no autorizado), logout
+      if (response.status === 401 || response.status === 403) {
+        // Limpiar localStorage
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
+
+        // Redirigir a login
+        window.location.href = "/login";
+
+        throw new Error("Sesión expirada. Por favor inicia sesión nuevamente.");
+      }
+
       const error = await response.json();
       throw new Error(error.message || `Error: ${response.status}`);
     }

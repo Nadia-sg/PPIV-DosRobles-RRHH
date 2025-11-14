@@ -154,6 +154,7 @@ const EmpleadosList = () => {
           open={fichaOpen}
           onClose={() => setFichaOpen(false)}
           empleado={empleadoSeleccionado}
+          onEmpleadoActualizado={fetchEmpleados}
         />
       )}
     </Box>

@@ -10,6 +10,7 @@ import {
   eliminarEmpleado,
   obtenerProximoLegajo,
   obtenerImagenPerfil,
+  desactivarEmpleado,
 } from "../controllers/empleadoController.js";
 import Empleado from "../models/Empleado.js";
 
@@ -68,6 +69,9 @@ router.get("/:id", obtenerEmpleadoPorId);
 
 // actualizar (puede enviar nueva imagen)
 router.put("/:id", upload.single("imagenPerfil"), actualizarEmpleado);
+
+// desactivar empleado
+router.patch("/:id/desactivar", desactivarEmpleado);
 
 router.delete("/:id", eliminarEmpleado);
 

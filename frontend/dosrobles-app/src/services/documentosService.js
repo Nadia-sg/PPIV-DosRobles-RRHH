@@ -92,13 +92,31 @@ export const documentosService = {
       let filename = 'documento.pdf';
 
       if (contentDisposition) {
-        const filenameMatch = contentDisposition.match(/filename="?([^"]+)"?/);
-        if (filenameMatch) {
-          filename = filenameMatch[1];
-          // Asegurar que tenga extensión .pdf
-          if (!filename.endsWith('.pdf')) {
-            filename += '.pdf';
+        // Primero intentar capturar filename*=UTF-8''[encoded]
+        let filenameMatch = contentDisposition.match(/filename\*=UTF-8''(.+?)(?:;|$)/);
+
+        if (filenameMatch && filenameMatch[1]) {
+          try {
+            // Decodificar URL encoding
+            filename = decodeURIComponent(filenameMatch[1]);
+          } catch (e) {
+            // Si falla, intentar el formato tradicional
+            filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
+            if (filenameMatch) {
+              filename = filenameMatch[1];
+            }
           }
+        } else {
+          // Intentar el formato tradicional: filename="nombre.pdf" o filename=nombre.pdf
+          filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
+          if (filenameMatch) {
+            filename = filenameMatch[1];
+          }
+        }
+
+        // Asegurar que tenga extensión .pdf
+        if (!filename.endsWith('.pdf')) {
+          filename += '.pdf';
         }
       }
 

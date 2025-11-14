@@ -3,6 +3,7 @@ import Usuario from "../models/Usuario.js";
 import Empleado from "../models/Empleado.js";
 import jwt from "jsonwebtoken";
 import bcrypt from "bcrypt";
+import { getJwtSecret, JWT_EXPIRES_IN } from "../config/jwt.js";
 
 // === LOGIN ===
 export const loginUser = async (req, res) => {
@@ -16,10 +17,19 @@ export const loginUser = async (req, res) => {
     if (!isMatch) return res.status(400).json({ message: "Contraseña incorrecta" });
 
     // Generar token incluyendo el rol
+    const jwtSecret = getJwtSecret();
+    console.log("🔑 [LOGIN] JWT_SECRET siendo usado:", jwtSecret);
+    console.log("🔑 [LOGIN] JWT_SECRET length:", jwtSecret.length);
+
     const token = jwt.sign(
-      { id: usuario._id, username: usuario.username, role: usuario.role },
-      process.env.JWT_SECRET,
-      { expiresIn: "1h" }
+      {
+        usuarioId: usuario._id,
+        empleadoId: usuario.empleado._id,
+        username: usuario.username,
+        role: usuario.role
+      },
+      jwtSecret,
+      { expiresIn: JWT_EXPIRES_IN }
     );
 
     res.status(200).json({
@@ -27,7 +37,11 @@ export const loginUser = async (req, res) => {
       token,
       user: {
         id: usuario._id,
+        empleadoId: usuario.empleado._id,
         username: usuario.username,
+        nombre: usuario.empleado.nombre,
+        apellido: usuario.empleado.apellido,
+        email: usuario.empleado.email,
         role: usuario.role,
         empleado: usuario.empleado, // ← incluye nombre, apellido, imagen, etc.
       },
@@ -100,10 +114,10 @@ export const actualizarUsuario = async (req, res) => {
     if (username) usuario.username = username;
     if (role) usuario.role = role;
 
-    // Si se envía una nueva contraseña, encriptarla
+    // Si se envía una nueva contraseña, asignarla directamente
+    // El middleware pre-save se encargará de hashearla
     if (password && password.trim() !== "") {
-      const salt = await bcrypt.genSalt(10);
-      usuario.password = await bcrypt.hash(password, salt);
+      usuario.password = password;
     }
 
     await usuario.save();
@@ -129,5 +143,116 @@ export const eliminarUsuario = async (req, res) => {
   } catch (error) {
     console.error("Error al eliminar usuario:", error);
     res.status(500).json({ message: "Error al eliminar usuario" });
+  }
+};
+
+// === LOGOUT ===
+export const logout = (req, res) => {
+  return res.status(200).json({
+    success: true,
+    message: "Logout exitoso",
+  });
+};
+
+// === VERIFICAR TOKEN ===
+export const verificarToken = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "Token no proporcionado",
+      });
+    }
+
+    const jwtSecret = getJwtSecret();
+    const decoded = jwt.verify(token, jwtSecret);
+
+    // Obtener usuario actualizado de la BD
+    const usuario = await Usuario.findById(decoded.usuarioId).populate(
+      "empleado"
+    );
+
+    if (!usuario || !usuario.estado) {
+      return res.status(401).json({
+        success: false,
+        message: "Usuario no válido",
+      });
+    }
+
+    return res.status(200).json({
+      success: true,
+      usuario: {
+        id: usuario._id,
+        empleadoId: usuario.empleado._id,
+        username: usuario.username,
+        nombre: usuario.empleado.nombre,
+        apellido: usuario.empleado.apellido,
+        email: usuario.empleado.email,
+        role: usuario.role,
+        estado: usuario.estado,
+      },
+    });
+  } catch (error) {
+    console.error("Error verificando token:", error);
+    return res.status(401).json({
+      success: false,
+      message: "Token inválido",
+    });
+  }
+};
+
+// === CREAR USUARIO DE PRUEBA ===
+export const crearUsuarioPrueba = async (req, res) => {
+  try {
+    const { empleadoId, username, password, role } = req.body;
+
+    // Validar que el empleado exista
+    const empleado = await Empleado.findById(empleadoId);
+    if (!empleado) {
+      return res.status(404).json({
+        success: false,
+        message: "Empleado no encontrado",
+      });
+    }
+
+    // Verificar si el usuario ya existe
+    const usuarioExistente = await Usuario.findOne({ username });
+    if (usuarioExistente) {
+      return res.status(400).json({
+        success: false,
+        message: "El username ya existe",
+      });
+    }
+
+    // Crear usuario
+    // Nota: El middleware pre-save se encargará de hashear la contraseña
+    const usuario = new Usuario({
+      empleado: empleadoId,
+      username,
+      password,
+      role: role || "empleado",
+      estado: true,
+    });
+
+    await usuario.save();
+
+    return res.status(201).json({
+      success: true,
+      message: "Usuario de prueba creado exitosamente",
+      usuario: {
+        id: usuario._id,
+        username: usuario.username,
+        role: usuario.role,
+      },
+    });
+  } catch (error) {
+    console.error("Error al crear usuario de prueba:", error);
+    return res.status(500).json({
+      success: false,
+      message: "Error al crear usuario",
+      error: error.message,
+    });
   }
 };

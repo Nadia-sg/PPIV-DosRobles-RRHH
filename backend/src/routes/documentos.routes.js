@@ -1,6 +1,7 @@
 import express from "express";
 import multer from "multer";
 import path from "path";
+import fs from "fs";
 import { fileURLToPath } from "url";
 import {
   obtenerTodosLosDocumentos,
@@ -17,6 +18,12 @@ const router = express.Router();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const uploadDir = path.join(__dirname, "../../uploads/documentos");
+
+// Crear directorio si no existe
+if (!fs.existsSync(uploadDir)) {
+  fs.mkdirSync(uploadDir, { recursive: true });
+  console.log("📁 Directorio de documentos creado:", uploadDir);
+}
 
 const storage = multer.diskStorage({
   destination: (req, file, cb) => {

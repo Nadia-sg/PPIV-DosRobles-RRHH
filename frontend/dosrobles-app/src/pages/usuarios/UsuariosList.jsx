@@ -12,6 +12,7 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import DescriptionIcon from "@mui/icons-material/Description";
 import CustomTable from "../../components/ui/CustomTable";
+import ModalDialog from "../../components/ui/ModalDialog";
 import {
   SecondaryButton,
   FichaButtonWithIcon,
@@ -30,6 +31,18 @@ const UsuariosList = () => {
   const [usuarios, setUsuarios] = useState([]);
   const [loading, setLoading] = useState(true);
   const [editarModalOpen, setEditarModalOpen] = useState(false);
+
+  // Estados para el modal de notificaciones
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
+  const [notificationType, setNotificationType] = useState("success");
+  const [notificationCallback, setNotificationCallback] = useState(null);
+
+  // Estados para el modal de confirmación
+  const [confirmOpen, setConfirmOpen] = useState(false);
+  const [confirmMessage, setConfirmMessage] = useState("");
+  const [confirmCallback, setConfirmCallback] = useState(null);
 
 
   const fetchUsuarios = async () => {
@@ -50,25 +63,81 @@ const UsuariosList = () => {
     fetchUsuarios();
   }, []);
 
+  // Mostrar notificación modal
+  const showNotification = (title, message, type = "success", callback = null) => {
+    setNotificationTitle(title);
+    setNotificationMessage(message);
+    setNotificationType(type);
+    setNotificationCallback(() => callback);
+    setNotificationOpen(true);
+  };
+
+  // Cerrar notificación
+  const handleCloseNotification = () => {
+    setNotificationOpen(false);
+    if (notificationCallback) {
+      notificationCallback();
+    }
+  };
+
+  // Mostrar modal de confirmación
+  const showConfirmation = (message, callback) => {
+    setConfirmMessage(message);
+    setConfirmCallback(() => callback);
+    setConfirmOpen(true);
+  };
+
+  // Aceptar confirmación
+  const handleConfirmYes = () => {
+    setConfirmOpen(false);
+    if (confirmCallback) {
+      confirmCallback(true);
+    }
+  };
+
+  // Rechazar confirmación
+  const handleConfirmNo = () => {
+    setConfirmOpen(false);
+    if (confirmCallback) {
+      confirmCallback(false);
+    }
+  };
+
   const handleVerUsuario = (usuario) => {
     setUsuarioSeleccionado(usuario);
   };
 
   const handleEliminarUsuario = async (usuario) => {
-    if (!window.confirm(`¿Eliminar al usuario ${usuario.username}?`)) return;
+    showConfirmation(
+      `¿Está seguro de que desea eliminar al usuario ${usuario.username}?`,
+      async (confirmed) => {
+        if (!confirmed) return;
 
-    try {
-      const response = await fetch(`http://localhost:4000/api/users/${usuario._id}`, {
-        method: "DELETE",
-      });
-      if (!response.ok) throw new Error("Error al eliminar usuario");
-      alert("Usuario eliminado correctamente");
-      fetchUsuarios();
-      setUsuarioSeleccionado(null);
-    } catch (error) {
-      console.error(error);
-      alert("No se pudo eliminar el usuario");
-    }
+        try {
+          const response = await fetch(`http://localhost:4000/api/users/${usuario._id}`, {
+            method: "DELETE",
+          });
+          if (!response.ok) throw new Error("Error al eliminar usuario");
+
+          showNotification(
+            "Éxito",
+            "Usuario eliminado correctamente",
+            "success",
+            () => {
+              fetchUsuarios();
+              setUsuarioSeleccionado(null);
+            }
+          );
+        } catch (error) {
+          console.error(error);
+          showNotification(
+            "Error",
+            "No se pudo eliminar el usuario",
+            "error"
+          );
+        }
+      }
+    );
   };
 
   const columns = isMobile
@@ -187,6 +256,40 @@ const UsuariosList = () => {
         }}
       />
 
+      {/* Modal de notificaciones */}
+      <ModalDialog
+        open={notificationOpen}
+        onClose={handleCloseNotification}
+        title={notificationTitle}
+        content={notificationMessage}
+        actions={[
+          {
+            label: "Aceptar",
+            onClick: handleCloseNotification,
+            variant: notificationType === "error" ? "outlined" : "contained",
+          },
+        ]}
+      />
+
+      {/* Modal de confirmación */}
+      <ModalDialog
+        open={confirmOpen}
+        onClose={handleConfirmNo}
+        title="Confirmar"
+        content={confirmMessage}
+        actions={[
+          {
+            label: "Cancelar",
+            onClick: handleConfirmNo,
+            variant: "outlined",
+          },
+          {
+            label: "Eliminar",
+            onClick: handleConfirmYes,
+            variant: "contained",
+          },
+        ]}
+      />
     </Box>
   );
 };

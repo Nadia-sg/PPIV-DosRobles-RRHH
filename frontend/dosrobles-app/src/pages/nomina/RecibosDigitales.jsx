@@ -71,10 +71,10 @@ export default function RecibosDigitales() {
         deducciones: formatMonto(nomina.deducciones?.totalDeducciones || 0),
         estado: "pagado",
         empleado: {
-          nombre: user?.nombre,
-          legajo: "026",
-          cuil: "20-12345678-9",
-          cargo: "Desarrollador Senior",
+          nombre: user?.nombre || nomina.empleadoId?.nombre,
+          legajo: nomina.empleadoId?.numeroLegajo || "No disponible",
+          cuil: nomina.empleadoId?.cuil || "20-12345678-9",
+          cargo: nomina.empleadoId?.puesto || "Desarrollador Senior",
           fechaIngreso: "01/03/2020",
         },
       }));
@@ -180,7 +180,7 @@ export default function RecibosDigitales() {
         fechaPago: nominaData.fechaAprobacion ? formatearFecha(nominaData.fechaAprobacion) : "",
         empleado: {
           nombre: user?.nombre || "No disponible",
-          legajo: nominaData.empleadoId?.legajo || "026",
+          legajo: nominaData.empleadoId?.numeroLegajo || "No disponible",
           cuil: nominaData.empleadoId?.cuil || "20-12345678-9",
           cargo: nominaData.empleadoId?.puesto || "Desarrollador Senior",
           fechaIngreso: "01/03/2020",
@@ -217,6 +217,15 @@ export default function RecibosDigitales() {
 
   const handleDescargarRecibo = async (recibo) => {
     try {
+      // Obtener datos completos del recibo para asegurar datos correctos (legajo, etc)
+      const respuesta = await nominaService.obtenerNominaById(recibo.id);
+      const nominaData = respuesta.data.nomina;
+
+      // Verificar que tengamos el legajo correcto
+      const legajoCorrecto = nominaData.empleadoId?.legajo || "026";
+      console.log("Descargando recibo con legajo:", legajoCorrecto);
+
+      // Descargar el PDF
       await nominaService.descargarReciboPDF(recibo.id);
     } catch (err) {
       console.error("Error al descargar recibo:", err);
@@ -407,6 +416,13 @@ export default function RecibosDigitales() {
             <CustomTable
               columns={columnasRecibos}
               rows={filasRecibos}
+              columnMapping={{
+                "Período": "periodo",
+                "Monto Bruto": "bruto",
+                "Deducciones": "deducciones",
+                "Neto": "neto",
+                "": "acciones",
+              }}
               headerColor="#7FC6BA"
               headerTextColor="#FFFFFF"
             />
@@ -450,6 +466,12 @@ export default function RecibosDigitales() {
             <CustomTable
               columns={columnasDocumentos}
               rows={filasDocumentos}
+              columnMapping={{
+                "Tipo": "tipo",
+                "Nombre": "nombre",
+                "Fecha": "fecha",
+                "": "acciones",
+              }}
               headerColor="#7FC6BA"
               headerTextColor="#FFFFFF"
             />

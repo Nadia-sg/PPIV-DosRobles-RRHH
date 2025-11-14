@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useMemo } from "react";
 import {
   Box,
   Typography,
@@ -31,7 +31,16 @@ export default function SelectInput({
   helperText,
   error,
   icon,
+  disabled = false,
+  readOnly = false,
 }) {
+  // Buscar el label correspondiente al value
+  const displayLabel = useMemo(() => {
+    if (!value) return placeholder;
+    const found = options.find(opt => opt.value === value);
+    return found ? found.label : value; // Mostrar el valor si no encontramos la opción
+  }, [value, options, placeholder]);
+
   return (
     <Box sx={{ mb: 3 }}>
       {label && (
@@ -56,12 +65,18 @@ export default function SelectInput({
       >
         {icon && <Box sx={{ mr: 1, color: "#7FC6BA" }}>{icon}</Box>}
 
-        <FormControl fullWidth variant="standard" sx={{ border: "none" }}>
+        <FormControl fullWidth variant="standard" sx={{ border: "none" }} disabled={disabled || readOnly}>
           <Select
             disableUnderline
             displayEmpty
-            value={value}
+            value={value || ""}
             onChange={onChange}
+            disabled={disabled || readOnly}
+            renderValue={(val) => {
+              if (!val) return <em style={{ color: "#B0B0B0" }}>{placeholder}</em>;
+              const found = options.find(opt => opt.value === val);
+              return found ? found.label : val;
+            }}
             sx={{
               color: "#585858",
               fontSize: "0.95rem",

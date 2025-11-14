@@ -38,9 +38,12 @@ export default function BandejaEntrada() {
     useState(null);
 
   // Determinar si es empleado o gerente
-  const esEmpleado = user?.rol === "empleado";
-  const esGerente = ["gerente", "rrhh", "admin"].includes(user?.rol);
+  const esEmpleado = user?.role === "empleado";
+  const esGerente = ["admin"].includes(user?.role); // Ahora solo hay admin (antes era gerente, rrhh, admin)
   const empleadoId = user?.empleadoId;
+
+  console.log("🔍 [BandejaEntrada] user:", user);
+  console.log("🔍 [BandejaEntrada] esEmpleado:", esEmpleado, "esGerente:", esGerente, "empleadoId:", empleadoId);
 
   // Cargar notificaciones cuando el usuario está disponible
   useEffect(() => {
@@ -50,6 +53,7 @@ export default function BandejaEntrada() {
   }, [userLoading, empleadoId]);
 
   const cargarNotificaciones = async () => {
+    console.log("🚀 [cargarNotificaciones] Iniciando carga. esEmpleado:", esEmpleado, "esGerente:", esGerente);
     try {
       setCargando(true);
       setError(null);
@@ -58,11 +62,16 @@ export default function BandejaEntrada() {
 
       // Si es empleado, cargar solo sus notificaciones
       if (esEmpleado) {
+        console.log("👤 [cargarNotificaciones] Eres empleado, obteniendo tus notificaciones...");
         respuesta = await notificacionesService.obtenerNotificaciones(empleadoId);
+        console.log("📬 [cargarNotificaciones] Respuesta empleado:", respuesta);
       }
       // Si es gerente/admin, cargar todas las notificaciones pero filtrar según corresponda
       else if (esGerente) {
+        console.log("👨‍💼 [cargarNotificaciones] Eres admin, obteniendo TODAS las notificaciones...");
         respuesta = await notificacionesService.obtenerTodasLasNotificaciones();
+        console.log("📬 [cargarNotificaciones] Respuesta admin (TODAS):", respuesta);
+
         // Filtrar notificaciones:
         // 1. Mostrar todas de "ausencia", "aprobacion", "rechazo" (ignorar otros tipos)
         // 2. Filtrar solo aquellas donde el gerente es el receptor (empleadoId coincide)
@@ -72,16 +81,22 @@ export default function BandejaEntrada() {
             const receptorId = notif.empleadoId?._id?.toString() || notif.empleadoId?.toString() || notif.empleadoId;
             const esReceptor = receptorId === empleadoId;
 
+            console.log("🔍 Filtrando notif:", notif.tipo, "receptor:", receptorId, "yo:", empleadoId, "match:", esReceptor);
+
             // Mostrar si es destinada a este gerente Y es uno de estos tipos
             return esReceptor && (notif.tipo === "ausencia" || notif.tipo === "aprobacion" || notif.tipo === "rechazo");
           }
         );
+        console.log("✅ Notificaciones filtradas para admin:", notificacionesFiltradas.length);
         respuesta.data = notificacionesFiltradas;
+      } else {
+        console.log("⚠️ No eres empleado ni admin, no se cargan notificaciones");
       }
 
-      setNotificaciones(respuesta.data || []);
+      console.log("💾 [cargarNotificaciones] Guardando notificaciones:", respuesta?.data?.length || 0);
+      setNotificaciones(respuesta?.data || []);
     } catch (err) {
-      console.error("Error al cargar notificaciones:", err);
+      console.error("❌ Error al cargar notificaciones:", err);
       setError(
         "No se pudieron cargar las notificaciones. Por favor, intenta de nuevo."
       );
@@ -176,28 +191,47 @@ export default function BandejaEntrada() {
   // Contar notificaciones no leídas
   const noLeidas = notificaciones.filter((notif) => !notif.leida).length;
 
-  // Formatear fecha
+  // Formatear fecha (manejo correcto de timezones)
   const formatearFecha = (fecha) => {
     if (!fecha) return "";
     try {
-      const date = new Date(fecha);
-      const hoy = new Date();
-      const ayer = new Date(hoy);
-      ayer.setDate(ayer.getDate() - 1);
+      // Si es una string en formato ISO (YYYY-MM-DD o YYYY-MM-DDTHH:mm:ss)
+      if (typeof fecha === 'string' && fecha.includes('-')) {
+        const partes = fecha.split('T')[0].split('-');
+        if (partes.length === 3) {
+          // Parsear manualmente para evitar problemas de timezone
+          const [year, month, day] = partes.map(p => parseInt(p, 10));
 
-      if (date.toDateString() === hoy.toDateString()) {
-        return date.toLocaleTimeString("es-AR", {
-          hour: "2-digit",
-          minute: "2-digit",
-        });
-      } else if (date.toDateString() === ayer.toDateString()) {
-        return "Ayer";
-      } else {
-        return date.toLocaleDateString("es-AR", {
-          month: "short",
-          day: "numeric",
-        });
+          // Crear fecha sin timezone issues
+          const hoy = new Date();
+          const hoySinHora = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+          const ayerSinHora = new Date(hoySinHora);
+          ayerSinHora.setDate(ayerSinHora.getDate() - 1);
+
+          const fechaComparada = new Date(year, month - 1, day);
+
+          if (fechaComparada.getTime() === hoySinHora.getTime()) {
+            // Es hoy, mostrar hora
+            const date = new Date(fecha);
+            return date.toLocaleTimeString("es-AR", {
+              hour: "2-digit",
+              minute: "2-digit",
+            });
+          } else if (fechaComparada.getTime() === ayerSinHora.getTime()) {
+            return "Ayer";
+          } else {
+            // Es otro día, mostrar fecha corta
+            return `${day}/${month}`;
+          }
+        }
       }
+
+      // Fallback para otros formatos
+      const date = new Date(fecha);
+      return date.toLocaleDateString("es-AR", {
+        month: "short",
+        day: "numeric",
+      });
     } catch {
       return fecha;
     }

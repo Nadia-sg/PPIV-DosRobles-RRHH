@@ -34,7 +34,10 @@ export default function ProtectedRoute({
       ? requiredRole
       : [requiredRole];
 
-    if (!rolesPermitidos.includes(user.rol)) {
+    console.log("🔐 [ProtectedRoute] Verificando acceso. Usuario rol:", user.role, "Roles permitidos:", rolesPermitidos);
+
+    if (!rolesPermitidos.includes(user.role)) {
+      console.log("❌ [ProtectedRoute] Acceso denegado. Usuario no tiene un rol permitido");
       return (
         <Box
           sx={{
@@ -56,6 +59,7 @@ export default function ProtectedRoute({
         </Box>
       );
     }
+    console.log("✅ [ProtectedRoute] Acceso permitido");
   }
 
   return element;

@@ -43,8 +43,18 @@ export default function CalculoHaberes() {
       setError(null);
 
       // Obtener empleados activos
+      console.log("📋 [cargarDatos] Obteniendo empleados activos...");
       const respuestaEmpleados = await empleadosService.obtenerEmpleadosActivos();
-      const empleadosActivos = respuestaEmpleados.data || [];
+      console.log("📋 [cargarDatos] respuestaEmpleados:", respuestaEmpleados);
+
+      // Manejar tanto arrays directos como objetos con .data
+      let empleadosActivos = [];
+      if (Array.isArray(respuestaEmpleados)) {
+        empleadosActivos = respuestaEmpleados;
+      } else if (respuestaEmpleados?.data) {
+        empleadosActivos = respuestaEmpleados.data;
+      }
+      console.log("📋 [cargarDatos] empleadosActivos.length:", empleadosActivos.length);
 
       // Obtener nóminas del período seleccionado
       const respuestaNominas = await nominaService.obtenerNominas({
@@ -62,6 +72,16 @@ export default function CalculoHaberes() {
           return nominaEmpleadoId === emp._id.toString();
         });
 
+        console.log("📋 [empleadoConNomina] emp:", {
+          _id: emp._id,
+          numeroLegajo: emp.numeroLegajo,
+          nombre: emp.nombre,
+          apellido: emp.apellido,
+          puesto: emp.puesto,
+          sueldoBruto: emp.sueldoBruto,
+          email: emp.email,
+        });
+
         if (nomina) {
           // Si existe nómina, usar esos datos
           const totalHaberes = nomina.haberes?.totalHaberes || 0;
@@ -69,39 +89,43 @@ export default function CalculoHaberes() {
 
           return {
             id: emp._id,
-            legajo: emp.legajo,
+            legajo: emp.numeroLegajo,
             nombre: `${emp.nombre} ${emp.apellido}`,
             cargo: emp.puesto,
+            email: emp.email,
             estado: nomina.estado,
             horasTrabajadas: nomina.horasTrabajadas || 0,
             horasExtras: nomina.horasExtras || 0,
             diasAusencia: nomina.diasAusencia || 0,
             diasTrabajados: nomina.diasTrabajados || 0,
-            sueldoBasico: nomina.sueldoBasico || emp.sueldoBasico,
+            sueldoBasico: nomina.sueldoBasico || emp.sueldoBruto,
             totalHaberes: totalHaberes,
             totalDeducciones: totalDeducciones,
             totalNeto: nomina.totalNeto || 0,
             nominaId: nomina._id,
-            nomina: nomina, // Guardar referencia completa
+            nomina: nomina,
+            empleado: emp, // Guardar referencia completa del empleado
           };
         } else {
           // Si no existe nómina, mostrar empleado como pendiente
           return {
             id: emp._id,
-            legajo: emp.legajo,
+            legajo: emp.numeroLegajo,
             nombre: `${emp.nombre} ${emp.apellido}`,
             cargo: emp.puesto,
+            email: emp.email,
             estado: "pendiente",
             horasTrabajadas: 0,
             horasExtras: 0,
             diasAusencia: 0,
             diasTrabajados: 0,
-            sueldoBasico: emp.sueldoBasico,
+            sueldoBasico: emp.sueldoBruto,
             totalHaberes: 0,
             totalDeducciones: 0,
             totalNeto: 0,
             nominaId: null,
             nomina: null,
+            empleado: emp, // Guardar referencia completa del empleado
           };
         }
       });
@@ -523,6 +547,16 @@ export default function CalculoHaberes() {
             <CustomTable
               columns={columnas}
               rows={filas}
+              columnMapping={{
+                "Legajo": "legajo",
+                "Empleado": "empleado",
+                "Cargo": "cargo",
+                "Estado": "estado",
+                "Días Trab.": "diasTrabajados",
+                "Ausencias": "ausencias",
+                "Neto Estimado": "netoEstimado",
+                "Acciones": "acciones",
+              }}
               headerColor="#7FC6BA"
               headerTextColor="#FFFFFF"
             />

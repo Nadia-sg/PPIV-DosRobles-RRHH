@@ -3,6 +3,7 @@ import CalculoDetalle from "../models/CalculoDetalle.js";
 import Empleado from "../models/Empleado.js";
 import Fichaje from "../models/Fichaje.js";
 import Licencia from "../models/Licencia.js";
+import { Notificacion } from "../models/Notificacion.js";
 
 // Función para obtener días del mes
 const obtenerDiasDelMes = (año, mes) => {
@@ -65,44 +66,60 @@ const calcularHorasTrabajadas = async (empleadoId, periodo) => {
 
 // Función para calcular componentes de nómina
 const calcularComponentes = async (empleado, diasTrabajados, horasExtras) => {
-  const sueldoBasico = empleado.sueldoBasico;
+  const sueldoBasico = empleado.sueldoBruto || empleado.sueldoBasico || 0;
   const diasDelMes = 22; // Promedio de días laborales
+
+  console.log("💰 [calcularComponentes] empleado:", {
+    nombre: empleado.nombre,
+    sueldoBruto: empleado.sueldoBruto,
+    sueldoBasico: empleado.sueldoBasico,
+    sueldoUsado: sueldoBasico,
+    diasTrabajados,
+    horasExtras,
+  });
+
+  // Validar que sueldoBasico sea un número válido
+  if (!sueldoBasico || isNaN(sueldoBasico) || sueldoBasico <= 0) {
+    throw new Error(`Sueldo básico inválido: ${sueldoBasico}. Empleado debe tener sueldoBruto definido.`);
+  }
 
   // Haberes
   const haberes = {
-    sueldoBasico: sueldoBasico,
-    antiguedad: Math.round((sueldoBasico * 0.25) * (diasTrabajados / diasDelMes)), // 25% de antigüedad prorrateo
+    sueldoBasico: sueldoBasico || 0,
+    antiguedad: Math.round((sueldoBasico * 0.25) * (diasTrabajados / diasDelMes)) || 0, // 25% de antigüedad prorrateo
     presentismo: diasTrabajados === diasDelMes ? Math.round(sueldoBasico * 0.1) : 0, // 10% si trabajó todo
-    horasExtras: Math.round(horasExtras * (sueldoBasico / 160)), // Basado en valor hora
-    viaticos: Math.round(sueldoBasico * 0.05), // 5% fijo
+    horasExtras: Math.round(horasExtras * (sueldoBasico / 160)) || 0, // Basado en valor hora
+    viaticos: Math.round(sueldoBasico * 0.05) || 0, // 5% fijo
     otrosHaberes: 0,
   };
 
-  haberes.totalHaberes =
-    haberes.sueldoBasico +
-    haberes.antiguedad +
-    haberes.presentismo +
-    haberes.horasExtras +
-    haberes.viaticos +
-    haberes.otrosHaberes;
+  haberes.totalHaberes = Math.round(
+    (haberes.sueldoBasico || 0) +
+    (haberes.antiguedad || 0) +
+    (haberes.presentismo || 0) +
+    (haberes.horasExtras || 0) +
+    (haberes.viaticos || 0) +
+    (haberes.otrosHaberes || 0)
+  );
 
   // Deducciones
   const deducciones = {
-    jubilacion: Math.round(haberes.totalHaberes * 0.11), // 11%
-    obraSocial: Math.round(haberes.totalHaberes * 0.03), // 3%
-    ley19032: Math.round(haberes.totalHaberes * 0.015), // 1.5%
-    sindicato: Math.round(haberes.totalHaberes * 0.02), // 2%
+    jubilacion: Math.round(haberes.totalHaberes * 0.11) || 0, // 11%
+    obraSocial: Math.round(haberes.totalHaberes * 0.03) || 0, // 3%
+    ley19032: Math.round(haberes.totalHaberes * 0.015) || 0, // 1.5%
+    sindicato: Math.round(haberes.totalHaberes * 0.02) || 0, // 2%
     otrosDes: 0,
   };
 
-  deducciones.totalDeducciones =
-    deducciones.jubilacion +
-    deducciones.obraSocial +
-    deducciones.ley19032 +
-    deducciones.sindicato +
-    deducciones.otrosDes;
+  deducciones.totalDeducciones = Math.round(
+    (deducciones.jubilacion || 0) +
+    (deducciones.obraSocial || 0) +
+    (deducciones.ley19032 || 0) +
+    (deducciones.sindicato || 0) +
+    (deducciones.otrosDes || 0)
+  );
 
-  const totalNeto = haberes.totalHaberes - deducciones.totalDeducciones;
+  const totalNeto = Math.round((haberes.totalHaberes || 0) - (deducciones.totalDeducciones || 0));
 
   return { haberes, deducciones, totalNeto };
 };
@@ -127,8 +144,8 @@ export const obtenerNominas = async (req, res) => {
     }
 
     const nominas = await Nomina.find(filtro)
-      .populate("empleadoId", "nombre apellido legajo email")
-      .populate("aprobadoPor", "nombre apellido legajo")
+      .populate("empleadoId", "nombre apellido numeroLegajo email")
+      .populate("aprobadoPor", "nombre apellido numeroLegajo")
       .sort({ periodo: -1 });
 
     res.json({
@@ -151,8 +168,8 @@ export const obtenerNominaById = async (req, res) => {
     const { id } = req.params;
 
     const nomina = await Nomina.findById(id)
-      .populate("empleadoId", "nombre apellido legajo email cuil puesto categoria")
-      .populate("aprobadoPor", "nombre apellido legajo");
+      .populate("empleadoId", "nombre apellido numeroLegajo email cuil puesto categoria")
+      .populate("aprobadoPor", "nombre apellido numeroLegajo");
 
     if (!nomina) {
       return res.status(404).json({
@@ -253,7 +270,7 @@ export const calcularNomina = async (req, res) => {
         diasAusencia,
         horasTrabajadas: totalHoras,
         horasExtras,
-        sueldoBasico: empleado.sueldoBasico,
+        sueldoBasico: empleado.sueldoBruto || empleado.sueldoBasico || 0,
         haberes,
         deducciones,
         totalNeto,
@@ -308,7 +325,7 @@ export const calcularNomina = async (req, res) => {
         tipoConcepto: "remunerativo",
         concepto: "Horas Extras",
         cantidad: horasExtras,
-        valorUnitario: Math.round(empleado.sueldoBasico / 160),
+        valorUnitario: Math.round((empleado.sueldoBruto || empleado.sueldoBasico || 0) / 160),
         totalConcepto: haberes.horasExtras,
         orden: 4,
       }
@@ -374,7 +391,7 @@ export const calcularNomina = async (req, res) => {
     await CalculoDetalle.insertMany(detalles);
 
     // Poblar antes de responder
-    await nuevaNomina.populate("empleadoId", "nombre apellido legajo");
+    await nuevaNomina.populate("empleadoId", "nombre apellido numeroLegajo");
 
     res.status(201).json({
       success: true,
@@ -534,6 +551,17 @@ export const aprobarNomina = async (req, res) => {
 
     await nomina.save();
 
+    // Crear notificación para el empleado
+    console.log("📬 [aprobarNomina] Creando notificación para empleado:", nomina.empleadoId);
+    const notificacionCreada = await Notificacion.create({
+      empleadoId: nomina.empleadoId,
+      tipo: "aprobacion",
+      asunto: "Tu recibo de haberes está disponible",
+      descripcion: `Tu nómina del período ${nomina.periodo} ha sido aprobada. Ya puedes descargar tu recibo de haberes desde la sección "Mis Documentos".`,
+      leida: false,
+    });
+    console.log("✅ [aprobarNomina] Notificación creada:", notificacionCreada._id);
+
     await nomina.populate([
       { path: "empleadoId", select: "nombre apellido legajo" },
       { path: "aprobadoPor", select: "nombre apellido legajo" },
@@ -559,7 +587,7 @@ export const obtenerResumenPeriodo = async (req, res) => {
     const { periodo } = req.params;
 
     const nominas = await Nomina.find({ periodo })
-      .populate("empleadoId", "nombre apellido legajo");
+      .populate("empleadoId", "nombre apellido numeroLegajo");
 
     const resumen = {
       periodo,

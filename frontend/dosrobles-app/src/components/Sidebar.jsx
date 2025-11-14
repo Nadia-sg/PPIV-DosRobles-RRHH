@@ -32,10 +32,11 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
     Ausencias: "/licencias",
     "Mi Fichaje": "/fichaje/historial",
     "Mis Documentos": "/nomina/recibos",
+    "Solicitudes Licencias": "/solicitudes-licencias",
     Empleados: "/empleados",
     "Control Horario": "/fichaje/empleados",
     Nómina: "/nomina/calculo",
-    Usuarios: "/usuarios", // <-- nueva ruta agregada
+    Usuarios: "/usuarios",
   };
 
   useEffect(() => {
@@ -161,10 +162,11 @@ const Sidebar = forwardRef(({ className, onItemClick }, ref) => {
                 {openMenus["organizacion"] && (
                   <ul className={styles.submenu}>
                     {[
+                      "Solicitudes Licencias",
                       "Empleados",
                       "Control Horario",
                       "Nómina",
-                      "Usuarios", // <-- nueva opción agregada aquí
+                      "Usuarios",
                     ].map((item) => (
                       <li
                         key={item}

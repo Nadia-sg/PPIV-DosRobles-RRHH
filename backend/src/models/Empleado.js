@@ -30,7 +30,10 @@ const empleadoSchema = new mongoose.Schema(
     categoriaImpositiva: { type: String },
 
     numeroLegajo: { type: String, unique: true },
-    
+
+    // Estado del empleado
+    estado: { type: String, enum: ["activo", "inactivo"], default: "activo" },
+
     // imagenPerfil guardada en la base de datos
     imagenPerfil: {
       data: Buffer,

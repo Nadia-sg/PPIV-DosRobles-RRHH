@@ -15,6 +15,7 @@ import DeleteIcon from "@mui/icons-material/Delete";
 const CustomTable = ({
   columns = [],
   rows = [],
+  columnMapping = {}, // Mapeo de nombres de columna a propiedades del objeto
   headerColor = "#817A6F",
   headerTextColor = "#FFFFFF",
   rowBgColor = "#FAFAFA",
@@ -83,8 +84,27 @@ const CustomTable = ({
               }}
             >
               {columns.map((col, i) => {
-                const key = Object.keys(row)[i];
-                const cellValue = row[key];
+                // Usar columnMapping si está disponible, sino intentar matching automático
+                let cellValue = null;
+
+                if (columnMapping[col]) {
+                  // Si hay un mapeo explícito, usarlo
+                  cellValue = row[columnMapping[col]];
+                } else {
+                  // Intentar matching automático case-insensitive
+                  for (const key of Object.keys(row)) {
+                    if (key.toLowerCase() === col.toLowerCase().replace(/\s+/g, "").replace(/\./g, "")) {
+                      cellValue = row[key];
+                      break;
+                    }
+                  }
+
+                  // Si no encontró, usar el índice como fallback
+                  if (cellValue === null && i < Object.keys(row).length) {
+                    const rowKeys = Object.keys(row);
+                    cellValue = row[rowKeys[i]];
+                  }
+                }
 
                 return (
                   <TableCell

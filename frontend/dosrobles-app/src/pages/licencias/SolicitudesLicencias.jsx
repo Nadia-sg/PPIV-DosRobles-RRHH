@@ -75,8 +75,8 @@ export default function SolicitudesLicencias() {
       setCargando(true);
       setError(null);
 
-      // Cargar todas las licencias (sin filtro de empleadoId)
-      const respuesta = await licenciasService.obtenerLicencias({});
+      // Cargar todas las licencias (parámetro todas=true para admin)
+      const respuesta = await licenciasService.obtenerLicencias({ todas: "true" });
 
       // Transformar datos de la API al formato del componente
       const licenciasTransformadas = (respuesta.data || []).map((lic) => {

@@ -74,8 +74,12 @@ export default function LicenciasList() {
 
   // Cargar licencias cuando el usuario esté disponible
   useEffect(() => {
+    console.log("🔄 [LicenciasList] useEffect ejecutado. userLoading:", userLoading, "user:", user);
     if (!userLoading && user?.empleadoId) {
+      console.log("✅ [LicenciasList] Llamando cargarLicencias()");
       cargarLicencias();
+    } else {
+      console.log("⏸️ [LicenciasList] No se llama cargarLicencias. userLoading:", userLoading, "user?.empleadoId:", user?.empleadoId);
     }
   }, [userLoading, user?.empleadoId]);
 
@@ -85,8 +89,8 @@ export default function LicenciasList() {
       setCargando(true);
       setError(null);
 
-      // Cargar solo las licencias del usuario logueado
-      const respuesta = await licenciasService.obtenerLicencias({ empleadoId: empleadoActualId });
+      // El backend filtra automáticamente por empleadoId del token
+      const respuesta = await licenciasService.obtenerLicencias();
 
       // Transformar datos de la API al formato del componente
       const licenciasTransformadas = (respuesta.data || []).map((lic) => {
@@ -123,8 +127,8 @@ export default function LicenciasList() {
   const handleSolicitudSubmit = async (nuevaLicencia) => {
     try {
       // Preparar datos para enviar a la API
+      // El empleadoId se obtiene del token en el backend
       const datosLicencia = {
-        empleadoId: empleadoActualId, // TODO: Obtener del contexto/autenticación (Pedro)
         tipoLicencia: nuevaLicencia.tipoLicencia,
         fechaInicio: nuevaLicencia.fechaInicio,
         fechaFin: nuevaLicencia.fechaFin,

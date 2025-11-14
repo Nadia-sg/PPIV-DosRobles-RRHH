@@ -7,6 +7,7 @@ import {
   Alert,
 } from "@mui/material";
 import ModalCard from "../ui/ModalCard";
+import ModalDialog from "../ui/ModalDialog";
 import {
   NextButton,
   SecondaryButton,
@@ -26,6 +27,11 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
   const [loading, setLoading] = useState(false);
   const [nextLegajo, setNextLegajo] = useState("Cargando...");
   const [errorMessage, setErrorMessage] = useState("");
+
+  // Estados para modal de notificación
+  const [notificationOpen, setNotificationOpen] = useState(false);
+  const [notificationTitle, setNotificationTitle] = useState("");
+  const [notificationMessage, setNotificationMessage] = useState("");
 
   const initialFormData = {
     numeroLegajo: "",
@@ -258,9 +264,9 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
       const result = await response.json();
       if (!response.ok) throw new Error(result?.error || "Error al registrar empleado");
 
-      alert("✅ Empleado registrado con éxito");
-      onEmpleadoGuardado?.();
-      onClose();
+      setNotificationTitle("✅ Éxito");
+      setNotificationMessage("Empleado registrado con éxito");
+      setNotificationOpen(true);
     } catch (error) {
       console.error("Error al registrar empleado:", error);
       setErrorMessage(error.message);
@@ -278,6 +284,12 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
   const handlePrev = () => {
     setStep((s) => Math.max(1, s - 1));
     setErrorMessage("");
+  };
+
+  const handleCloseNotification = () => {
+    setNotificationOpen(false);
+    onEmpleadoGuardado?.();
+    onClose();
   };
 
   // Render de pasos completo 
@@ -549,9 +561,26 @@ const NuevoEmpleadoModal = ({ open, onClose, onEmpleadoGuardado }) => {
   };
 
   return (
-    <ModalCard open={open} onClose={onClose} title="Agregar empleado" width={700}>
-      {renderStep()}
-    </ModalCard>
+    <>
+      <ModalCard open={open} onClose={onClose} title="Agregar empleado" width={700}>
+        {renderStep()}
+      </ModalCard>
+
+      {/* Modal de notificación */}
+      <ModalDialog
+        open={notificationOpen}
+        onClose={handleCloseNotification}
+        title={notificationTitle}
+        content={notificationMessage}
+        actions={[
+          {
+            label: "Aceptar",
+            onClick: handleCloseNotification,
+            variant: "contained",
+          },
+        ]}
+      />
+    </>
   );
 };
 

@@ -21,7 +21,7 @@ export const authService = {
       // Guardar token en localStorage
       if (data.token) {
         localStorage.setItem("token", data.token);
-        localStorage.setItem("user", JSON.stringify(data.usuario));
+        localStorage.setItem("user", JSON.stringify(data.user));
       }
 
       return data;
@@ -82,8 +82,8 @@ export const authService = {
     const user = authService.getUser();
     if (!user) return false;
     if (requiredRole instanceof Array) {
-      return requiredRole.includes(user.rol);
+      return requiredRole.includes(user.role);
     }
-    return user.rol === requiredRole;
+    return user.role === requiredRole;
   },
 };

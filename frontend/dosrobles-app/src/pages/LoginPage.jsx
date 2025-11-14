@@ -5,7 +5,7 @@ import { LoginButton } from "../components/ui/Buttons";
 import loginImage from "../assets/login.jpg";
 import logoImage from "../assets/Logo4.png";
 import { useNavigate } from "react-router-dom";
-import { loginUser } from "../api/authService"; // Importar el servicio
+import { useUser } from "../context/UserContext"; // Importar el context
 
 export default function LoginPage() {
   const [user, setUser] = useState("");
@@ -13,6 +13,7 @@ export default function LoginPage() {
   const [error, setError] = useState("");
   const isMobile = useMediaQuery("(max-width:900px)");
   const navigate = useNavigate();
+  const { login } = useUser(); // Usar el context
 
   const userInputRef = useRef(null);
   const passwordInputRef = useRef(null);
@@ -20,17 +21,15 @@ export default function LoginPage() {
   const handleLogin = async () => {
     try {
       setError(""); // limpiar errores previos
-      const data = await loginUser(user, password); // llamada al backend
+      console.log("🔑 [LoginPage] Iniciando login...");
+      const data = await login(user, password); // llamada al context
 
-      // Guardar token y usuario en localStorage
-      localStorage.setItem("token", data.token);
-      localStorage.setItem("user", JSON.stringify(data.user));
-
-      console.log("Login exitoso:", data);
+      console.log("✅ [LoginPage] Login exitoso:", data);
 
       // Redirigir al home
       navigate("/home");
     } catch (err) {
+      console.error("❌ [LoginPage] Error en login:", err);
       setError(err.message || "Error al iniciar sesión");
     }
   };

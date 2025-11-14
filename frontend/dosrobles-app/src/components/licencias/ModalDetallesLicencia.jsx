@@ -199,7 +199,7 @@ export default function ModalDetallesLicencia({
               }}
             >
               <Typography sx={{ fontSize: "0.9rem", color: "#808080", mb: 0.5 }}>
-                Comentario del Gerente
+                Comentario
               </Typography>
               <Typography sx={{ fontSize: "0.95rem", color: "#585858" }}>
                 {licencia.comentarioGerente}

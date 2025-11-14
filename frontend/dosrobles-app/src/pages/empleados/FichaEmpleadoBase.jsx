@@ -14,7 +14,7 @@ const FichaEmpleadoBase = ({
   readOnly = true,
   actions = [],
   onChange,
-  onImageChange, 
+  onImageChange,
 }) => {
   const fileInputRef = useRef(null);
 
@@ -125,7 +125,7 @@ const FichaEmpleadoBase = ({
 
       {/* === FORMULARIO STEP1 - Datos Personales === */}
       <FormCard title="Datos Personales" sx={{ mb: 2 }}>
-        <Stack spacing={2}>
+        <Stack spacing={2} sx={{ position: "relative", zIndex: 1 }}>
           <BaseInput
             label="Nombre"
             value={data.nombre}
@@ -161,12 +161,21 @@ const FichaEmpleadoBase = ({
 
       {/* === FORMULARIO STEP2 - Datos Laborales === */}
       <FormCard title="Datos Laborales" sx={{ mb: 2 }}>
-        <Stack spacing={2}>
-          <BaseInput
+        <Stack spacing={2} sx={{ position: "relative", zIndex: 1 }}>
+          <SelectInput
             label="Área de trabajo"
             value={data.area}
             readOnly={readOnly}
             onChange={(e) => onChange("area", e.target.value)}
+            options={[
+              { label: "Carpintería", value: "carpinteria" },
+              { label: "Aserradero", value: "aserradero" },
+              { label: "Instalaciones", value: "instalaciones" },
+              { label: "Administración", value: "administracion" },
+              { label: "Recursos Humanos", value: "rrhh" },
+              { label: "Pintura", value: "pintura" },
+              { label: "Diseño", value: "diseno" },
+            ]}
           />
           <BaseInput
             label="Puesto/Cargo"
@@ -209,12 +218,18 @@ const FichaEmpleadoBase = ({
 
       {/* === FORMULARIO STEP3 - Datos de Remuneración === */}
       <FormCard title="Datos de Remuneración">
-        <Stack spacing={2}>
-          <BaseInput
+        <Stack spacing={2} sx={{ position: "relative", zIndex: 1 }}>
+          <SelectInput
             label="Tipo de remuneración"
             value={data.tipoRemuneracion}
             readOnly={readOnly}
             onChange={(e) => onChange("tipoRemuneracion", e.target.value)}
+            options={[
+              { label: "Jornada completa", value: "completa" },
+              { label: "Media jornada", value: "media" },
+              { label: "Por hora", value: "hora" },
+              { label: "Por proyecto", value: "proyecto" },
+            ]}
           />
           <BaseInput
             label="Sueldo bruto"
@@ -222,11 +237,18 @@ const FichaEmpleadoBase = ({
             readOnly={readOnly}
             onChange={(e) => onChange("sueldo", e.target.value)}
           />
-          <BaseInput
+          <SelectInput
             label="Banco"
             value={data.banco}
             readOnly={readOnly}
             onChange={(e) => onChange("banco", e.target.value)}
+            options={[
+              { label: "Banco Nación", value: "nacion" },
+              { label: "Banco Provincia", value: "provincia" },
+              { label: "Banco Galicia", value: "galicia" },
+              { label: "Banco Santander", value: "santander" },
+              { label: "Banco BBVA", value: "bbva" },
+            ]}
           />
           <BaseInput
             label="CBU"

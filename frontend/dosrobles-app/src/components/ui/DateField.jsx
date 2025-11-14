@@ -8,7 +8,7 @@ import { CalendarMonth } from "@mui/icons-material";
  * - Normaliza internamente a "yyyy-MM-dd" para el <input type="date" />
  * - Muestra fecha en formato local (es-AR) en el área visible
  */
-export default function DateField({ label, value, onChange }) {
+export default function DateField({ label, value, onChange, readOnly = false, disabled = false }) {
   const inputRef = useRef(null);
 
   // Convierte distintos formatos a yyyy-MM-dd (sin uso de UTC)
@@ -62,6 +62,7 @@ export default function DateField({ label, value, onChange }) {
   }, [inputValue]);
 
   const handleOpen = () => {
+    if (disabled || readOnly) return;
     if (inputRef.current) {
       if (typeof inputRef.current.showPicker === "function") {
         inputRef.current.showPicker();
@@ -72,7 +73,7 @@ export default function DateField({ label, value, onChange }) {
   };
 
   return (
-    <Box sx={{ mb: 3, position: "relative" }}>
+    <Box sx={{ mb: 3, position: "relative", zIndex: 10 }}>
       {/* Label */}
       <Typography
         sx={{
@@ -84,6 +85,7 @@ export default function DateField({ label, value, onChange }) {
           color: "#585858",
           fontWeight: 500,
           fontSize: "0.9rem",
+          zIndex: 2,
         }}
       >
         {label}
@@ -102,8 +104,11 @@ export default function DateField({ label, value, onChange }) {
           px: 2,
           py: 1.2,
           mt: 1,
-          backgroundColor: "#FFFFFF",
-          cursor: "pointer",
+          backgroundColor: disabled || readOnly ? "#F5F5F5" : "#FFFFFF",
+          cursor: disabled || readOnly ? "not-allowed" : "pointer",
+          opacity: disabled || readOnly ? 0.6 : 1,
+          position: "relative",
+          zIndex: 3,
         }}
       >
         <Typography sx={{ color: inputValue ? "#585858" : "#999999", fontSize: "0.95rem" }}>
@@ -122,6 +127,7 @@ export default function DateField({ label, value, onChange }) {
           onChange={(e) => {
             if (typeof onChange === "function") onChange(e);
           }}
+          disabled={disabled || readOnly}
           style={{
             opacity: 0,
             position: "absolute",

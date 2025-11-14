@@ -10,23 +10,20 @@ export const UserProvider = ({ children }) => {
 
   // Verificar si hay usuario al cargar la app
   useEffect(() => {
-    const verificarAutenticacion = async () => {
+    const verificarAutenticacion = () => {
       try {
+        console.log("🔍 [UserContext] Verificando autenticación...");
         const token = authService.getToken();
         const usuarioLocal = authService.getUser();
 
-        if (token && usuarioLocal) {
-          // Verificar que el token sea válido
-          const respuestaVerificacion = await authService.verificarToken(token);
+        console.log("🔍 [UserContext] Token:", !!token);
+        console.log("🔍 [UserContext] Usuario local:", usuarioLocal);
 
-          // Usar el usuario del backend (con rol actualizado)
-          if (respuestaVerificacion.usuario) {
-            setUser(respuestaVerificacion.usuario);
-            // Actualizar también en localStorage para mantener sincronizado
-            localStorage.setItem("user", JSON.stringify(respuestaVerificacion.usuario));
-          } else {
-            setUser(usuarioLocal);
-          }
+        if (token && usuarioLocal) {
+          console.log("✅ [UserContext] Token y usuario encontrados, usando usuario local");
+          setUser(usuarioLocal);
+        } else {
+          console.log("⚠️ [UserContext] No hay token o usuario local. Token:", !!token, "Usuario:", !!usuarioLocal);
         }
       } catch (err) {
         console.log("Token inválido, realizando logout");
@@ -43,7 +40,7 @@ export const UserProvider = ({ children }) => {
     try {
       setError(null);
       const response = await authService.login(username, password);
-      setUser(response.usuario);
+      setUser(response.user);
       return response;
     } catch (err) {
       const errorMessage = err.message || "Error al iniciar sesión";

@@ -9,9 +9,10 @@ export const generarReciboPDF = async (req, res) => {
     const { nominaId } = req.params;
 
     // Obtener nómina
+    // Nota: el campo es 'numeroLegajo' no 'legajo' en el modelo Empleado
     const nomina = await Nomina.findById(nominaId).populate(
       "empleadoId",
-      "nombre apellido legajo cuil categoria puesto fechaIngreso"
+      "nombre apellido numeroLegajo cuil categoria puesto fechaIngreso"
     );
 
     if (!nomina) {
@@ -19,6 +20,26 @@ export const generarReciboPDF = async (req, res) => {
         success: false,
         message: "Nómina no encontrada",
       });
+    }
+
+    // Validar que empleadoId esté poblado
+    if (!nomina.empleadoId) {
+      return res.status(400).json({
+        success: false,
+        message: "Error: La nómina no tiene empleado asociado",
+      });
+    }
+
+    // Si numeroLegajo no está disponible en el populate, buscarlo directamente
+    if (!nomina.empleadoId.numeroLegajo) {
+      console.warn("⚠️ [generarReciboPDF] numeroLegajo no disponible en populate, buscando directamente...");
+      const empleado = await Empleado.findById(nomina.empleadoId._id).select("numeroLegajo");
+      if (empleado && empleado.numeroLegajo) {
+        nomina.empleadoId.numeroLegajo = empleado.numeroLegajo;
+      } else {
+        console.warn("⚠️ [generarReciboPDF] No se encontró numeroLegajo para empleado:", nomina.empleadoId._id);
+        nomina.empleadoId.numeroLegajo = "No disponible";
+      }
     }
 
     // Obtener detalles
@@ -32,9 +53,10 @@ export const generarReciboPDF = async (req, res) => {
 
     // Headers
     res.setHeader("Content-Type", "application/pdf");
+    const legajoParaNombre = nomina.empleadoId.numeroLegajo || "sin_legajo";
     res.setHeader(
       "Content-Disposition",
-      `attachment; filename=recibo_${nomina.empleadoId.legajo}_${nomina.periodo}.pdf`
+      `attachment; filename=recibo_${legajoParaNombre}_${nomina.periodo}.pdf`
     );
 
     doc.pipe(res);
@@ -57,7 +79,7 @@ export const generarReciboPDF = async (req, res) => {
     doc.fontSize(10).font("Helvetica-Bold").text("DATOS DEL EMPLEADO");
     doc.fontSize(9).font("Helvetica");
     doc.text(`Nombre: ${nomina.empleadoId.nombre} ${nomina.empleadoId.apellido}`);
-    doc.text(`Legajo: ${nomina.empleadoId.legajo}`);
+    doc.text(`Legajo: ${nomina.empleadoId.numeroLegajo || "No disponible"}`);
     doc.text(`CUIL: ${nomina.empleadoId.cuil}`);
     doc.text(`Puesto: ${nomina.empleadoId.puesto}`);
     doc.text(`Categoría: ${nomina.empleadoId.categoria}`);
@@ -205,7 +227,7 @@ export const generarRecibosMultiples = async (req, res) => {
     const nominas = await Nomina.find({
       periodo,
       estado: "aprobado",
-    }).populate("empleadoId", "legajo");
+    }).populate("empleadoId", "numeroLegajo");
 
     if (nominas.length === 0) {
       return res.status(404).json({
@@ -219,7 +241,7 @@ export const generarRecibosMultiples = async (req, res) => {
       message: `${nominas.length} recibos disponibles para descargar`,
       data: nominas.map((n) => ({
         nominaId: n._id,
-        empleado: n.empleadoId.legajo,
+        empleado: n.empleadoId.numeroLegajo || "No disponible",
         periodo: n.periodo,
         neto: n.totalNeto,
       })),

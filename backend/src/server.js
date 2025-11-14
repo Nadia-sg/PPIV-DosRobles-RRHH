@@ -1,18 +1,17 @@
 // src/server.js
-import express from "express";
 import dotenv from "dotenv";
+dotenv.config();
+
+import express from "express";
 import cors from "cors";
 import { connectDB } from "./config/db.js";
 import authRoutes from "./routes/authRoutes.js";
 import empleadoRoutes from "./routes/empleadoRoutes.js";
-import empleadosRoutes from "./routes/empleados.routes.js";
 import licenciasRoutes from "./routes/licencias.routes.js";
 import nominaRoutes from "./routes/nomina.routes.js";
 import pdfRoutes from "./routes/pdf.routes.js";
 import notificacionesRoutes from "./routes/notificaciones.routes.js";
 import documentosRoutes from "./routes/documentos.routes.js";
-
-dotenv.config();
 
 const app = express();
 
@@ -22,7 +21,9 @@ app.use(express.urlencoded({ extended: true }));
 app.use(
   cors({
     origin: "http://localhost:5173",
-    methods: ["GET", "POST", "PUT", "DELETE"],
+    methods: ["GET", "POST", "PUT", "PATCH", "DELETE"],
+    credentials: true,
+    exposedHeaders: ["Content-Disposition", "Content-Type"],
   })
 );
 
@@ -37,7 +38,6 @@ app.get("/", (_, res) => {
 // Rutas de API
 app.use("/api/auth", authRoutes);
 app.use("/api/empleados", empleadoRoutes);
-app.use("/api/empleados", empleadosRoutes);
 app.use("/api/licencias", licenciasRoutes);
 app.use("/api/nomina", nominaRoutes);
 app.use("/api/pdf", pdfRoutes);

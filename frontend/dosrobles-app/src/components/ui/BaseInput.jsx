@@ -24,6 +24,8 @@ export default function BaseInput({
   error,
   icon,
   type = "text",
+  disabled = false,
+  readOnly = false,
 }) {
   return (
     <Box sx={{ mb: 3 }}>
@@ -38,7 +40,7 @@ export default function BaseInput({
         sx={{
           display: "flex",
           alignItems: "center",
-          backgroundColor: "#FFFFFF",
+          backgroundColor: disabled || readOnly ? "#F5F5F5" : "#FFFFFF",
           border: "1px solid #E2E1E1",
           borderRadius: 2,
           boxShadow: "0 2px 4px rgba(0,0,0,0.05)",
@@ -54,8 +56,10 @@ export default function BaseInput({
           placeholder={placeholder}
           value={value}
           onChange={onChange}
+          disabled={disabled || readOnly}
           InputProps={{
             disableUnderline: true,
+            readOnly: readOnly,
             sx: {
               color: "#585858",
               fontSize: "0.95rem",

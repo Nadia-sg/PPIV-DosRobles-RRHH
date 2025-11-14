@@ -19,6 +19,8 @@ import {
   IconNextButton,
 } from "../components/ui/Buttons";
 import { useNavigate } from "react-router-dom";
+import { useUser } from "../context/UserContext";
+import { notificacionesService } from "../services/notificacionesService";
 
 export default function Home() {
   const isMobile = useMediaQuery("(max-width:900px)");
@@ -277,6 +279,84 @@ function EstadoEquipoCard({ isMobile }) {
 }
 
 function BandejaEntradaCard({ isMobile, navigate }) {
+  const { user, loading: userLoading } = useUser();
+  const [notificaciones, setNotificaciones] = useState([]);
+  const [cargando, setCargando] = useState(true);
+
+  const esEmpleado = user?.role === "empleado";
+  const esAdmin = ["admin"].includes(user?.role);
+  const empleadoId = user?.empleadoId;
+
+  useEffect(() => {
+    if (!userLoading && empleadoId) {
+      cargarNotificaciones();
+    }
+  }, [userLoading, empleadoId]);
+
+  const cargarNotificaciones = async () => {
+    console.log("🚀 [BandejaEntradaCard] Cargando notificaciones. esEmpleado:", esEmpleado, "esAdmin:", esAdmin);
+    try {
+      setCargando(true);
+
+      let respuesta;
+
+      if (esEmpleado) {
+        console.log("👤 [BandejaEntradaCard] Eres empleado, obteniendo tus notificaciones...");
+        respuesta = await notificacionesService.obtenerNotificaciones(empleadoId);
+      } else if (esAdmin) {
+        console.log("👨‍💼 [BandejaEntradaCard] Eres admin, obteniendo TODAS las notificaciones...");
+        respuesta = await notificacionesService.obtenerTodasLasNotificaciones();
+
+        const notificacionesFiltradas = (respuesta.data || []).filter((notif) => {
+          const receptorId = notif.empleadoId?._id?.toString() || notif.empleadoId?.toString() || notif.empleadoId;
+          const esReceptor = receptorId === empleadoId;
+          return esReceptor && (notif.tipo === "ausencia" || notif.tipo === "aprobacion" || notif.tipo === "rechazo");
+        });
+        respuesta.data = notificacionesFiltradas;
+      }
+
+      console.log("📬 [BandejaEntradaCard] Notificaciones cargadas:", respuesta?.data?.length || 0);
+      // Mostrar solo las últimas 3 notificaciones
+      const ultimasNotificaciones = (respuesta?.data || []).slice(0, 3);
+      setNotificaciones(ultimasNotificaciones);
+    } catch (err) {
+      console.error("❌ [BandejaEntradaCard] Error al cargar:", err);
+      setNotificaciones([]);
+    } finally {
+      setCargando(false);
+    }
+  };
+
+  const formatearFecha = (fecha) => {
+    if (!fecha) return "";
+    try {
+      if (typeof fecha === 'string' && fecha.includes('-')) {
+        const partes = fecha.split('T')[0].split('-');
+        if (partes.length === 3) {
+          const [year, month, day] = partes.map(p => parseInt(p, 10));
+          const hoy = new Date();
+          const hoySinHora = new Date(hoy.getFullYear(), hoy.getMonth(), hoy.getDate());
+          const ayerSinHora = new Date(hoySinHora);
+          ayerSinHora.setDate(ayerSinHora.getDate() - 1);
+          const fechaComparada = new Date(year, month - 1, day);
+
+          if (fechaComparada.getTime() === hoySinHora.getTime()) {
+            const date = new Date(fecha);
+            return date.toLocaleTimeString("es-AR", { hour: "2-digit", minute: "2-digit" });
+          } else if (fechaComparada.getTime() === ayerSinHora.getTime()) {
+            return "Ayer";
+          } else {
+            return `${day}/${month}`;
+          }
+        }
+      }
+      const date = new Date(fecha);
+      return date.toLocaleDateString("es-AR", { month: "short", day: "numeric" });
+    } catch {
+      return fecha;
+    }
+  };
+
   return (
     <Card
       sx={{
@@ -299,42 +379,52 @@ function BandejaEntradaCard({ isMobile, navigate }) {
       </Box>
 
       <Box sx={{ display: "flex", flexDirection: "column", gap: 1, flex: 1, overflowY: "auto" }}>
-        {[...Array(5)].map((_, i) => (
-          <Box
-            key={i}
-            sx={{
-              display: "flex",
-              flexDirection: { xs: "column", md: "row" },
-              justifyContent: { xs: "flex-start", md: "space-between" },
-              alignItems: { xs: "flex-start", md: "center" },
-              backgroundColor: "#E9E9E9",
-              borderRadius: 1,
-              p: 1.5,
-              mb: 1,
-              cursor: "pointer",
-              "&:hover": { backgroundColor: "#dcdcdc" },
-            }}
-          >
+        {cargando ? (
+          <Box sx={{ display: "flex", justifyContent: "center", py: 2 }}>
+            <CircularProgress size={30} />
+          </Box>
+        ) : notificaciones.length > 0 ? (
+          notificaciones.map((notif, i) => (
             <Box
+              key={i}
               sx={{
                 display: "flex",
-                justifyContent: { xs: "space-between", md: "flex-start" },
-                width: "100%",
-                mb: { xs: 0.5, md: 0 },
+                flexDirection: { xs: "column", md: "row" },
+                justifyContent: { xs: "flex-start", md: "space-between" },
+                alignItems: { xs: "flex-start", md: "center" },
+                backgroundColor: "#E9E9E9",
+                borderRadius: 1,
+                p: 1.5,
+                mb: 1,
+                cursor: "pointer",
+                "&:hover": { backgroundColor: "#dcdcdc" },
               }}
             >
-              <Typography variant="body2" color="text.secondary">
-                Fecha {i + 1}
-              </Typography>
-              <Typography variant="body2" color="text.secondary">
-                Remitente {i + 1}
+              <Box
+                sx={{
+                  display: "flex",
+                  justifyContent: { xs: "space-between", md: "flex-start" },
+                  width: "100%",
+                  mb: { xs: 0.5, md: 0 },
+                }}
+              >
+                <Typography variant="body2" color="text.secondary">
+                  {formatearFecha(notif.createdAt)}
+                </Typography>
+                <Typography variant="body2" color="text.secondary">
+                  {notif.empleadoId?.nombre || "Sistema"}
+                </Typography>
+              </Box>
+              <Typography variant="body2" fontWeight="bold" sx={{ width: "100%" }}>
+                {notif.asunto}
               </Typography>
             </Box>
-            <Typography variant="body2" fontWeight="bold" sx={{ width: "100%" }}>
-              Asunto del mail {i + 1}
-            </Typography>
-          </Box>
-        ))}
+          ))
+        ) : (
+          <Typography variant="body2" color="text.secondary" sx={{ textAlign: "center", py: 2 }}>
+            Sin notificaciones
+          </Typography>
+        )}
       </Box>
     </Card>
   );
