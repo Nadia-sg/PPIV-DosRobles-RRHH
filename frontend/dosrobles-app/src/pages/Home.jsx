@@ -7,6 +7,8 @@ import {
   Typography,
   useMediaQuery,
   CircularProgress,
+  Grid,
+  useMediaQuery
 } from "@mui/material";
 import PlayArrowIcon from "@mui/icons-material/PlayArrow";
 import ArrowForwardIosIcon from "@mui/icons-material/ArrowForwardIos";
@@ -20,7 +22,11 @@ import {
 } from "../components/ui/Buttons";
 import { useNavigate } from "react-router-dom";
 import { useUser } from "../context/UserContext";
-import { notificacionesService } from "../services/notificacionesService";
+import { notificacionesService } from "../services/notificacionesService";import FichajeCard from "../components/home/FichajeCard";
+import EstadoEquipoCard from "../components/home/EstadoEquipoCard";
+import BandejaEntradaCard from "../components/home/BandejaEntradaCard";
+import EventosCard from "../components/home/EventosCard";
+
 
 export default function Home() {
   const isMobile = useMediaQuery("(max-width:900px)");
@@ -71,6 +77,9 @@ export default function Home() {
         padding: 4,
       }}
     >
+      {/* ===================
+          FILA SUPERIOR
+          =================== */}
       {userRole === "admin" ? (
         <>
           {/* ADMIN */}
@@ -82,15 +91,20 @@ export default function Home() {
               flexWrap: isMobile ? "wrap" : "nowrap",
             }}
           >
+            {/* CUADRANTE 1: FICHAJE */}
             <FichajeCard
               isMobile={isMobile}
               progress={progress}
               seconds={seconds}
               navigate={navigate}
             />
+            {/* CUADRANTE 2: ESTADO DEL EQUIPO */}
             <EstadoEquipoCard isMobile={isMobile} />
           </Box>
 
+          {/* ===================
+            FILA INFERIOR
+          =================== */}
           <Box
             sx={{
               display: "flex",
@@ -99,7 +113,9 @@ export default function Home() {
               flexWrap: isMobile ? "wrap" : "nowrap",
             }}
           >
+        {/* CUADRANTE 3: BANDEJA DE ENTRADA */}
             <BandejaEntradaCard isMobile={isMobile} navigate={navigate} />
+       {/* CUADRANTE 4: EVENTOS */}
             <EventosCard isMobile={isMobile} eventos={eventos} />
           </Box>
         </>

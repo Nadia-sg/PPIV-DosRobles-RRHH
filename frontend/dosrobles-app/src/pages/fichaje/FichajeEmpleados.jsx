@@ -1,52 +1,109 @@
-// src/pages/fichaje/FichajeEmpleados.jsx
-import React, { useState } from "react";
-import { Box, Typography, Avatar, Stack, TextField, MenuItem } from "@mui/material";
+import React, { useState, useEffect } from "react";
+import {
+  Box,
+  Typography,
+  Avatar,
+  Stack,
+  TextField,
+  MenuItem,
+  CircularProgress,
+} from "@mui/material";
 import { NextButton, PrimaryButton } from "../../components/ui/Buttons";
 import CheckboxInput from "../../components/ui/CheckboxInput";
 import CustomTable from "../../components/ui/CustomTable";
-import Empleado2 from "../../assets/empleados/empleado2.png";
-import Empleado1 from "../../assets/empleados/empleado1.png";
 import SearchBar from "../../components/ui/SearchBar";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
+import { useNavigate } from "react-router-dom";
 
 const meses = [
-  "Enero","Febrero","Marzo","Abril","Mayo","Junio",
-  "Julio","Agosto","Septiembre","Octubre","Noviembre","Diciembre"
+  "Enero",
+  "Febrero",
+  "Marzo",
+  "Abril",
+  "Mayo",
+  "Junio",
+  "Julio",
+  "Agosto",
+  "Septiembre",
+  "Octubre",
+  "Noviembre",
+  "Diciembre",
 ];
 
 const FichajeEmpleados = () => {
-  const [mes, setMes] = useState("Agosto");
-  const [anio, setAnio] = useState(2025);
+  // 📅 Fecha actual
+  const fechaActual = new Date();
+  const mesActual = meses[fechaActual.getMonth()]; // Ej: "Noviembre"
+  const anioActual = fechaActual.getFullYear(); // Ej: 2025
+
+  // 🧩 Estados
+  const [mes, setMes] = useState(mesActual);
+  const [anio, setAnio] = useState(anioActual);
   const [search, setSearch] = useState("");
+  const [fichajes, setFichajes] = useState([]);
+  const [loading, setLoading] = useState(true);
 
-  const empleados = [
-    { id: 1, nombre: "Juan Pérez", foto: Empleado2, hsPrevistas: "192h", hsTrabajadas: "196h 2m" },
-    { id: 2, nombre: "Mariana Gómez", foto: Empleado1, hsPrevistas: "160h", hsTrabajadas: "158h 30m" },
-  ];
+  // 🔁 Obtener fichajes
+  useEffect(() => {
+    const fetchFichajes = async () => {
+      setLoading(true);
+      try {
+        const mesNumero = meses.indexOf(mes) + 1; // Enero=1, Febrero=2...
+        const response = await fetch(
+          `http://localhost:4000/fichajes/empleados-mes?mes=${mesNumero}&anio=${anio}`
+        );
+        if (!response.ok) throw new Error("Error al obtener fichajes");
+        const data = await response.json();
+        setFichajes(data);
+      } catch (error) {
+        console.error("Error al obtener fichajes:", error);
+      } finally {
+        setLoading(false);
+      }
+    };
+    fetchFichajes();
+  }, [mes, anio]);
 
-  const filtered = empleados.filter(emp => 
-    emp.nombre.toLowerCase().includes(search.toLowerCase())
+  // 🔍 Filtro de búsqueda
+  const filtered = fichajes.filter((f) =>
+    f.nombre.toLowerCase().includes(search.toLowerCase())
   );
 
+  // 🧱 Columnas de la tabla
   const columns = ["", "Empleado", "Hs Previstas", "Hs Trabajadas", "Más Info"];
-  const rows = filtered.map(emp => ({
-    check: <CheckboxInput />,
+
+  // 🧾 Filas
+  const rows = filtered.map((f) => ({
+    check: <CheckBoxInput />,
     empleado: (
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
-        <Avatar src={emp.foto} sx={{ width: 40, height: 40 }} />
-        <Typography>{emp.nombre}</Typography>
+        <Avatar src={f.fotoPerfil || ""} sx={{ width: 40, height: 40 }} />
+        <Typography>{`${f.nombre} ${f.apellido}`}</Typography>
       </Box>
     ),
-    hsPrevistas: emp.hsPrevistas,
-    hsTrabajadas: emp.hsTrabajadas,
-    masInfo: <NextButton onClick={() => console.log("Ver detalle", emp.id)} endIcon={<ArrowForwardIcon />} />
+    hsPrevistas: f.hsPrevistas || "—",
+    hsTrabajadas: f.hsTrabajadas || "—",
+    masInfo: (
+      <NextButton
+        onClick={() =>
+          navigate(`/fichaje/historial/${f.idEmpleado}?admin=true`)
+        }
+        endIcon={<ArrowForwardIcon />}
+      />
+    ),
   }));
 
+  const navigate = useNavigate();
+
+  // 🖥 Render
   return (
     <Box sx={{ p: 4 }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
-        <Typography variant="h4" sx={{ fontWeight: 600, color: "#585858", mb: 1 }}>
+        <Typography
+          variant="h4"
+          sx={{ fontWeight: 600, color: "#585858", mb: 1 }}
+        >
           Fichaje de Empleados
         </Typography>
         <Typography variant="body2" sx={{ color: "#808080" }}>
@@ -63,27 +120,38 @@ const FichajeEmpleados = () => {
           onChange={(e) => setMes(e.target.value)}
         >
           {meses.map((m) => (
-            <MenuItem key={m} value={m}>{m}</MenuItem>
+            <MenuItem key={m} value={m}>
+              {m}
+            </MenuItem>
           ))}
         </TextField>
+
         <TextField
           type="number"
           label="Año"
           value={anio}
           onChange={(e) => setAnio(e.target.value)}
         />
+
         <SearchBar value={search} onChange={(e) => setSearch(e.target.value)} />
       </Stack>
 
       {/* Tabla */}
-      <CustomTable
-        columns={columns}
-        rows={rows}
-      />
 
-      {/* Botón Aprobar */}
+      {loading ? (
+        <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
+          <CircularProgress />
+        </Box>
+      ) : (
+        <CustomTable columns={columns} rows={rows} />
+      )}
+
+      {/* Botón */}
       <Box sx={{ mt: 3 }}>
-        <PrimaryButton fullWidth onClick={() => console.log("Aprobar fichajes")}>
+        <PrimaryButton
+          fullWidth
+          onClick={() => console.log("Aprobar fichajes")}
+        >
           Aprobar los fichajes de los empleados
         </PrimaryButton>
       </Box>

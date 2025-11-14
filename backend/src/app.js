@@ -19,7 +19,10 @@ app.use(express.json());
 
 // Rutas
 app.use("/api/auth", authRoutes);
-app.use("/api/empleados", empleadoRoutes); 
+app.use("/api/empleados", empleadoRoutes);
+app.use("/fichajes", fichajesRoutes);
+app.use("/empleados", empleadosRoutes);
+app.use("/eventos", eventosRoutes);
 
 export default app;
 

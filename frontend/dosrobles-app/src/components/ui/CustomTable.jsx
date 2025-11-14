@@ -23,19 +23,30 @@ const CustomTable = ({
   hoverColor = "#F0EFEF",
   onEdit,
   onDelete,
+  maxHeight,
 }) => {
   const showActions = onEdit || onDelete;
+
+  
 
   return (
     <TableContainer
       component={Paper}
       sx={{
         borderRadius: 3,
-        boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
-        overflow: "hidden",
+    boxShadow: "0 2px 10px rgba(0,0,0,0.08)",
+    overflowY: "auto",
+    maxHeight: maxHeight || "420px",    
       }}
     >
-      <Table sx={{ borderCollapse: "separate", borderSpacing: "0 8px" }}>
+      <Table
+        stickyHeader                   
+        sx={{
+          borderCollapse: "separate",
+          borderSpacing: "0 8px",
+          minWidth: "100%",
+        }}
+      >
         {/* Cabecera */}
         <TableHead>
           <TableRow sx={{ backgroundColor: headerColor }}>
@@ -47,6 +58,10 @@ const CustomTable = ({
                   fontWeight: "medium",
                   borderBottom: "none",
                   fontSize: "0.95rem",
+                  position: "sticky",    
+                  top: 0,
+                  zIndex: 1,
+                  backgroundColor: headerColor, 
                 }}
               >
                 {col}
@@ -58,6 +73,10 @@ const CustomTable = ({
                   color: headerTextColor,
                   fontWeight: "medium",
                   borderBottom: "none",
+                  position: "sticky",
+                  top: 0,
+                  zIndex: 1,
+                  backgroundColor: headerColor,
                 }}
               >
                 Acciones
@@ -115,7 +134,6 @@ const CustomTable = ({
                       fontSize: "0.95rem",
                     }}
                   >
-                    {/* Soporta texto o JSX */}
                     {React.isValidElement(cellValue)
                       ? cellValue
                       : cellValue ?? "-"}
