@@ -1,3 +1,6 @@
+// src/pages/fichajes/FichajeEmpleados.jsx
+
+
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -7,6 +10,8 @@ import {
   TextField,
   MenuItem,
   CircularProgress,
+  Snackbar,
+  Alert,
 } from "@mui/material";
 import { NextButton, PrimaryButton } from "../../components/ui/Buttons";
 import CheckBoxInput from "../../components/ui/CheckBoxInput";
@@ -31,58 +36,122 @@ const meses = [
 ];
 
 const FichajeEmpleados = () => {
-  // 📅 Fecha actual
   const fechaActual = new Date();
-  const mesActual = meses[fechaActual.getMonth()]; // Ej: "Noviembre"
-  const anioActual = fechaActual.getFullYear(); // Ej: 2025
+  const mesActual = meses[fechaActual.getMonth()];
+  const anioActual = fechaActual.getFullYear();
 
-  // 🧩 Estados
   const [mes, setMes] = useState(mesActual);
   const [anio, setAnio] = useState(anioActual);
   const [search, setSearch] = useState("");
   const [fichajes, setFichajes] = useState([]);
   const [loading, setLoading] = useState(true);
 
-  // 🔁 Obtener fichajes
-  useEffect(() => {
-    const fetchFichajes = async () => {
-      setLoading(true);
-      try {
-        const mesNumero = meses.indexOf(mes) + 1; // Enero=1, Febrero=2...
-        const response = await fetch(
-          `http://localhost:4000/fichajes/empleados-mes?mes=${mesNumero}&anio=${anio}`
-        );
-        if (!response.ok) throw new Error("Error al obtener fichajes");
-        const data = await response.json();
-        setFichajes(data);
-      } catch (error) {
-        console.error("Error al obtener fichajes:", error);
-      } finally {
-        setLoading(false);
-      }
-    };
-    fetchFichajes();
-  }, [mes, anio]);
+  // empleados seleccionados
+  const [selected, setSelected] = useState({});
 
-  // 🔍 Filtro de búsqueda
+  // empleados aprobados visualmente
+  const [aprobados, setAprobados] = useState({});
+
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+
+  const navigate = useNavigate();
+
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+
+ 
+  async function aprobarFichajeService(payload) {
+    const res = await fetch(`${API_URL}/fichajes/aprobaciones`, {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(payload),
+    });
+
+    if (!res.ok) {
+      throw new Error("Error al aprobar fichaje");
+    }
+
+    return res.json();
+  }
+
+  // 🔁 Obtener fichajes
+ useEffect(() => {
+  const fetchFichajes = async () => {
+    setLoading(true);
+    try {
+      const mesNumero = meses.indexOf(mes) + 1;
+      const res = await fetch(
+        `${API_URL}/fichajes/empleados-mes?mes=${mesNumero}&anio=${anio}`
+      );
+
+      if (!res.ok) throw new Error("Error al obtener fichajes");
+      const data = await res.json();
+
+      setFichajes(data);
+
+      if (data.length > 0) {
+        console.log("🔎 Primer fichaje recibido:", data[0]);
+      } else {
+        console.log("🔎 No llegaron fichajes desde el backend.");
+      }
+
+    } catch (err) {
+      console.error(err);
+      setToast({
+        open: true,
+        message: "Error al cargar fichajes",
+        severity: "error",
+      });
+    } finally {
+      setLoading(false);
+    }
+  };
+
+  fetchFichajes();
+}, [mes, anio]);
+
+  // Filtrar empleados
   const filtered = fichajes.filter((f) =>
     f.nombre.toLowerCase().includes(search.toLowerCase())
   );
 
-  // 🧱 Columnas de la tabla
-  const columns = ["", "Empleado", "Hs Previstas", "Hs Trabajadas", "Más Info"];
+  // Columnas
+  const columns = [
+    "Fichaje mensual",
+    "Empleado",
+    "Hs Previstas",
+    "Hs Trabajadas",
+    "Más Info",
+  ];
 
-  // 🧾 Filas
+  //  Filas
   const rows = filtered.map((f) => ({
-    check: <CheckBoxInput />,
+    check: aprobados[f.idEmpleado] ? (
+      <Typography sx={{ color: "primary.main", fontWeight: 600 }}>
+        Aprobado
+      </Typography>
+    ) : (
+      <CheckBoxInput
+        checked={!!selected[f.idEmpleado]}
+        onChange={(e) =>
+          setSelected((prev) => ({
+            ...prev,
+            [f.idEmpleado]: e.target.checked,
+          }))
+        }
+      />
+    ),
     empleado: (
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <Avatar src={f.fotoPerfil || ""} sx={{ width: 40, height: 40 }} />
         <Typography>{`${f.nombre} ${f.apellido}`}</Typography>
       </Box>
     ),
-    hsPrevistas: f.hsPrevistas || "—",
-    hsTrabajadas: f.hsTrabajadas || "—",
+    hsPrevistas: f.hsPrevistas || 0,
+    hsTrabajadas: f.hsTrabajadas || 0,
     masInfo: (
       <NextButton
         onClick={() =>
@@ -93,9 +162,75 @@ const FichajeEmpleados = () => {
     ),
   }));
 
-  const navigate = useNavigate();
+  // =====================================================
+  // APROBAR FICHAJES SELECCIONADOS
+  // =====================================================
+  const handleAprobar = async () => {
+  try {
+    const seleccionadosIds = Object.keys(selected).filter(
+      (id) => selected[id] === true
+    );
 
-  // 🖥 Render
+    if (seleccionadosIds.length === 0) {
+      setToast({
+        open: true,
+        message: "No seleccionaste ningún empleado",
+        severity: "warning",
+      });
+      return;
+    }
+
+    const mesNumero = meses.indexOf(mes) + 1;
+    const mesFormateado = `${anio}-${String(mesNumero).padStart(2, "0")}`;
+
+    for (const idEmpleado of seleccionadosIds) {
+      const emp = fichajes.find((f) => f.idEmpleado === idEmpleado);
+      if (!emp) continue;
+
+      // Convertir hsPrevistas → número
+      const hsPrevistasNum = parseInt(emp.hsPrevistas.replace("h", ""), 10);
+
+      // Convertir hsTrabajadas "9h 0m" → horas decimales
+      const [horasStr, minutosStr] = emp.hsTrabajadas.split(" ");
+      const horasNum = parseInt(horasStr.replace("h", ""), 10);
+      const minutosNum = parseInt(minutosStr.replace("m", ""), 10);
+      const hsTrabajadasNum = horasNum + minutosNum / 60;
+
+      const payload = {
+        empleadoId: idEmpleado,
+        mes: mesFormateado,
+        horasTrabajadas: hsTrabajadasNum,
+        horasExtras: Math.max(0, hsTrabajadasNum - hsPrevistasNum),
+        horasDescuento: Math.max(0, hsPrevistasNum - hsTrabajadasNum),
+      };
+
+      await aprobarFichajeService(payload);
+    }
+
+    // Actualizar visual
+    const nuevosAprobados = {};
+    seleccionadosIds.forEach((id) => {
+      nuevosAprobados[id] = true;
+    });
+
+    setAprobados((prev) => ({ ...prev, ...nuevosAprobados }));
+    setSelected({});
+
+    setToast({
+      open: true,
+      message: "Fichajes aprobados correctamente",
+      severity: "success",
+    });
+  } catch (error) {
+    console.error(error);
+    setToast({
+      open: true,
+      message: "Error al aprobar fichajes",
+      severity: "error",
+    });
+  }
+};
+
   return (
     <Box sx={{ p: 4 }}>
       {/* Header */}
@@ -113,12 +248,7 @@ const FichajeEmpleados = () => {
 
       {/* Controles */}
       <Stack direction="row" spacing={2} sx={{ mb: 3 }} alignItems="center">
-        <TextField
-          select
-          label="Mes"
-          value={mes}
-          onChange={(e) => setMes(e.target.value)}
-        >
+        <TextField select label="Mes" value={mes} onChange={(e) => setMes(e.target.value)}>
           {meses.map((m) => (
             <MenuItem key={m} value={m}>
               {m}
@@ -137,7 +267,6 @@ const FichajeEmpleados = () => {
       </Stack>
 
       {/* Tabla */}
-
       {loading ? (
         <Box sx={{ display: "flex", justifyContent: "center", mt: 5 }}>
           <CircularProgress />
@@ -146,15 +275,28 @@ const FichajeEmpleados = () => {
         <CustomTable columns={columns} rows={rows} />
       )}
 
-      {/* Botón */}
+      {/* Botón Aprobar */}
       <Box sx={{ mt: 3 }}>
-        <PrimaryButton
-          fullWidth
-          onClick={() => console.log("Aprobar fichajes")}
-        >
+        <PrimaryButton fullWidth onClick={handleAprobar}>
           Aprobar los fichajes de los empleados
         </PrimaryButton>
       </Box>
+
+      {/* Toast */}
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={3000}
+        onClose={() => setToast({ ...toast, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setToast({ ...toast, open: false })}
+          severity={toast.severity}
+          sx={{ width: "100%" }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

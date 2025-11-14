@@ -2,6 +2,7 @@
 
 import Fichaje from "../models/Fichaje.js";
 import Empleado from "../models/Empleado.js";
+import Aprobacion from "../models/Aprobacion.js";
 
 // ===================
 // INICIAR JORNADA
@@ -425,5 +426,39 @@ export const crearFichaje = async (req, res) => {
   } catch (error) {
     console.error("Error al crear fichaje:", error);
     res.status(500).json({ message: "Error al crear fichaje" });
+  }
+};
+
+// Crear aprobaciones mensuales
+export const crearAprobacion = async (req, res) => {
+  try {
+    const { empleadoId, mes, horasTrabajadas, horasExtras, horasDescuento } = req.body;
+
+    if (!empleadoId || !mes) {
+      return res.status(400).json({ message: "empleadoId y mes son obligatorios" });
+    }
+
+    const nuevaAprobacion = new Aprobacion({
+      empleadoId,
+      mes,
+      horasTrabajadas,
+      horasExtras,
+      horasDescuento
+    });
+
+    await nuevaAprobacion.save();
+    res.json(nuevaAprobacion);
+  } catch (error) {
+    res.status(500).json({ message: "Error al crear aprobación", error });
+  }
+};
+
+// Obtener aprobaciones
+export const getAprobaciones = async (req, res) => {
+  try {
+    const aprobaciones = await Aprobacion.find();
+    res.json(aprobaciones);
+  } catch (error) {
+    res.status(500).json({ message: "Error al obtener aprobaciones" });
   }
 };

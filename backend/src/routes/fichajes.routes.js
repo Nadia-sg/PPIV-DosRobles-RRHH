@@ -13,7 +13,9 @@ import {
   getEstadoEquipo,
   actualizarFichaje, 
   eliminarFichaje,
-  crearFichaje
+  crearFichaje,
+  crearAprobacion, 
+  getAprobaciones
 } from "../controllers/fichajes.controller.js";
 
 
@@ -34,6 +36,9 @@ router.put("/:id", actualizarFichaje);
 router.delete("/:id", eliminarFichaje);
 router.post("/crear", crearFichaje);
 
+// Rutas de aprobaciones
+router.post("/aprobaciones", crearAprobacion);
+router.get("/aprobaciones", getAprobaciones);
 
 export default router;
 

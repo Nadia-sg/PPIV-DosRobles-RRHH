@@ -46,3 +46,24 @@ export async function crearFichaje(payload) {
 
   return res.json();
 }
+
+// aprobarFichajeService.js
+
+export async function aprobarFichajeService(data) {
+  try {
+    const response = await fetch("http://localhost:4000/fichajes/aprobaciones", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(data),
+    });
+
+    if (!response.ok) {
+      throw new Error("Error al aprobar fichaje");
+    }
+
+    return await response.json();
+  } catch (err) {
+    console.error(err);
+    throw err;
+  }
+}
