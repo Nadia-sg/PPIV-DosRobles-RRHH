@@ -1,5 +1,5 @@
 // src/pages/empleados/HistorialFichajes.jsx
-// src/pages/empleados/HistorialFichajes.jsx
+
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -38,6 +38,8 @@ const HistorialFichajes = () => {
     new URLSearchParams(location.search).get("admin") === "true";
 
   const idFinal = empleadoId || "6912a5168034733944baedcb";
+
+  
 
   // ===== Toast
   const [toast, setToast] = useState({
@@ -102,6 +104,7 @@ const HistorialFichajes = () => {
             display: "flex",
             flexDirection: "column",
             alignItems: "center",
+            overflow: "hidden",
           }}
         >
           <Typography sx={{ fontWeight: 600 }}>
@@ -268,7 +271,7 @@ const HistorialFichajes = () => {
   };
 
   return (
-    <Box sx={{ p: 4 }}>
+    <Box sx={{ p: 4, overflow: "hidden" }}>
       {/* === Encabezado === */}
       <Box sx={{ mb: 3 }}>
         <Typography
@@ -318,7 +321,7 @@ const HistorialFichajes = () => {
           <CircularProgress />
         </Box>
       ) : rows.length > 0 ? (
-        <CustomTable columns={columns} rows={rows} maxHeight="600px" />
+        <CustomTable columns={columns} rows={rows} />
       ) : (
         <Typography sx={{ color: "error.main", mt: 2, textAlign: "center" }}>
           {error || "No hay fichajes registrados para este empleado."}

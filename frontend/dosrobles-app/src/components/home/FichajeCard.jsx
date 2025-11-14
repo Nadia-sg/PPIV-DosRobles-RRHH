@@ -1,6 +1,5 @@
 /* src/components/home/FichajeCard.jsx*/
 
-
 import React, { useState, useEffect } from "react";
 import {
   Box,
@@ -37,6 +36,38 @@ export default function FichajeCard() {
 
   const empleadoId = "6912a5168034733944baedcb";
 
+  // cargar fichaje activo al entrar a la pantalla
+  useEffect(() => {
+    async function fetchActivo() {
+      try {
+        const res = await fetch(`${API_BASE}/fichajes/activo/${empleadoId}`);
+        const data = await res.json();
+
+        if (data?.activo) {
+          const fichaje = data.activo;
+          setFichajeActivo(fichaje);
+          setEstadoFichaje("activo");
+
+          // Calcular segundos transcurridos desde horaEntrada
+          const [hh, mm] = fichaje.horaEntrada.split(":").map(Number);
+
+          // Hora de entrada en HOY
+          const entradaDate = new Date();
+          entradaDate.setHours(hh, mm, 0, 0);
+
+          const ahora = new Date();
+          const diffSeconds = Math.floor((ahora - entradaDate) / 1000);
+
+          setSeconds(diffSeconds > 0 ? diffSeconds : 0);
+        }
+      } catch (err) {
+        console.error("Error consultando fichaje activo:", err);
+      }
+    }
+
+    fetchActivo();
+  }, []);
+
   useEffect(() => {
     if (estadoFichaje !== "activo") return;
     const interval = setInterval(() => setSeconds((prev) => prev + 1), 1000);
@@ -48,6 +79,10 @@ export default function FichajeCard() {
     const mm = String(date.getMinutes()).padStart(2, "0");
     return `${hh}:${mm}`;
   }
+
+  useEffect(() => {
+    fetchFichajeActivo();
+  }, []);
 
   function determinarTipoFichaje(lat, lon) {
     const oficinaLat = -34.6259206;
@@ -88,7 +123,8 @@ export default function FichajeCard() {
           });
 
           const data = await res.json();
-          if (!res.ok) throw new Error(data?.message || "Error al iniciar fichaje");
+          if (!res.ok)
+            throw new Error(data?.message || "Error al iniciar fichaje");
 
           setFichajeActivo(data.data);
           setEstadoFichaje("activo");
@@ -186,6 +222,35 @@ export default function FichajeCard() {
       },
       { enableHighAccuracy: true, timeout: 10000, maximumAge: 0 }
     );
+  }
+
+  async function fetchFichajeActivo() {
+    try {
+      const res = await fetch(`${API_BASE}/fichajes/activo/${empleadoId}`);
+      const data = await res.json();
+
+      if (!res.ok)
+        throw new Error(data.message || "Error al verificar fichaje");
+
+      if (data.activo) {
+        setFichajeActivo(data.activo);
+        setEstadoFichaje("activo");
+
+        // Calcular segundos transcurridos
+        if (data.activo.horaEntrada) {
+          const [hh, mm] = data.activo.horaEntrada.split(":").map(Number);
+          const horaEntradaDate = new Date();
+          horaEntradaDate.setHours(hh, mm, 0, 0);
+
+          const diff = Math.floor(
+            (Date.now() - horaEntradaDate.getTime()) / 1000
+          );
+          setSeconds(diff > 0 ? diff : 0);
+        }
+      }
+    } catch (err) {
+      console.error("Error al obtener fichaje activo:", err);
+    }
   }
 
   return (
@@ -354,7 +419,11 @@ export default function FichajeCard() {
               </Typography>
             }
             actions={[
-              { label: "Cancelar", variant: "outlined", onClick: () => setOpenInicio(false) },
+              {
+                label: "Cancelar",
+                variant: "outlined",
+                onClick: () => setOpenInicio(false),
+              },
               {
                 label: "Iniciar",
                 onClick: () => {
@@ -378,7 +447,11 @@ export default function FichajeCard() {
             title="Registrar salida"
             content="¿Quieres registrar la salida y finalizar tu jornada laboral?"
             actions={[
-              { label: "Cancelar", variant: "outlined", onClick: () => setOpenSalida(false) },
+              {
+                label: "Cancelar",
+                variant: "outlined",
+                onClick: () => setOpenSalida(false),
+              },
               {
                 label: "Confirmar",
                 onClick: () => {

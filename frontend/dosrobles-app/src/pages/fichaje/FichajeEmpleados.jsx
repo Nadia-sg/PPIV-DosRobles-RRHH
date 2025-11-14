@@ -77,7 +77,7 @@ const FichajeEmpleados = () => {
     return res.json();
   }
 
-  // 🔁 Obtener fichajes
+  // Obtener fichajes
  useEffect(() => {
   const fetchFichajes = async () => {
     setLoading(true);
@@ -232,7 +232,7 @@ const FichajeEmpleados = () => {
 };
 
   return (
-    <Box sx={{ p: 4 }}>
+    <Box sx={{ p: 4, overflow: "hidden" }}>
       {/* Header */}
       <Box sx={{ mb: 3 }}>
         <Typography

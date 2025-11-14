@@ -2,7 +2,7 @@
 
 import Fichaje from "../models/Fichaje.js";
 import Empleado from "../models/Empleado.js";
-import Aprobacion from "../models/Aprobacion.js";
+
 
 // ===================
 // INICIAR JORNADA
@@ -462,3 +462,26 @@ export const getAprobaciones = async (req, res) => {
     res.status(500).json({ message: "Error al obtener aprobaciones" });
   }
 };
+
+export async function getFichajeActivo(req, res) {
+  const { empleadoId } = req.params;
+
+  try {
+    const fichaje = await Fichaje.findOne({
+      empleadoId,
+      horaSalida: null // 🔥 NO debe tener salida registrada
+    }).sort({ createdAt: -1 });
+
+    if (!fichaje) {
+      return res.status(200).json({ activo: null });
+    }
+
+    return res.status(200).json({ activo: fichaje });
+
+  } catch (error) {
+    console.error("Error buscando fichaje activo:", error);
+    return res.status(500).json({
+      message: "Error buscando fichaje activo",
+    });
+  }
+}
