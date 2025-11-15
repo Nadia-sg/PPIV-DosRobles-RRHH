@@ -16,9 +16,14 @@ import EditIcon from "@mui/icons-material/Edit";
 import DeleteIcon from "@mui/icons-material/Delete";
 import { SecondaryButton } from "../ui/Buttons";
 import ModalCard from "../ui/ModalCard";
+import ModalDialog from "../ui/ModalDialog";
+import { useUser } from "../../context/userContextHelper";
 
-export default function EventosCard({ API_BASE }) {
+export default function EventosCard() {
   const isMobile = useMediaQuery("(max-width:900px)");
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+  const { user } = useUser();
+  const isAdmin = user?.role === "admin";
 
   const [eventos, setEventos] = useState([]);
   const [openModalEvento, setOpenModalEvento] = useState(false);
@@ -33,12 +38,14 @@ export default function EventosCard({ API_BASE }) {
     message: "",
     severity: "success",
   });
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [eventoToDelete, setEventoToDelete] = useState(null);
 
   // Cargar eventos al montar
   useEffect(() => {
     async function fetchEventos() {
       try {
-        const res = await fetch(`${API_BASE}/eventos`);
+        const res = await fetch(`${API_BASE}/api/eventos`);
         const data = await res.json();
         if (res.ok) setEventos(data.data || []);
       } catch (err) {
@@ -46,7 +53,7 @@ export default function EventosCard({ API_BASE }) {
       }
     }
     fetchEventos();
-  }, [API_BASE]);
+  }, []);
 
   // Manejar cambios en formulario
   function handleChangeForm(e) {
@@ -56,6 +63,16 @@ export default function EventosCard({ API_BASE }) {
 
   // Guardar o actualizar evento
   async function handleGuardarEvento() {
+    // Solo admin puede crear/editar eventos
+    if (!isAdmin) {
+      setToast({
+        open: true,
+        message: "No tienes permisos para realizar esta acción",
+        severity: "error",
+      });
+      return;
+    }
+
     if (!formEvento.fecha || !formEvento.hora || !formEvento.detalle.trim()) {
       setToast({
         open: true,
@@ -69,7 +86,7 @@ export default function EventosCard({ API_BASE }) {
       if (editIndex !== null) {
         // --- MODO EDICIÓN ---
         const eventoEditado = { ...formEvento, _id: eventos[editIndex]._id };
-        const res = await fetch(`${API_BASE}/eventos/${eventoEditado._id}`, {
+        const res = await fetch(`${API_BASE}/api/eventos/${eventoEditado._id}`, {
           method: "PUT",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(eventoEditado),
@@ -89,7 +106,7 @@ export default function EventosCard({ API_BASE }) {
         });
       } else {
         // --- MODO CREACIÓN ---
-        const res = await fetch(`${API_BASE}/eventos`, {
+        const res = await fetch(`${API_BASE}/api/eventos`, {
           method: "POST",
           headers: { "Content-Type": "application/json" },
           body: JSON.stringify(formEvento),
@@ -121,27 +138,43 @@ export default function EventosCard({ API_BASE }) {
 
   // Editar evento
   const handleEditarEvento = (index) => {
-    setFormEvento({ ...eventos[index] }); // 🔑 clonar objeto
+    const evento = eventos[index];
+    // Convertir la fecha ISO al formato YYYY-MM-DD para el input de date
+    const fechaFormato = evento.fecha
+      ? new Date(evento.fecha).toISOString().split("T")[0]
+      : "";
+
+    setFormEvento({
+      fecha: fechaFormato,
+      hora: evento.hora || "",
+      detalle: evento.detalle || "",
+    });
     setEditIndex(index);
     setOpenModalEvento(true);
   };
 
-  // Eliminar evento
-  async function handleEliminarEvento(index) {
-    const eventoAEliminar = eventos[index];
-    const confirmacion = window.confirm(
-      `¿Seguro que deseas eliminar el evento "${eventoAEliminar.detalle}"?`
-    );
-    if (!confirmacion) return;
+  // Abrir modal de confirmación de eliminación
+  const handleEliminarEvento = (index) => {
+    setEventoToDelete({ index, evento: eventos[index] });
+    setDeleteConfirmOpen(true);
+  };
+
+  // Confirmar eliminación
+  const handleConfirmDelete = async () => {
+    if (!eventoToDelete) return;
+
+    const { index, evento } = eventoToDelete;
 
     try {
-      const res = await fetch(`${API_BASE}/eventos/${eventoAEliminar._id}`, {
+      const res = await fetch(`${API_BASE}/api/eventos/${evento._id}`, {
         method: "DELETE",
       });
       const data = await res.json();
       if (!res.ok) throw new Error(data?.message || "Error al eliminar evento");
 
       setEventos((prev) => prev.filter((_, i) => i !== index));
+      setDeleteConfirmOpen(false);
+      setEventoToDelete(null);
       setToast({
         open: true,
         message: "Evento eliminado correctamente",
@@ -155,7 +188,13 @@ export default function EventosCard({ API_BASE }) {
         severity: "error",
       });
     }
-  }
+  };
+
+  // Cancelar eliminación
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false);
+    setEventoToDelete(null);
+  };
 
   return (
     <Card
@@ -184,17 +223,19 @@ export default function EventosCard({ API_BASE }) {
         >
           Eventos
         </Typography>
-        <SecondaryButton
-          startIcon={<EditCalendarIcon />}
-          sx={{
-            fontSize: isMobile ? "0.7rem" : "0.85rem",
-            p: isMobile ? "0.3rem 0.6rem" : "0.4rem 0.8rem",
-            borderRadius: 2,
-          }}
-          onClick={() => setOpenModalEvento(true)}
-        >
-          Añadir evento
-        </SecondaryButton>
+        {isAdmin && (
+          <SecondaryButton
+            startIcon={<EditCalendarIcon />}
+            sx={{
+              fontSize: isMobile ? "0.7rem" : "0.85rem",
+              p: isMobile ? "0.3rem 0.6rem" : "0.4rem 0.8rem",
+              borderRadius: 2,
+            }}
+            onClick={() => setOpenModalEvento(true)}
+          >
+            Añadir evento
+          </SecondaryButton>
+        )}
       </Box>
 
       <Box
@@ -247,17 +288,19 @@ export default function EventosCard({ API_BASE }) {
                   {evento.detalle}
                 </Typography>
               </Box>
-              <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
-                <IconButton size="small" onClick={() => handleEditarEvento(i)}>
-                  <EditIcon fontSize="small" sx={{ color: "#808080" }} />
-                </IconButton>
-                <IconButton
-                  size="small"
-                  onClick={() => handleEliminarEvento(i)}
-                >
-                  <DeleteIcon fontSize="small" sx={{ color: "#808080" }} />
-                </IconButton>
-              </Box>
+              {isAdmin && (
+                <Box sx={{ display: "flex", justifyContent: "center", gap: 1 }}>
+                  <IconButton size="small" onClick={() => handleEditarEvento(i)}>
+                    <EditIcon fontSize="small" sx={{ color: "#808080" }} />
+                  </IconButton>
+                  <IconButton
+                    size="small"
+                    onClick={() => handleEliminarEvento(i)}
+                  >
+                    <DeleteIcon fontSize="small" sx={{ color: "#808080" }} />
+                  </IconButton>
+                </Box>
+              )}
             </Box>
           );
         })}
@@ -314,6 +357,30 @@ export default function EventosCard({ API_BASE }) {
           />
         </Box>
       </ModalCard>
+
+      {/* Modal de confirmación de eliminación */}
+      <ModalDialog
+        open={deleteConfirmOpen}
+        onClose={handleCancelDelete}
+        title="Confirmar eliminación"
+        content={
+          eventoToDelete
+            ? `¿Estás seguro de que deseas eliminar el evento "${eventoToDelete.evento.detalle}"?`
+            : "¿Estás seguro de que deseas eliminar este evento?"
+        }
+        actions={[
+          {
+            label: "Cancelar",
+            onClick: handleCancelDelete,
+            variant: "outlined",
+          },
+          {
+            label: "Eliminar",
+            onClick: handleConfirmDelete,
+            variant: "contained",
+          },
+        ]}
+      />
 
       <Snackbar
         open={toast.open}

@@ -8,7 +8,7 @@ import CustomTable from "../../components/ui/CustomTable";
 import SearchBar from "../../components/ui/SearchBar";
 import ModalDetallesLicencia from "../../components/licencias/ModalDetallesLicencia";
 import { licenciasService } from "../../services/licenciasService";
-import { useUser } from "../../context/UserContext";
+import { useUser } from "../../context/userContextHelper";
 
 export default function SolicitudesLicencias() {
   const { user, loading: userLoading } = useUser();

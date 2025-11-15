@@ -4,6 +4,7 @@ import React from "react";
 import { Routes, Route, Navigate } from "react-router-dom";
 
 import { UserProvider } from "./context/UserContext";
+import { FichajeProvider } from "./context/FichajeContext";
 import ProtectedRoute from "./components/ProtectedRoute";
 import AppLayout from "./layouts/AppLayout";
 import Home from './pages/Home';
@@ -37,7 +38,8 @@ import FormDemo from "./pages/FormDemo";
 function App() {
   return (
     <UserProvider>
-      <Routes>
+      <FichajeProvider>
+        <Routes>
         {/* Redirección inicial al login */}
         <Route path="/" element={<Navigate to="/login" />} />
 
@@ -123,7 +125,8 @@ function App() {
         {/* Ruta por defecto */}
         <Route path="*" element={<h1>Página no encontrada</h1>} />
       </Route>
-    </Routes>
+        </Routes>
+      </FichajeProvider>
     </UserProvider>
   );
 }

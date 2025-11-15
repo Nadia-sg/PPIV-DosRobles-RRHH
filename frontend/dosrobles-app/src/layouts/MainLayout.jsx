@@ -4,7 +4,7 @@ import logo from "../assets/logo.png";
 import topVector from "../assets/topVector.svg";
 import topVectorMobile from "../assets/topVector-mobile.svg";
 import logoutIcon from "../assets/logout.svg";
-import { useUser } from "../context/UserContext";
+import { useUser } from "../context/userContextHelper";
 
 export default function MainLayout({ children }) {
   const navigate = useNavigate();

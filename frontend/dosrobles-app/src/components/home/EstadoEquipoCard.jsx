@@ -1,45 +1,17 @@
 /* src/components/home/EstadoEquipoCard.jsx*/
 
-import React, { useState, useEffect } from "react";
+import React from "react";
 import {
   Box,
   Card,
   Typography,
   useMediaQuery,
-  IconButton,
-  TextField,
 } from "@mui/material";
-import EditCalendarIcon from "@mui/icons-material/EditCalendar";
-import EditIcon from "@mui/icons-material/Edit";
-import DeleteIcon from "@mui/icons-material/Delete";
-
-import {
-  PrimaryButton,
-  SecondaryButton,
-  IconNextButton,
-} from "../../components/ui/Buttons";
-import ModalCard from "../../components/ui/ModalCard";
+import { useFichaje } from "../../context/fichajeContextHelper";
 
 export default function EstadoEquipoCard() {
   const isMobile = useMediaQuery("(max-width:900px)");
-  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
-  const [estadoEquipo, setEstadoEquipo] = useState({
-    fichados: 0,
-    ausentes: 0,
-  });
-
-  useEffect(() => {
-    async function fetchEstado() {
-      try {
-        const res = await fetch(`${API_BASE}/fichajes/estado`);
-        const data = await res.json();
-        if (res.ok) setEstadoEquipo(data);
-      } catch (error) {
-        console.error("Error al obtener estado del equipo:", error);
-      }
-    }
-    fetchEstado();
-  }, []);
+  const { estadoEquipo } = useFichaje();
 
   return (
     <>

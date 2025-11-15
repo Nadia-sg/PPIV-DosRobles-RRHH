@@ -16,7 +16,7 @@ import { empleadosService } from "../../services/empleadosService";
 export default function CalculoHaberes() {
   // Estados
   const [busqueda, setBusqueda] = useState("");
-  const [periodoSeleccionado, setPeriodoSeleccionado] = useState("2025-10");
+  const [periodoSeleccionado, setPeriodoSeleccionado] = useState("2025-11");
   const [modalDetalleOpen, setModalDetalleOpen] = useState(false);
   const [empleadoSeleccionado, setEmpleadoSeleccionado] = useState(null);
   const [empleados, setEmpleados] = useState([]);
@@ -25,10 +25,17 @@ export default function CalculoHaberes() {
 
   // Lista de períodos disponibles
   const periodos = [
+    { value: "2025-11", label: "Noviembre 2025" },
     { value: "2025-10", label: "Octubre 2025" },
     { value: "2025-09", label: "Septiembre 2025" },
     { value: "2025-08", label: "Agosto 2025" },
     { value: "2025-07", label: "Julio 2025" },
+    { value: "2025-06", label: "Junio 2025" },
+    { value: "2025-05", label: "Mayo 2025" },
+    { value: "2025-04", label: "Abril 2025" },
+    { value: "2025-03", label: "Marzo 2025" },
+    { value: "2025-02", label: "Febrero 2025" },
+    { value: "2025-01", label: "Enero 2025" },
   ];
 
   // Cargar datos al montar o cambiar período
@@ -62,7 +69,16 @@ export default function CalculoHaberes() {
       });
       const nominas = respuestaNominas.data || [];
 
-      // Combinar información de empleados con sus nóminas
+      // Obtener aprobaciones de fichajes del período
+      const [mes, anio] = periodoSeleccionado.split("-");
+      const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
+      const respuestaAprobaciones = await fetch(
+        `${API_BASE}/api/fichajes/aprobaciones/mes?mes=${mes}&anio=${anio}`
+      );
+      const aprobacionesData = respuestaAprobaciones.ok ? await respuestaAprobaciones.json() : { data: [] };
+      const aprobaciones = aprobacionesData.data || [];
+
+      // Combinar información de empleados con sus nóminas y aprobaciones
       const empleadosConNomina = empleadosActivos.map((emp) => {
         // Buscar nómina - considerar que empleadoId puede ser un objeto (populate)
         const nomina = nominas.find((n) => {
@@ -70,6 +86,14 @@ export default function CalculoHaberes() {
             ? n.empleadoId._id.toString()
             : n.empleadoId.toString();
           return nominaEmpleadoId === emp._id.toString();
+        });
+
+        // Buscar aprobación de fichajes
+        const aprobacion = aprobaciones.find((a) => {
+          const aprobacionEmpleadoId = typeof a.empleadoId === 'object'
+            ? a.empleadoId._id.toString()
+            : a.empleadoId.toString();
+          return aprobacionEmpleadoId === emp._id.toString();
         });
 
         console.log("📋 [empleadoConNomina] emp:", {
@@ -82,32 +106,32 @@ export default function CalculoHaberes() {
           email: emp.email,
         });
 
-        if (nomina) {
-          // Si existe nómina, usar esos datos
-          const totalHaberes = nomina.haberes?.totalHaberes || 0;
-          const totalDeducciones = nomina.deducciones?.totalDeducciones || 0;
-
+        // PRIORIDAD: Si existe APROBACION (más reciente), usar esos datos
+        if (aprobacion) {
+          // Usar datos de aprobación de fichajes
           return {
             id: emp._id,
             legajo: emp.numeroLegajo,
             nombre: `${emp.nombre} ${emp.apellido}`,
             cargo: emp.puesto,
             email: emp.email,
-            estado: nomina.estado,
-            horasTrabajadas: nomina.horasTrabajadas || 0,
-            horasExtras: nomina.horasExtras || 0,
-            diasAusencia: nomina.diasAusencia || 0,
-            diasTrabajados: nomina.diasTrabajados || 0,
-            sueldoBasico: nomina.sueldoBasico || emp.sueldoBruto,
-            totalHaberes: totalHaberes,
-            totalDeducciones: totalDeducciones,
-            totalNeto: nomina.totalNeto || 0,
-            nominaId: nomina._id,
+            estado: nomina?.estado || "pendiente",
+            horasTrabajadas: aprobacion.hsTrabajadas || 0,
+            horasExtras: aprobacion.hsExtra || 0,
+            diasAusencia: 0,
+            diasTrabajados: 0,
+            sueldoBasico: emp.sueldoBruto,
+            totalHaberes: nomina?.haberes?.totalHaberes || 0,
+            totalDeducciones: nomina?.deducciones?.totalDeducciones || 0,
+            totalNeto: nomina?.totalNeto || 0,
+            nominaId: nomina?._id || null,
             nomina: nomina,
-            empleado: emp, // Guardar referencia completa del empleado
+            aprobacion: aprobacion,
+            empleado: emp,
           };
         } else {
-          // Si no existe nómina, mostrar empleado como pendiente
+          // Si NO hay aprobación de fichajes, no mostrar datos de nómina vieja
+          // Mostrar como pendiente esperando que se aprueben fichajes en Control Horario
           return {
             id: emp._id,
             legajo: emp.numeroLegajo,
@@ -124,8 +148,9 @@ export default function CalculoHaberes() {
             totalDeducciones: 0,
             totalNeto: 0,
             nominaId: null,
-            nomina: null,
-            empleado: emp, // Guardar referencia completa del empleado
+            nomina: nomina,
+            aprobacion: null,
+            empleado: emp,
           };
         }
       });
@@ -138,15 +163,6 @@ export default function CalculoHaberes() {
     } finally {
       setCargando(false);
     }
-  };
-
-  // Calcular totales para un empleado
-  const calcularTotales = (emp) => {
-    return {
-      haberes: emp.totalHaberes || 0,
-      deducciones: emp.totalDeducciones || 0,
-      neto: emp.totalNeto || 0,
-    };
   };
 
   // Filtrar empleados según búsqueda
@@ -279,48 +295,47 @@ export default function CalculoHaberes() {
   };
 
   // Ver detalle del cálculo
-  const handleVerDetalle = async (empleado) => {
+  const handleVerDetalle = async (filaOEmpleado) => {
     try {
-      // Si tiene nominaId, cargar los detalles completos
-      if (empleado.nominaId) {
-        const respuesta = await nominaService.obtenerNominaById(empleado.nominaId);
-        if (respuesta.data && respuesta.data.nomina) {
-          const nominaCompleta = respuesta.data.nomina;
-          // Enriquecer el empleado con datos de nómina
-          const empleadoConDetalles = {
-            ...empleado,
-            horasTrabajadas: nominaCompleta.horasTrabajadas || 0,
-            horasExtras: nominaCompleta.horasExtras || 0,
-            diasTrabajados: nominaCompleta.diasTrabajados || 0,
-            diasAusencia: nominaCompleta.diasAusencia || 0,
-            totalHaberes: nominaCompleta.haberes?.totalHaberes || 0,
-            totalDeducciones: nominaCompleta.deducciones?.totalDeducciones || 0,
-            totalNeto: nominaCompleta.totalNeto || 0,
-            calculoDetalle: {
-              sueldoBasico: nominaCompleta.haberes?.sueldoBasico || 0,
-              antiguedad: nominaCompleta.haberes?.antiguedad || 0,
-              presentismo: nominaCompleta.haberes?.presentismo || 0,
-              horasExtras: nominaCompleta.haberes?.horasExtras || 0,
-              viaticos: nominaCompleta.haberes?.viaticos || 0,
-              jubilacion: nominaCompleta.deducciones?.jubilacion || 0,
-              obraSocial: nominaCompleta.deducciones?.obraSocial || 0,
-              ley19032: nominaCompleta.deducciones?.ley19032 || 0,
-              sindicato: nominaCompleta.deducciones?.sindicato || 0,
-            }
-          };
-          setEmpleadoSeleccionado(empleadoConDetalles);
-        } else {
-          setEmpleadoSeleccionado(empleado);
-        }
-      } else {
-        // Sin nómina, mostrar datos básicos
+      // Obtener el empleado completo (puede venir de filas de tabla o directamente)
+      const empleado = filaOEmpleado._empleado || filaOEmpleado;
+
+      // PRIORIDAD: Si existe APROBACION de fichajes, usar esos datos (son más recientes)
+      if (empleado.aprobacion) {
         setEmpleadoSeleccionado({
           ...empleado,
+          horasTrabajadas: empleado.aprobacion.hsTrabajadas || 0,
+          horasExtras: empleado.aprobacion.hsExtra || 0,
+          diasTrabajados: 0,
+          diasAusencia: 0,
+          aprobacion: empleado.aprobacion,
           calculoDetalle: {
             sueldoBasico: empleado.sueldoBasico || 0,
             antiguedad: 0,
             presentismo: 0,
             horasExtras: 0,
+            viaticos: 0,
+            jubilacion: 0,
+            obraSocial: 0,
+            ley19032: 0,
+            sindicato: 0,
+          }
+        });
+      } else {
+        // Si NO hay aprobación, mostrar datos del fichaje actual o vacíos
+        // NO usar nómina vieja que puede tener datos inconsistentes
+        setEmpleadoSeleccionado({
+          ...empleado,
+          horasTrabajadas: empleado.horasTrabajadas || 0,
+          horasExtras: empleado.horasExtras || 0,
+          diasTrabajados: 0,
+          diasAusencia: 0,
+          aprobacion: null,
+          calculoDetalle: {
+            sueldoBasico: empleado.sueldoBasico || 0,
+            antiguedad: 0,
+            presentismo: 0,
+            horasExtras: empleado.horasExtras || 0,
             viaticos: 0,
             jubilacion: 0,
             obraSocial: 0,
@@ -426,6 +441,8 @@ export default function CalculoHaberes() {
       ausencias: emp.diasAusencia || 0,
       netoEstimado: emp.totalNeto > 0 ? formatMonto(emp.totalNeto) : "$0",
       acciones: botonesAccion,
+      // Datos adicionales (no se muestran en tabla, pero disponibles para modal)
+      _empleado: emp,
     };
   });
 

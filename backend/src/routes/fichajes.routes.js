@@ -11,9 +11,11 @@ import {
   getFichajesActivos,
   cerrarJornada,
   getEstadoEquipo,
-  actualizarFichaje, 
+  actualizarFichaje,
   eliminarFichaje,
-  crearFichaje
+  crearFichaje,
+  aprobarFichajes,
+  getAprobacionesMes
 } from "../controllers/fichajes.controller.js";
 
 
@@ -23,9 +25,11 @@ router.post("/inicio", iniciarJornada);
 router.post("/salida", registrarSalida);
 router.post("/pausa", registrarPausa);
 router.post("/cerrar", cerrarJornada);
+router.post("/aprobar", aprobarFichajes);
 
 router.get("/", getFichajes);
 router.get("/empleados-mes", getFichajesEmpleados);
+router.get("/aprobaciones/mes", getAprobacionesMes);
 router.get("/activos", getFichajesActivos);
 router.get("/estado", getEstadoEquipo);
 router.get("/empleado/:empleadoId", getFichajesPorEmpleado);

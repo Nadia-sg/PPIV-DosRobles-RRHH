@@ -5,7 +5,7 @@ import { LoginButton } from "../components/ui/Buttons";
 import loginImage from "../assets/login.jpg";
 import logoImage from "../assets/Logo4.png";
 import { useNavigate } from "react-router-dom";
-import { useUser } from "../context/UserContext"; // Importar el context
+import { useUser } from "../context/userContextHelper"; // Importar el context
 
 export default function LoginPage() {
   const [user, setUser] = useState("");

@@ -1,4 +1,4 @@
-import React, { useMemo } from "react";
+import React from "react";
 import {
   Box,
   Typography,
@@ -34,12 +34,6 @@ export default function SelectInput({
   disabled = false,
   readOnly = false,
 }) {
-  // Buscar el label correspondiente al value
-  const displayLabel = useMemo(() => {
-    if (!value) return placeholder;
-    const found = options.find(opt => opt.value === value);
-    return found ? found.label : value; // Mostrar el valor si no encontramos la opción
-  }, [value, options, placeholder]);
 
   return (
     <Box sx={{ mb: 3 }}>

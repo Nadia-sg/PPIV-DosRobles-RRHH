@@ -11,7 +11,7 @@ import ModalDetallesLicencia from "../../components/licencias/ModalDetallesLicen
 import ModalConfirmacion from "../../components/licencias/ModalConfirmacion";
 import ModalError from "../../components/licencias/ModalError";
 import { licenciasService } from "../../services/licenciasService";
-import { useUser } from "../../context/UserContext";
+import { useUser } from "../../context/userContextHelper";
 
 export default function LicenciasList() {
   const { user, loading: userLoading } = useUser();
@@ -27,7 +27,6 @@ export default function LicenciasList() {
   const [busqueda, setBusqueda] = useState("");
 
   // Siempre mostrar solo las licencias del usuario logueado
-  const empleadoActualId = user?.empleadoId;
   const [licencias, setLicencias] = useState([]);
   const [cargando, setCargando] = useState(true);
   const [error, setError] = useState(null);

@@ -20,7 +20,7 @@ import ModalVistaPrevia from "../../components/nomina/ModalVistaPrevia";
 import ModalSubirDocumento from "../../components/documentos/ModalSubirDocumento";
 import { nominaService } from "../../services/nominaService";
 import { documentosService } from "../../services/documentosService";
-import { useUser } from "../../context/UserContext";
+import { useUser } from "../../context/userContextHelper";
 
 export default function RecibosDigitales() {
   const { user, loading: userLoading } = useUser();

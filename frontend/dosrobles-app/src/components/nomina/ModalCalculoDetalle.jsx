@@ -102,13 +102,13 @@ export default function ModalCalculoDetalle({ open, onClose, empleado, onCalcula
             <Grid item xs={6} md={3}>
               <Typography sx={{ fontSize: "0.85rem", color: "#808080" }}>Horas Trabajadas</Typography>
               <Typography sx={{ fontSize: "1rem", fontWeight: 600, color: "#585858" }}>
-                {empleado.horasTrabajadas || 0}h
+                {typeof empleado.horasTrabajadas === 'string' ? empleado.horasTrabajadas : (empleado.horasTrabajadas || 0) + 'h'}
               </Typography>
             </Grid>
             <Grid item xs={6} md={3}>
               <Typography sx={{ fontSize: "0.85rem", color: "#808080" }}>Horas Extras</Typography>
-              <Typography sx={{ fontSize: "1rem", fontWeight: 600, color: (empleado.horasExtras || 0) > 0 ? "#7FC6BA" : "#585858" }}>
-                {empleado.horasExtras || 0}h
+              <Typography sx={{ fontSize: "1rem", fontWeight: 600, color: (typeof empleado.horasExtras === 'string' ? parseInt(empleado.horasExtras) : empleado.horasExtras) > 0 ? "#7FC6BA" : "#585858" }}>
+                {typeof empleado.horasExtras === 'string' ? empleado.horasExtras : (empleado.horasExtras || 0) + 'h'}
               </Typography>
             </Grid>
             <Grid item xs={6} md={3}>
@@ -166,10 +166,10 @@ export default function ModalCalculoDetalle({ open, onClose, empleado, onCalcula
                   </TableCell>
                   <TableCell align="right">{formatMonto(calcDetalle.presentismo)}</TableCell>
                 </TableRow>
-                {empleado.horasExtras > 0 && (
+                {((typeof empleado.horasExtras === 'string' ? parseInt(empleado.horasExtras) : empleado.horasExtras) || 0) > 0 && (
                   <TableRow sx={{ "&:hover": { backgroundColor: "#FAFAFA" } }}>
                     <TableCell>
-                      Horas Extras ({empleado.horasExtras}h)
+                      Horas Extras ({typeof empleado.horasExtras === 'string' ? empleado.horasExtras : empleado.horasExtras + 'h'})
                     </TableCell>
                     <TableCell align="right">{formatMonto(calcDetalle.horasExtras)}</TableCell>
                   </TableRow>

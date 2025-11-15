@@ -99,7 +99,7 @@ export const documentosService = {
           try {
             // Decodificar URL encoding
             filename = decodeURIComponent(filenameMatch[1]);
-          } catch (e) {
+          } catch {
             // Si falla, intentar el formato tradicional
             filenameMatch = contentDisposition.match(/filename="?([^";]+)"?/);
             if (filenameMatch) {

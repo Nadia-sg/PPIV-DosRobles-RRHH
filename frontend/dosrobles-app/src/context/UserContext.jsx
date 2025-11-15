@@ -1,7 +1,6 @@
-import React, { createContext, useState, useEffect } from "react";
+import { useState, useEffect } from "react";
 import { authService } from "../services/authService";
-
-export const UserContext = createContext();
+import { UserContext } from "./UserContextType";
 
 export const UserProvider = ({ children }) => {
   const [user, setUser] = useState(null);
@@ -25,7 +24,7 @@ export const UserProvider = ({ children }) => {
         } else {
           console.log("⚠️ [UserContext] No hay token o usuario local. Token:", !!token, "Usuario:", !!usuarioLocal);
         }
-      } catch (err) {
+      } catch {
         console.log("Token inválido, realizando logout");
         authService.logout();
       } finally {
@@ -65,13 +64,4 @@ export const UserProvider = ({ children }) => {
   };
 
   return <UserContext.Provider value={value}>{children}</UserContext.Provider>;
-};
-
-// Hook para usar el contexto
-export const useUser = () => {
-  const context = React.useContext(UserContext);
-  if (!context) {
-    throw new Error("useUser debe ser usado dentro de un UserProvider");
-  }
-  return context;
 };

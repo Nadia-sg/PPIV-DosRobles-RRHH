@@ -7,9 +7,11 @@ import {
   TextField,
   MenuItem,
   CircularProgress,
+  Snackbar,
+  Alert,
+  Checkbox,
 } from "@mui/material";
 import { NextButton, PrimaryButton } from "../../components/ui/Buttons";
-import CheckboxInput from "../../components/ui/CheckboxInput";
 import CustomTable from "../../components/ui/CustomTable";
 import SearchBar from "../../components/ui/SearchBar";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
@@ -42,6 +44,14 @@ const FichajeEmpleados = () => {
   const [search, setSearch] = useState("");
   const [fichajes, setFichajes] = useState([]);
   const [loading, setLoading] = useState(true);
+  const [selectedEmpleados, setSelectedEmpleados] = useState(new Set());
+  const [approvingLoading, setApprovingLoading] = useState(false);
+  const [toast, setToast] = useState({
+    open: false,
+    message: "",
+    severity: "success",
+  });
+  const API_BASE = import.meta.env.VITE_API_URL || "http://localhost:4000";
 
   // 🔁 Obtener fichajes
   useEffect(() => {
@@ -50,7 +60,7 @@ const FichajeEmpleados = () => {
       try {
         const mesNumero = meses.indexOf(mes) + 1; // Enero=1, Febrero=2...
         const response = await fetch(
-          `http://localhost:4000/fichajes/empleados-mes?mes=${mesNumero}&anio=${anio}`
+          `http://localhost:4000/api/fichajes/empleados-mes?mes=${mesNumero}&anio=${anio}`
         );
         if (!response.ok) throw new Error("Error al obtener fichajes");
         const data = await response.json();
@@ -74,7 +84,20 @@ const FichajeEmpleados = () => {
 
   // 🧾 Filas
   const rows = filtered.map((f) => ({
-    check: <CheckBoxInput />,
+    check: (
+      <Checkbox
+        checked={selectedEmpleados.has(f.idEmpleado)}
+        onChange={(e) => {
+          const newSelected = new Set(selectedEmpleados);
+          if (e.target.checked) {
+            newSelected.add(f.idEmpleado);
+          } else {
+            newSelected.delete(f.idEmpleado);
+          }
+          setSelectedEmpleados(newSelected);
+        }}
+      />
+    ),
     empleado: (
       <Box sx={{ display: "flex", alignItems: "center", gap: 1 }}>
         <Avatar src={f.fotoPerfil || ""} sx={{ width: 40, height: 40 }} />
@@ -91,9 +114,57 @@ const FichajeEmpleados = () => {
         endIcon={<ArrowForwardIcon />}
       />
     ),
+    _empleadoId: f.idEmpleado,
   }));
 
   const navigate = useNavigate();
+
+  // 📤 Aprobar fichajes
+  const handleAprobarFichajes = async () => {
+    if (selectedEmpleados.size === 0) {
+      setToast({
+        open: true,
+        message: "Debes seleccionar al menos un empleado",
+        severity: "warning",
+      });
+      return;
+    }
+
+    setApprovingLoading(true);
+    try {
+      const mesNumero = meses.indexOf(mes) + 1;
+      const response = await fetch(`${API_BASE}/api/fichajes/aprobar`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          empleadoIds: Array.from(selectedEmpleados),
+          mes: mesNumero,
+          anio: parseInt(anio),
+        }),
+      });
+
+      const data = await response.json();
+
+      if (!response.ok) throw new Error(data.message || "Error al aprobar");
+
+      setToast({
+        open: true,
+        message: data.message || "Fichajes aprobados correctamente",
+        severity: "success",
+      });
+
+      setSelectedEmpleados(new Set());
+    } catch (error) {
+      console.error("Error:", error);
+      setToast({
+        open: true,
+        message: error.message || "Error al aprobar los fichajes",
+        severity: "error",
+      });
+    } finally {
+      setApprovingLoading(false);
+    }
+  };
 
   // 🖥 Render
   return (
@@ -150,11 +221,30 @@ const FichajeEmpleados = () => {
       <Box sx={{ mt: 3 }}>
         <PrimaryButton
           fullWidth
-          onClick={() => console.log("Aprobar fichajes")}
+          onClick={handleAprobarFichajes}
+          disabled={approvingLoading || selectedEmpleados.size === 0}
         >
-          Aprobar los fichajes de los empleados
+          {approvingLoading
+            ? "Aprobando..."
+            : `Aprobar los fichajes de los empleados (${selectedEmpleados.size} seleccionados)`}
         </PrimaryButton>
       </Box>
+
+      {/* Toast */}
+      <Snackbar
+        open={toast.open}
+        autoHideDuration={4000}
+        onClose={() => setToast({ ...toast, open: false })}
+        anchorOrigin={{ vertical: "top", horizontal: "center" }}
+      >
+        <Alert
+          onClose={() => setToast({ ...toast, open: false })}
+          severity={toast.severity}
+          sx={{ width: "100%", minWidth: "300px" }}
+        >
+          {toast.message}
+        </Alert>
+      </Snackbar>
     </Box>
   );
 };

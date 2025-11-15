@@ -23,7 +23,8 @@ import EventIcon from "@mui/icons-material/Event";
 import NotificationsIcon from "@mui/icons-material/Notifications";
 import { PrimaryButton, SecondaryButton } from "../components/ui/Buttons";
 import { notificacionesService } from "../services/notificacionesService";
-import { useUser } from "../context/UserContext";
+import { useUser } from "../context/userContextHelper";
+import MessageThread from "../components/bandeja/MessageThread";
 
 export default function BandejaEntrada() {
   const { user, loading: userLoading } = useUser();
@@ -84,7 +85,7 @@ export default function BandejaEntrada() {
             console.log("🔍 Filtrando notif:", notif.tipo, "receptor:", receptorId, "yo:", empleadoId, "match:", esReceptor);
 
             // Mostrar si es destinada a este gerente Y es uno de estos tipos
-            return esReceptor && (notif.tipo === "ausencia" || notif.tipo === "aprobacion" || notif.tipo === "rechazo");
+            return esReceptor && (notif.tipo === "ausencia" || notif.tipo === "aprobacion" || notif.tipo === "rechazo" || notif.tipo === "mensaje");
           }
         );
         console.log("✅ Notificaciones filtradas para admin:", notificacionesFiltradas.length);
@@ -186,6 +187,14 @@ export default function BandejaEntrada() {
     if (filtro === "no-leidas") return !notif.leida;
     if (filtro === "leidas") return notif.leida;
     return true; // todas
+  });
+
+  // Agrupar mensajes por conversación - mostrar solo los mensajes principales (no respuestas)
+  const mensajesPrincipales = notificacionesFiltradas.filter((notif) => {
+    // Mostrar: ausencias, aprobaciones, rechazos, y mensajes principales (no respuestas)
+    // Las respuestas tienen el campo respuestaA relleno
+    if (notif.respuestaA) return false; // Las respuestas no se muestran aquí
+    return true;
   });
 
   // Contar notificaciones no leídas
@@ -349,16 +358,26 @@ export default function BandejaEntrada() {
 
           {/* Lista de notificaciones */}
           <Box sx={{ backgroundColor: "#FFFFFF", borderRadius: 2, overflow: "hidden" }}>
-            {notificacionesFiltradas.length > 0 ? (
-              notificacionesFiltradas.map((notificacion, index) => (
-                <Box
+            {mensajesPrincipales.length > 0 ? (
+              mensajesPrincipales.map((notificacion, index) =>
+                notificacion.tipo === "mensaje" ? (
+                  <MessageThread
+                    key={notificacion._id || index}
+                    mensaje={notificacion}
+                    onReplyAdded={cargarNotificaciones}
+                    getColorPrioridad={getColorPrioridad}
+                    getIconoTipo={getIconoTipo}
+                    formatearFecha={formatearFecha}
+                  />
+                ) : (
+                  <Box
                   key={notificacion._id || index}
                   sx={{
                     display: "flex",
                     alignItems: "center",
                     p: 2,
                     borderBottom:
-                      index < notificacionesFiltradas.length - 1
+                      index < mensajesPrincipales.length - 1
                         ? "1px solid #E0E0E0"
                         : "none",
                     backgroundColor: notificacion.leida ? "#FFFFFF" : "#FFFBF7",
@@ -486,8 +505,9 @@ export default function BandejaEntrada() {
                   >
                     <MoreVertIcon sx={{ fontSize: "1.2rem" }} />
                   </IconButton>
-                </Box>
-              ))
+                  </Box>
+                )
+              )
             ) : (
               <Box sx={{ p: 4, textAlign: "center" }}>
                 {filtro === "no-leidas" ? (

@@ -1,5 +1,4 @@
 // src/pages/empleados/HistorialFichajes.jsx
-// src/pages/empleados/HistorialFichajes.jsx
 import React, { useEffect, useState } from "react";
 import {
   Box,
@@ -10,9 +9,11 @@ import {
   Snackbar,
   Alert,
 } from "@mui/material";
-import { useParams, useLocation } from "react-router-dom";
+import { useParams, useLocation, useNavigate } from "react-router-dom";
+import ArrowBackIcon from "@mui/icons-material/ArrowBack";
 import CustomTable from "../../components/ui/CustomTable";
 import ModalCard from "../../components/ui/ModalCard";
+import ModalDialog from "../../components/ui/ModalDialog";
 import { PrimaryButton } from "../../components/ui/Buttons";
 import {
   getFichajesPorEmpleado,
@@ -20,8 +21,11 @@ import {
   deleteFichaje,
   crearFichaje,
 } from "../../services/fichajesService";
+import { useFichaje } from "../../context/fichajeContextHelper";
 
 const HistorialFichajes = () => {
+  const navigate = useNavigate();
+  const { notificarCambioFichaje } = useFichaje();
   const [rows, setRows] = useState([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState(null);
@@ -31,13 +35,36 @@ const HistorialFichajes = () => {
   // Modal
   const [openModal, setOpenModal] = useState(false);
   const [fichajeEdit, setFichajeEdit] = useState(null);
+  const [deleteConfirmOpen, setDeleteConfirmOpen] = useState(false);
+  const [fichajeToDelete, setFichajeToDelete] = useState(null);
+
+  // Estados para validación de horario
+  const [createErrors, setCreateErrors] = useState({
+    horaEntrada: "",
+    horaSalida: "",
+  });
+  const [editErrors, setEditErrors] = useState({
+    horaEntrada: "",
+    horaSalida: "",
+  });
+
+  // Función para validar formato HH:MM
+  const validateTimeFormat = (time) => {
+    const timeRegex = /^([0-1]?[0-9]|2[0-3]):[0-5][0-9]$/;
+    return timeRegex.test(time);
+  };
 
   const { empleadoId } = useParams();
   const location = useLocation();
   const isAdminView =
     new URLSearchParams(location.search).get("admin") === "true";
 
-  const idFinal = empleadoId || "6912a5168034733944baedcb";
+  // Obtener el empleadoId del usuario logueado
+  const user = JSON.parse(localStorage.getItem("user"));
+  const userEmpleadoId = user?.empleadoId;
+
+  // Si hay parámetro, usarlo; si no, usar el del usuario logueado
+  const idFinal = empleadoId || userEmpleadoId;
 
   // ===== Toast
   const [toast, setToast] = useState({
@@ -60,19 +87,35 @@ const HistorialFichajes = () => {
       try {
         const data = await getFichajesPorEmpleado(idFinal);
 
-        const API_BASE =
-          import.meta.env.VITE_API_URL || "http://localhost:4000";
-        const empleadoResponse = await fetch(
-          `${API_BASE}/empleados/${idFinal}`
-        );
-        const empleadoData = await empleadoResponse.json();
-
-        setEmpleado({
-          nombre: empleadoData.nombre || "Empleado",
-          apellido: empleadoData.apellido || "",
-        });
+        // Intentar extraer el nombre y apellido del primer fichaje (si viene populate)
+        let empleadoInfo = {
+          nombre: "Empleado",
+          apellido: "",
+        };
 
         if (Array.isArray(data) && data.length > 0) {
+          // Si el first fichaje tiene empleadoId como objeto populate, usarlo
+          if (data[0].empleadoId?.nombre) {
+            empleadoInfo = {
+              nombre: data[0].empleadoId.nombre || "Empleado",
+              apellido: data[0].empleadoId.apellido || "",
+            };
+          } else {
+            // Si no, hacer fetch al endpoint de empleados
+            const API_BASE =
+              import.meta.env.VITE_API_URL || "http://localhost:4000";
+            const empleadoResponse = await fetch(
+              `${API_BASE}/api/empleados/${idFinal}`
+            );
+            const empleadoData = await empleadoResponse.json();
+
+            empleadoInfo = {
+              nombre: empleadoData.nombre || "Empleado",
+              apellido: empleadoData.apellido || "",
+            };
+          }
+
+          setEmpleado(empleadoInfo);
           const formattedRows = data.map((fichaje) => formatRow(fichaje));
           setRows(formattedRows);
         } else {
@@ -96,6 +139,7 @@ const HistorialFichajes = () => {
     const opcionesMes = { day: "2-digit", month: "short" };
 
     return {
+      _id: fichaje._id,
       fecha: (
         <Box
           sx={{
@@ -130,7 +174,7 @@ const HistorialFichajes = () => {
               variant="outlined"
               color="error"
               size="small"
-              onClick={() => handleDelete(fichaje._id)}
+              onClick={() => handleDeleteClick(fichaje)}
             >
               Eliminar
             </Button>
@@ -150,14 +194,12 @@ const HistorialFichajes = () => {
   const handleSave = async (e) => {
     e.preventDefault();
 
-    const updatedData = {
-      fecha: new Date(e.target.fecha?.value + "T00:00:00").toISOString(),
-      horaEntrada: e.target.horaEntrada.value.trim(),
-      horaSalida: e.target.horaSalida.value.trim(),
-      tipoFichaje: e.target.tipoFichaje.value.trim(),
-    };
+    const horaEntrada = e.target.horaEntrada.value.trim();
+    const horaSalida = e.target.horaSalida.value.trim();
+    const errors = { horaEntrada: "", horaSalida: "" };
 
-    if (!updatedData.horaEntrada || !updatedData.horaSalida) {
+    // Validar que no estén vacíos
+    if (!horaEntrada || !horaSalida) {
       setToast({
         open: true,
         message: "Debes completar las horas de entrada y salida.",
@@ -166,9 +208,36 @@ const HistorialFichajes = () => {
       return;
     }
 
+    // Validar formato HH:MM
+    if (!validateTimeFormat(horaEntrada)) {
+      errors.horaEntrada = "Formato inválido. Usa HH:MM (ej: 09:00)";
+    }
+    if (!validateTimeFormat(horaSalida)) {
+      errors.horaSalida = "Formato inválido. Usa HH:MM (ej: 17:00)";
+    }
+
+    // Si hay errores, mostrarlos y retornar
+    if (errors.horaEntrada || errors.horaSalida) {
+      setEditErrors(errors);
+      setToast({
+        open: true,
+        message: "El formato de horario debe ser HH:MM (ej: 09:00)",
+        severity: "error",
+      });
+      return;
+    }
+
+    const updatedData = {
+      fecha: new Date(e.target.fecha?.value + "T00:00:00").toISOString(),
+      horaEntrada,
+      horaSalida,
+      tipoFichaje: e.target.tipoFichaje.value.trim(),
+    };
+
     try {
       await updateFichaje(fichajeEdit._id, updatedData);
       setOpenModal(false);
+      setEditErrors({ horaEntrada: "", horaSalida: "" });
 
       const refreshed = await getFichajesPorEmpleado(idFinal);
       setRows(refreshed.map((f) => formatRow(f)));
@@ -177,6 +246,8 @@ const HistorialFichajes = () => {
         message: "Fichaje actualizado con éxito",
         severity: "success",
       });
+      // Notificar al contexto para actualizar el estado del equipo
+      await notificarCambioFichaje();
     } catch (err) {
       console.error("❌ Error al actualizar fichaje:", err);
       setToast({
@@ -187,26 +258,42 @@ const HistorialFichajes = () => {
     }
   };
 
-  // === Eliminar fichaje ===
-  const handleDelete = async (id) => {
-    if (confirm("¿Seguro que querés eliminar este fichaje?")) {
-      try {
-        await deleteFichaje(id);
-        setRows((prev) => prev.filter((f) => f._id !== id));
-        setToast({
-          open: true,
-          message: "✅ Fichaje eliminado correctamente",
-          severity: "success",
-        });
-      } catch (err) {
-        console.error(err);
-        setToast({
-          open: true,
-          message:
-            "❌ Error al eliminar el fichaje. Ver consola para más detalles.",
-          severity: "error",
-        });
-      }
+  // === Abrir modal de confirmación para eliminar ===
+  const handleDeleteClick = (fichaje) => {
+    setFichajeToDelete(fichaje);
+    setDeleteConfirmOpen(true);
+  };
+
+  // === Cancelar eliminación ===
+  const handleCancelDelete = () => {
+    setDeleteConfirmOpen(false);
+    setFichajeToDelete(null);
+  };
+
+  // === Confirmar y ejecutar eliminación ===
+  const handleConfirmDelete = async () => {
+    if (!fichajeToDelete) return;
+
+    try {
+      await deleteFichaje(fichajeToDelete._id);
+      setRows((prev) => prev.filter((f) => f._id !== fichajeToDelete._id));
+      setDeleteConfirmOpen(false);
+      setFichajeToDelete(null);
+      setToast({
+        open: true,
+        message: "✅ Fichaje eliminado correctamente",
+        severity: "success",
+      });
+      // Notificar al contexto para actualizar el estado del equipo
+      await notificarCambioFichaje();
+    } catch (err) {
+      console.error(err);
+      setToast({
+        open: true,
+        message:
+          "❌ Error al eliminar el fichaje. Ver consola para más detalles.",
+        severity: "error",
+      });
     }
   };
 
@@ -218,9 +305,33 @@ const HistorialFichajes = () => {
     const horaEntrada = e.target.horaEntrada.value.trim();
     const horaSalida = e.target.horaSalida.value.trim();
     let fechaInput = e.target.fecha?.value; // formato YYYY-MM-DD
+    const errors = { horaEntrada: "", horaSalida: "" };
 
     if (!horaEntrada || !horaSalida) {
-      alert("⚠️ Debes completar las horas de entrada y salida.");
+      setToast({
+        open: true,
+        message: "Debes completar las horas de entrada y salida.",
+        severity: "warning",
+      });
+      return;
+    }
+
+    // Validar formato HH:MM
+    if (!validateTimeFormat(horaEntrada)) {
+      errors.horaEntrada = "Formato inválido. Usa HH:MM (ej: 09:00)";
+    }
+    if (!validateTimeFormat(horaSalida)) {
+      errors.horaSalida = "Formato inválido. Usa HH:MM (ej: 17:00)";
+    }
+
+    // Si hay errores, mostrarlos y retornar
+    if (errors.horaEntrada || errors.horaSalida) {
+      setCreateErrors(errors);
+      setToast({
+        open: true,
+        message: "El formato de horario debe ser HH:MM (ej: 09:00)",
+        severity: "error",
+      });
       return;
     }
 
@@ -248,6 +359,7 @@ const HistorialFichajes = () => {
     try {
       await crearFichaje(nuevoFichaje);
       setOpenCreateModal(false);
+      setCreateErrors({ horaEntrada: "", horaSalida: "" });
 
       const refreshed = await getFichajesPorEmpleado(idFinal);
       setRows(refreshed.map((f) => formatRow(f)));
@@ -257,6 +369,8 @@ const HistorialFichajes = () => {
         message: "Fichaje creado con éxito",
         severity: "success",
       });
+      // Notificar al contexto para actualizar el estado del equipo
+      await notificarCambioFichaje();
     } catch (err) {
       console.error("❌ Error al crear fichaje:", err);
       setToast({
@@ -348,16 +462,24 @@ const HistorialFichajes = () => {
             <TextField
               name="horaEntrada"
               label="Hora de entrada"
+              placeholder="HH:MM (ej: 09:00)"
               defaultValue={fichajeEdit.horaEntrada}
               fullWidth
               margin="normal"
+              error={!!editErrors.horaEntrada}
+              helperText={editErrors.horaEntrada}
+              onChange={() => setEditErrors({ ...editErrors, horaEntrada: "" })}
             />
             <TextField
               name="horaSalida"
               label="Hora de salida"
+              placeholder="HH:MM (ej: 17:00)"
               defaultValue={fichajeEdit.horaSalida}
               fullWidth
               margin="normal"
+              error={!!editErrors.horaSalida}
+              helperText={editErrors.horaSalida}
+              onChange={() => setEditErrors({ ...editErrors, horaSalida: "" })}
             />
             <TextField
               name="tipoFichaje"
@@ -397,14 +519,22 @@ const HistorialFichajes = () => {
             <TextField
               name="horaEntrada"
               label="Hora de entrada"
+              placeholder="HH:MM (ej: 09:00)"
               fullWidth
               margin="normal"
+              error={!!createErrors.horaEntrada}
+              helperText={createErrors.horaEntrada}
+              onChange={() => setCreateErrors({ ...createErrors, horaEntrada: "" })}
             />
             <TextField
               name="horaSalida"
               label="Hora de salida"
+              placeholder="HH:MM (ej: 17:00)"
               fullWidth
               margin="normal"
+              error={!!createErrors.horaSalida}
+              helperText={createErrors.horaSalida}
+              onChange={() => setCreateErrors({ ...createErrors, horaSalida: "" })}
             />
             <TextField
               name="tipoFichaje"
@@ -425,11 +555,49 @@ const HistorialFichajes = () => {
         </ModalCard>
       )}
 
-      {/* === Botón Agregar Fichaje === */}
-      <Box sx={{ mt: 3 }}>
-        <PrimaryButton fullWidth onClick={() => setOpenCreateModal(true)}>
-          Agregar fichaje
-        </PrimaryButton>
+      {/* === Modal de confirmación para eliminar === */}
+      <ModalDialog
+        open={deleteConfirmOpen}
+        onClose={handleCancelDelete}
+        title="Confirmar eliminación"
+        content={
+          fichajeToDelete
+            ? `¿Estás seguro de que deseas eliminar el fichaje del ${new Date(
+                fichajeToDelete.fecha
+              ).toLocaleDateString("es-AR")}?`
+            : "¿Estás seguro de que deseas eliminar este fichaje?"
+        }
+        actions={[
+          {
+            label: "Cancelar",
+            variant: "outlined",
+            onClick: handleCancelDelete,
+          },
+          {
+            label: "Eliminar",
+            variant: "contained",
+            color: "error",
+            onClick: handleConfirmDelete,
+          },
+        ]}
+      />
+
+      {/* === Botones de acción === */}
+      <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
+        {isAdminView && (
+          <Button
+            startIcon={<ArrowBackIcon />}
+            onClick={() => navigate("/fichaje/empleados")}
+            sx={{ textTransform: "none", color: "#585858" }}
+          >
+            Volver
+          </Button>
+        )}
+        <Box sx={{ flex: 1 }}>
+          <PrimaryButton fullWidth onClick={() => setOpenCreateModal(true)}>
+            Agregar fichaje
+          </PrimaryButton>
+        </Box>
       </Box>
 
       {/* === Snackbar Toast === */}

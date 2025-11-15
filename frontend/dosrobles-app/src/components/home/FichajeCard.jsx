@@ -17,9 +17,11 @@ import StopIcon from "@mui/icons-material/Stop";
 import { PrimaryButton, SecondaryButton, IconNextButton } from "../ui/Buttons";
 import { useNavigate } from "react-router-dom";
 import ModalDialog from "../ui/ModalDialog";
+import { useFichaje } from "../../context/fichajeContextHelper";
 
 export default function FichajeCard() {
   const isMobile = useMediaQuery("(max-width:900px)");
+  const { notificarCambioFichaje } = useFichaje();
   const [seconds, setSeconds] = useState(0);
   const [estadoFichaje, setEstadoFichaje] = useState("inactivo");
   const [openInicio, setOpenInicio] = useState(false);
@@ -35,7 +37,46 @@ export default function FichajeCard() {
   const progress = Math.min((seconds / totalSeconds) * 100, 100);
   const navigate = useNavigate();
 
-  const empleadoId = "6912a5168034733944baedcb";
+  // Obtener empleadoId del usuario logueado
+  const user = JSON.parse(localStorage.getItem("user"));
+  const empleadoId = user?.empleadoId || "6912a5168034733944baedcb";
+
+  // Recuperar fichaje activo al montar el componente
+  useEffect(() => {
+    async function checkActiveFichaje() {
+      try {
+        const res = await fetch(`${API_BASE}/api/fichajes/empleado/${empleadoId}`);
+        if (res.ok) {
+          const data = await res.json();
+          const fichajes = Array.isArray(data) ? data : data.data || [];
+
+          // Buscar fichaje activo (sin horaSalida)
+          const activeFichaje = fichajes.find(f => !f.horaSalida);
+
+          if (activeFichaje) {
+            setFichajeActivo(activeFichaje);
+            setEstadoFichaje("activo");
+
+            // Calcular segundos transcurridos desde horaEntrada
+            if (activeFichaje.horaEntrada) {
+              const [horas, minutos] = activeFichaje.horaEntrada.split(":").map(Number);
+              const ahora = new Date();
+              const entradaDate = new Date();
+              entradaDate.setHours(horas, minutos, 0);
+
+              const diffMs = ahora - entradaDate;
+              const diffSeconds = Math.max(0, Math.floor(diffMs / 1000));
+              setSeconds(diffSeconds);
+            }
+          }
+        }
+      } catch (err) {
+        console.error("Error al verificar fichaje activo:", err);
+      }
+    }
+
+    checkActiveFichaje();
+  }, [empleadoId, API_BASE]);
 
   useEffect(() => {
     if (estadoFichaje !== "activo") return;
@@ -76,7 +117,7 @@ export default function FichajeCard() {
         const horaEntrada = formatHHMM();
 
         try {
-          const res = await fetch(`${API_BASE}/fichajes/inicio`, {
+          const res = await fetch(`${API_BASE}/api/fichajes/inicio`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -98,6 +139,8 @@ export default function FichajeCard() {
             severity: "info",
           });
           setSeconds(0);
+          // Notificar al contexto para actualizar el estado del equipo
+          await notificarCambioFichaje();
         } catch (err) {
           console.error(err);
           setToast({
@@ -145,7 +188,7 @@ export default function FichajeCard() {
         const horaSalida = formatHHMM();
 
         try {
-          const res = await fetch(`${API_BASE}/fichajes/salida`, {
+          const res = await fetch(`${API_BASE}/api/fichajes/salida`, {
             method: "POST",
             headers: { "Content-Type": "application/json" },
             body: JSON.stringify({
@@ -167,6 +210,8 @@ export default function FichajeCard() {
             severity: "success",
           });
           setSeconds(0);
+          // Notificar al contexto para actualizar el estado del equipo
+          await notificarCambioFichaje();
         } catch (err) {
           console.error(err);
           setToast({

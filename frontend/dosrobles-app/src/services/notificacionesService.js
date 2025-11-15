@@ -57,11 +57,21 @@ export const notificacionesService = {
   // Crear una nueva notificación
   crearNotificacion: async (datosNotificacion) => {
     try {
+      // Obtener el token del localStorage
+      const token = localStorage.getItem("token");
+
+      const headers = {
+        "Content-Type": "application/json",
+      };
+
+      // Agregar el token en el header si existe
+      if (token) {
+        headers["Authorization"] = `Bearer ${token}`;
+      }
+
       const response = await fetch(API_URL, {
         method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
+        headers,
         body: JSON.stringify(datosNotificacion),
       });
 

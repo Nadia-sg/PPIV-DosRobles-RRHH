@@ -141,7 +141,7 @@ export const IconNextButton = styled(NextButton)(({ theme }) => ({
 }));
 
 // 🔹 Botón Ver Ficha
-export const FichaButton = styled(BaseButton)(({ theme }) => ({
+export const FichaButton = styled(BaseButton)(() => ({
   width: 60,
   height: 60,
   flexDirection: "column",

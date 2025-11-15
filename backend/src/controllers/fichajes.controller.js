@@ -2,6 +2,7 @@
 
 import Fichaje from "../models/Fichaje.js";
 import Empleado from "../models/Empleado.js";
+import Aprobacion from "../models/Aprobacion.js";
 
 // ===================
 // INICIAR JORNADA
@@ -320,21 +321,26 @@ export const cerrarJornada = async (req, res) => {
 
 export const getEstadoEquipo = async (req, res) => {
   try {
-    // contamos todos los empleados registrados
-    const totalEmpleados = await Empleado.countDocuments();
+    // contamos todos los empleados registrados y activos
+    const totalEmpleados = await Empleado.countDocuments({ estado: "activo" });
 
-    // buscamos fichajes del día actual sin hora de salida
+    // buscamos fichajes del día actual (por campo 'fecha', no 'createdAt')
     const hoy = new Date();
     hoy.setHours(0, 0, 0, 0);
     const manana = new Date(hoy);
     manana.setDate(hoy.getDate() + 1);
 
-    const fichajesActivos = await Fichaje.find({
-      horaSalida: null,
-      createdAt: { $gte: hoy, $lt: manana },
+    // Obtener todos los fichajes de hoy
+    const fichajesHoy = await Fichaje.find({
+      fecha: { $gte: hoy, $lt: manana },
     });
 
-    const fichados = fichajesActivos.length;
+    // Extraer IDs únicos de empleados que ficharon hoy
+    const empleadosQueFicharonHoy = new Set(
+      fichajesHoy.map(f => f.empleadoId.toString())
+    );
+
+    const fichados = empleadosQueFicharonHoy.size;
     const ausentes = Math.max(totalEmpleados - fichados, 0);
 
     res.status(200).json({
@@ -355,10 +361,40 @@ export const actualizarFichaje = async (req, res) => {
     const { id } = req.params;
     const updates = req.body;
 
-    const fichaje = await Fichaje.findByIdAndUpdate(id, updates, { new: true });
+    const fichaje = await Fichaje.findById(id);
     if (!fichaje) {
       return res.status(404).json({ success: false, message: "Fichaje no encontrado" });
     }
+
+    // Actualizar campos
+    if (updates.horaEntrada) fichaje.horaEntrada = updates.horaEntrada;
+    if (updates.horaSalida) fichaje.horaSalida = updates.horaSalida;
+    if (updates.fecha) fichaje.fecha = updates.fecha;
+    if (updates.tipoFichaje) fichaje.tipoFichaje = updates.tipoFichaje;
+    if (updates.ubicacion) fichaje.ubicacion = updates.ubicacion;
+    if (updates.pausas) fichaje.pausas = updates.pausas;
+
+    // Recalcular totalTrabajado y diferenciaHs si hay horaEntrada y horaSalida
+    if (fichaje.horaEntrada && fichaje.horaSalida) {
+      const [hEntrada, mEntrada] = fichaje.horaEntrada.split(":").map(Number);
+      const [hSalida, mSalida] = fichaje.horaSalida.split(":").map(Number);
+
+      let totalMin = hSalida * 60 + mSalida - (hEntrada * 60 + mEntrada);
+
+      // Restar minutos de pausas
+      const totalPausaMin = calcularMinutosPausas(fichaje.pausas);
+      totalMin -= totalPausaMin;
+
+      fichaje.totalTrabajado = `${Math.floor(totalMin / 60)}h ${totalMin % 60}m`;
+
+      const diffMin = totalMin - 480; // 480 minutos = 8 horas
+      const sign = diffMin >= 0 ? "+" : "-";
+      fichaje.diferenciaHs = `${sign}${Math.floor(Math.abs(diffMin) / 60)}h ${
+        Math.abs(diffMin) % 60
+      }m`;
+    }
+
+    await fichaje.save();
 
     res.status(200).json({ success: true, message: "Fichaje actualizado", data: fichaje });
   } catch (error) {
@@ -425,5 +461,112 @@ export const crearFichaje = async (req, res) => {
   } catch (error) {
     console.error("Error al crear fichaje:", error);
     res.status(500).json({ message: "Error al crear fichaje" });
+  }
+};
+
+// === APROBAR FICHAJES DE EMPLEADOS ===
+export const aprobarFichajes = async (req, res) => {
+  try {
+    const { empleadoIds, mes, anio } = req.body;
+
+    if (!empleadoIds || !Array.isArray(empleadoIds) || empleadoIds.length === 0) {
+      return res.status(400).json({ message: "Debe seleccionar al menos un empleado" });
+    }
+
+    if (!mes || !anio) {
+      return res.status(400).json({ message: "Debe especificar mes y año" });
+    }
+
+    const aprobaciones = [];
+
+    for (const empleadoId of empleadoIds) {
+      // Obtener fichajes del empleado para el mes/año
+      const inicioMes = new Date(anio, mes - 1, 1);
+      const finMes = new Date(anio, mes, 0, 23, 59, 59);
+
+      const fichajes = await Fichaje.find({
+        empleadoId,
+        fecha: { $gte: inicioMes, $lte: finMes },
+      });
+
+      // Sumar horas trabajadas
+      let totalMinutos = 0;
+      fichajes.forEach((f) => {
+        if (f.totalTrabajado) {
+          const [h, m] = f.totalTrabajado.split("h");
+          const horas = parseInt(h) || 0;
+          const minutos = parseInt((m || "0").replace("m", "")) || 0;
+          totalMinutos += horas * 60 + minutos;
+        }
+      });
+
+      const hsTrabajadas = `${Math.floor(totalMinutos / 60)}h ${totalMinutos % 60}m`;
+
+      // Calcular hs extra o descuento
+      // 480 minutos = 8 horas de trabajo esperado por día
+      const diasHabiles = getDiasHabiles(mes, anio);
+      const minutosEsperados = diasHabiles * 480;
+      const diferencia = totalMinutos - minutosEsperados;
+
+      let hsExtra = "0h 0m";
+      let hsDescuento = "0h 0m";
+
+      if (diferencia > 0) {
+        hsExtra = `${Math.floor(diferencia / 60)}h ${diferencia % 60}m`;
+      } else if (diferencia < 0) {
+        const absDif = Math.abs(diferencia);
+        hsDescuento = `${Math.floor(absDif / 60)}h ${absDif % 60}m`;
+      }
+
+      // Crear o actualizar aprobación
+      const aprobacion = await Aprobacion.findOneAndUpdate(
+        { empleadoId, mes, anio },
+        {
+          empleadoId,
+          mes,
+          anio,
+          hsTrabajadas,
+          hsExtra,
+          hsDescuento,
+          estado: "aprobado",
+          fechaAprobacion: new Date(),
+        },
+        { upsert: true, new: true }
+      );
+
+      aprobaciones.push(aprobacion);
+    }
+
+    res.status(201).json({
+      message: `${aprobaciones.length} fichaje(s) aprobado(s) correctamente`,
+      data: aprobaciones,
+    });
+  } catch (error) {
+    console.error("Error al aprobar fichajes:", error);
+    res.status(500).json({ message: "Error al aprobar los fichajes" });
+  }
+};
+
+// === OBTENER APROBACIONES POR MES/AÑO ===
+export const getAprobacionesMes = async (req, res) => {
+  try {
+    const { mes, anio } = req.query;
+
+    if (!mes || !anio) {
+      return res.status(400).json({ message: "Debe enviar mes y año" });
+    }
+
+    const aprobaciones = await Aprobacion.find({
+      mes: parseInt(mes),
+      anio: parseInt(anio),
+    }).populate("empleadoId", "nombre apellido numeroLegajo");
+
+    res.status(200).json({
+      success: true,
+      data: aprobaciones,
+    });
+  } catch (error) {
+    console.error("Error al obtener aprobaciones:", error);
+    res.status(500).json({ success: false, message: "Error al obtener aprobaciones" });
   }
 };

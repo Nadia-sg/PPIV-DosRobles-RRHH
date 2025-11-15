@@ -6,7 +6,7 @@ import { Box, Typography, Dialog, IconButton, TextField } from "@mui/material";
 import CloseIcon from "@mui/icons-material/Close";
 import { PrimaryButton, RejectButton } from "../ui/Buttons";
 import ModalConfirmacionGerente from "./ModalConfirmacionGerente";
-import { useUser } from "../../context/UserContext";
+import { useUser } from "../../context/userContextHelper";
 
 export default function ModalAprobacionLicencia({ open, onClose, solicitud, onAprobar, onRechazar, onConfirmacion }) {
   const { user } = useUser();

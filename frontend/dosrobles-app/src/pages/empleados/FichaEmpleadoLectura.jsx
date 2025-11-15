@@ -48,33 +48,37 @@ const FichaEmpleadoLectura = ({ open, onClose }) => {
   ];
 
   return (
-    <Box sx={{ p: 4 }}>
-      <Box sx={{ mb: 3 }}>
+    <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
+      {/* Header Fijo */}
+      <Box sx={{ p: 4, backgroundColor: "#FFFFFF", borderBottom: "1px solid #E0E0E0", flexShrink: 0 }}>
         <Typography
           variant="h4"
           sx={{ fontWeight: 600, color: "#585858", mb: 0.5 }}
         >
           Mi Ficha
         </Typography>
-        <Typography variant="body2" sx={{ color: "#808080", mb: 4 }}>
+        <Typography variant="body2" sx={{ color: "#808080" }}>
           Consultá tus datos personales, laborales y de contacto. Asegurate de
           mantener tu información actualizada.
         </Typography>
       </Box>
 
-      {empleadoData ? (
-        <FichaEmpleadoBase
-          data={empleadoData}
-          readOnly={true}
-          actions={actions}
-          onClose={onClose}
-          showClose={true}
-        />
-      ) : (
-        <Typography color="error">
-          No se pudo cargar la ficha del empleado.
-        </Typography>
-      )}
+      {/* Contenido con Scroll */}
+      <Box sx={{ flex: 1, overflowY: "auto", p: 4 }}>
+        {empleadoData ? (
+          <FichaEmpleadoBase
+            data={empleadoData}
+            readOnly={true}
+            actions={actions}
+            onClose={onClose}
+            showClose={true}
+          />
+        ) : (
+          <Typography color="error">
+            No se pudo cargar la ficha del empleado.
+          </Typography>
+        )}
+      </Box>
     </Box>
   );
 };

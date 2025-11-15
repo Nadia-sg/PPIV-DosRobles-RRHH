@@ -2,7 +2,7 @@ import { styled } from "@mui/material/styles";
 import { InputBase, Box } from "@mui/material";
 import SearchIcon from "@mui/icons-material/Search";
 
-const SearchContainer = styled(Box)(({ theme }) => ({
+const SearchContainer = styled(Box)(() => ({
   display: "flex",
   alignItems: "center",
   backgroundColor: "#FFFFFF",
@@ -11,10 +11,10 @@ const SearchContainer = styled(Box)(({ theme }) => ({
   padding: "0.5rem 1rem",
   color: "#808080",
   width: "100%",
-  maxWidth: 400, 
+  maxWidth: 400,
 }));
 
-const StyledInput = styled(InputBase)(({ theme }) => ({
+const StyledInput = styled(InputBase)(() => ({
   color: "#808080",
   flex: 1,
   "& input::placeholder": {

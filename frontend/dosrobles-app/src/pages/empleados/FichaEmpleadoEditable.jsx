@@ -3,6 +3,7 @@ import React, { useEffect, useState } from "react";
 import ModalCard from "../../components/ui/ModalCard";
 import ModalDialog from "../../components/ui/ModalDialog";
 import FichaEmpleadoBase from "./FichaEmpleadoBase";
+import SendMessageModal from "../../components/modales/SendMessageModal";
 import { CircularProgress, Box } from "@mui/material";
 
 const FichaEmpleadoEditable = ({ open, onClose, empleado, onEmpleadoActualizado }) => {
@@ -23,6 +24,9 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado, onEmpleadoActualizado 
   // Estados para el modal de confirmación de eliminación
   const [confirmDeleteOpen, setConfirmDeleteOpen] = useState(false);
   const [pendingDelete, setPendingDelete] = useState(false);
+
+  // Estado para el modal de envío de mensaje
+  const [messageModalOpen, setMessageModalOpen] = useState(false);
 
   // Mapeo inverso (backend → frontend)
   const mapBackendToFrontend = (backendData) => {
@@ -277,7 +281,7 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado, onEmpleadoActualizado 
         },
         {
           label: "Enviar Mensaje",
-          onClick: () => console.log("Mensaje"),
+          onClick: () => setMessageModalOpen(true),
           variant: "outlined",
         },
         {
@@ -350,6 +354,16 @@ const FichaEmpleadoEditable = ({ open, onClose, empleado, onEmpleadoActualizado 
             disabled: pendingDelete,
           },
         ]}
+      />
+
+      {/* Modal de envío de mensaje */}
+      <SendMessageModal
+        open={messageModalOpen}
+        onClose={() => setMessageModalOpen(false)}
+        empleado={empleadoData}
+        onMessageSent={() => {
+          console.log("✅ Mensaje enviado al empleado");
+        }}
       />
     </>
   );
