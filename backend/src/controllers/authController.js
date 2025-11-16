@@ -18,8 +18,6 @@ export const loginUser = async (req, res) => {
 
     // Generar token incluyendo el rol
     const jwtSecret = getJwtSecret();
-    console.log("🔑 [LOGIN] JWT_SECRET siendo usado:", jwtSecret);
-    console.log("🔑 [LOGIN] JWT_SECRET length:", jwtSecret.length);
 
     const token = jwt.sign(
       {
