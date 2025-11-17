@@ -1,8 +1,8 @@
 # Sistema de Gestión de RR.HH. — Dos Robles
 
 **Proyecto:** Sistema integral para la gestión de recursos humanos de la empresa *Dos Robles*.  
-**Autor:** Pink Code
-**Materia:** PPIV - Técnicatura Superior en Desarrollo de Software
+**Autor:** Pink Code.
+**Materia:** PPIV - Técnicatura Superior en Desarrollo de Software.
 
 Desarrollo de un sistema de gestión de recursos humanos para la empresa Dos Robles, 
 que permita administrar la información de empleados, 
