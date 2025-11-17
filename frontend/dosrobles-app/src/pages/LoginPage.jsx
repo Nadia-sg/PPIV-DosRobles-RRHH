@@ -187,9 +187,14 @@ export default function LoginPage() {
             Ingresar
           </LoginButton>
 
-          <Typography sx={{ mt: 2, fontSize: "0.85rem", color: "#DADADA" }}>
-            ¿Olvidaste tu contraseña?
-          </Typography>
+          <Box sx={{ mt: 3, p: 2, bgcolor: "rgba(255,255,255,0.1)", borderRadius: 1 }}>
+            <Typography sx={{ fontSize: "0.85rem", color: "#DADADA", mb: 1 }}>
+              ¿Olvidaste tu contraseña?
+            </Typography>
+            <Typography sx={{ fontSize: "0.8rem", color: "#B0B0B0", fontStyle: "italic" }}>
+              Comunícate con un administrador para resetear tu contraseña.
+            </Typography>
+          </Box>
         </form>
       </Box>
     </Box>

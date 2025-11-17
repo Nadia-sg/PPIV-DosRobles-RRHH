@@ -56,8 +56,10 @@ const HistorialFichajes = () => {
 
   const { empleadoId } = useParams();
   const location = useLocation();
-  const isAdminView =
-    new URLSearchParams(location.search).get("admin") === "true";
+  const searchParams = new URLSearchParams(location.search);
+  const isAdminView = searchParams.get("admin") === "true";
+  const mesParam = searchParams.get("mes");
+  const anioParam = searchParams.get("anio");
 
   // Obtener el empleadoId del usuario logueado
   const user = JSON.parse(localStorage.getItem("user"));
@@ -85,7 +87,10 @@ const HistorialFichajes = () => {
   useEffect(() => {
     const cargarDatos = async () => {
       try {
-        const data = await getFichajesPorEmpleado(idFinal);
+        let data = await getFichajesPorEmpleado(idFinal);
+
+        // Filtrar por mes y año si están especificados en la URL
+        data = filterFichajesByMonthYear(data);
 
         // Intentar extraer el nombre y apellido del primer fichaje (si viene populate)
         let empleadoInfo = {
@@ -130,7 +135,20 @@ const HistorialFichajes = () => {
     };
 
     cargarDatos();
-  }, [idFinal, isAdminView]);
+  }, [idFinal, isAdminView, mesParam, anioParam]);
+
+  // === Función para filtrar fichajes por mes y año ===
+  const filterFichajesByMonthYear = (data) => {
+    if (mesParam && anioParam && Array.isArray(data)) {
+      return data.filter((fichaje) => {
+        const fechaFichaje = new Date(fichaje.fecha);
+        const mesFichaje = fechaFichaje.getMonth() + 1;
+        const anioFichaje = fechaFichaje.getFullYear();
+        return mesFichaje === parseInt(mesParam) && anioFichaje === parseInt(anioParam);
+      });
+    }
+    return data;
+  };
 
   // === Formateador de filas ===
   const formatRow = (fichaje) => {
@@ -239,7 +257,9 @@ const HistorialFichajes = () => {
       setOpenModal(false);
       setEditErrors({ horaEntrada: "", horaSalida: "" });
 
-      const refreshed = await getFichajesPorEmpleado(idFinal);
+      let refreshed = await getFichajesPorEmpleado(idFinal);
+      // Aplicar el mismo filtro que en el useEffect
+      refreshed = filterFichajesByMonthYear(refreshed);
       setRows(refreshed.map((f) => formatRow(f)));
       setToast({
         open: true,
@@ -361,7 +381,9 @@ const HistorialFichajes = () => {
       setOpenCreateModal(false);
       setCreateErrors({ horaEntrada: "", horaSalida: "" });
 
-      const refreshed = await getFichajesPorEmpleado(idFinal);
+      let refreshed = await getFichajesPorEmpleado(idFinal);
+      // Aplicar el mismo filtro que en el useEffect
+      refreshed = filterFichajesByMonthYear(refreshed);
       setRows(refreshed.map((f) => formatRow(f)));
       setError(null);
       setToast({
@@ -583,22 +605,26 @@ const HistorialFichajes = () => {
       />
 
       {/* === Botones de acción === */}
-      <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
-        {isAdminView && (
+      {isAdminView && (
+        <Box sx={{ mt: 3, display: "flex", gap: 2 }}>
           <Button
             startIcon={<ArrowBackIcon />}
-            onClick={() => navigate("/fichaje/empleados")}
+            onClick={() => {
+              // Volver a FichajeEmpleados con los parámetros mes y año
+              const query = mesParam && anioParam ? `?mes=${mesParam}&anio=${anioParam}` : "";
+              navigate(`/fichaje/empleados${query}`);
+            }}
             sx={{ textTransform: "none", color: "#585858" }}
           >
             Volver
           </Button>
-        )}
-        <Box sx={{ flex: 1 }}>
-          <PrimaryButton fullWidth onClick={() => setOpenCreateModal(true)}>
-            Agregar fichaje
-          </PrimaryButton>
+          <Box sx={{ flex: 1 }}>
+            <PrimaryButton fullWidth onClick={() => setOpenCreateModal(true)}>
+              Agregar fichaje
+            </PrimaryButton>
+          </Box>
         </Box>
-      </Box>
+      )}
 
       {/* === Snackbar Toast === */}
       <Snackbar

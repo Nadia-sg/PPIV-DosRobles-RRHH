@@ -104,55 +104,42 @@ export default function CalculoHaberes() {
           puesto: emp.puesto,
           sueldoBruto: emp.sueldoBruto,
           email: emp.email,
+          tieneNomina: !!nomina,
+          estadoNomina: nomina?.estado,
+          tieneAprobacion: !!aprobacion,
         });
 
-        // PRIORIDAD: Si existe APROBACION (más reciente), usar esos datos
-        if (aprobacion) {
-          // Usar datos de aprobación de fichajes
-          return {
-            id: emp._id,
-            legajo: emp.numeroLegajo,
-            nombre: `${emp.nombre} ${emp.apellido}`,
-            cargo: emp.puesto,
-            email: emp.email,
-            estado: nomina?.estado || "pendiente",
-            horasTrabajadas: aprobacion.hsTrabajadas || 0,
-            horasExtras: aprobacion.hsExtra || 0,
-            diasAusencia: 0,
-            diasTrabajados: 0,
-            sueldoBasico: emp.sueldoBruto,
-            totalHaberes: nomina?.haberes?.totalHaberes || 0,
-            totalDeducciones: nomina?.deducciones?.totalDeducciones || 0,
-            totalNeto: nomina?.totalNeto || 0,
-            nominaId: nomina?._id || null,
-            nomina: nomina,
-            aprobacion: aprobacion,
-            empleado: emp,
-          };
-        } else {
-          // Si NO hay aprobación de fichajes, no mostrar datos de nómina vieja
-          // Mostrar como pendiente esperando que se aprueben fichajes en Control Horario
-          return {
-            id: emp._id,
-            legajo: emp.numeroLegajo,
-            nombre: `${emp.nombre} ${emp.apellido}`,
-            cargo: emp.puesto,
-            email: emp.email,
-            estado: "pendiente",
-            horasTrabajadas: 0,
-            horasExtras: 0,
-            diasAusencia: 0,
-            diasTrabajados: 0,
-            sueldoBasico: emp.sueldoBruto,
-            totalHaberes: 0,
-            totalDeducciones: 0,
-            totalNeto: 0,
-            nominaId: null,
-            nomina: nomina,
-            aprobacion: null,
-            empleado: emp,
-          };
-        }
+        // El estado viene de la NÓMINA, no de la aprobación
+        // Si hay nómina, mostrar su estado (calculado, aprobado, etc)
+        // Si no hay nómina, mostrar "pendiente"
+        const estado = nomina?.estado || "pendiente";
+
+        // Datos de horas/días vienen de la aprobación si existe, sino de la nómina
+        const horasTrabajadas = aprobacion?.hsTrabajadas || nomina?.horasTrabajadas || 0;
+        const horasExtras = aprobacion?.hsExtra || nomina?.horasExtras || 0;
+        const diasAusencia = nomina?.diasAusencia || 0;
+        const diasTrabajados = nomina?.diasTrabajados || 0;
+
+        return {
+          id: emp._id,
+          legajo: emp.numeroLegajo,
+          nombre: `${emp.nombre} ${emp.apellido}`,
+          cargo: emp.puesto,
+          email: emp.email,
+          estado: estado,
+          horasTrabajadas: horasTrabajadas,
+          horasExtras: horasExtras,
+          diasAusencia: diasAusencia,
+          diasTrabajados: diasTrabajados,
+          sueldoBasico: emp.sueldoBruto,
+          totalHaberes: nomina?.haberes?.totalHaberes || 0,
+          totalDeducciones: nomina?.deducciones?.totalDeducciones || 0,
+          totalNeto: nomina?.totalNeto || 0,
+          nominaId: nomina?._id || null,
+          nomina: nomina,
+          aprobacion: aprobacion,
+          empleado: emp,
+        };
       });
 
       setEmpleados(empleadosConNomina);

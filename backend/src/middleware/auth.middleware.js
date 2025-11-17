@@ -18,13 +18,9 @@ export const autenticacion = (req, res, next) => {
     }
 
     const jwtSecret = getJwtSecret();
-    console.log("🔐 JWT_SECRET siendo usado:", jwtSecret);
-    console.log("📌 Token recibido:", token.substring(0, 20) + "...");
-    console.log("🔐 JWT_SECRET length:", jwtSecret.length);
 
     try {
       const decoded = jwt.verify(token, jwtSecret);
-      console.log("✅ Token verificado correctamente. Usuario:", decoded.username);
 
       // Guardar datos del usuario en req.user para usarlos en el controlador
       req.user = {

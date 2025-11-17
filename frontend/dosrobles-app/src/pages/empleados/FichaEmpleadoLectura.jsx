@@ -39,18 +39,18 @@ const FichaEmpleadoLectura = ({ open, onClose }) => {
     }
   }, [open]); // se actualiza cada vez que se abre el modal
 
-  const actions = [
-    {
-      label: "Solicitar Ausencia",
-      onClick: () => console.log("Solicitar Ausencia"),
-    },
-    { label: "Enviar Mensaje", onClick: () => console.log("Mensaje") },
-  ];
-
   return (
-    <Box sx={{ display: "flex", flexDirection: "column", height: "100vh" }}>
-      {/* Header Fijo */}
-      <Box sx={{ p: 4, backgroundColor: "#FFFFFF", borderBottom: "1px solid #E0E0E0", flexShrink: 0 }}>
+    <Box sx={{ display: "flex", flexDirection: "column" }}>
+      {/* Header Sticky */}
+      <Box sx={{
+        position: "sticky",
+        top: 0,
+        p: 4,
+        backgroundColor: "#FFFFFF",
+        borderBottom: "1px solid #E0E0E0",
+        zIndex: 10,
+        flexShrink: 0
+      }}>
         <Typography
           variant="h4"
           sx={{ fontWeight: 600, color: "#585858", mb: 0.5 }}
@@ -64,12 +64,12 @@ const FichaEmpleadoLectura = ({ open, onClose }) => {
       </Box>
 
       {/* Contenido con Scroll */}
-      <Box sx={{ flex: 1, overflowY: "auto", p: 4 }}>
+      <Box sx={{ p: 4, overflowY: "auto" }}>
         {empleadoData ? (
           <FichaEmpleadoBase
             data={empleadoData}
             readOnly={true}
-            actions={actions}
+            actions={[]}
             onClose={onClose}
             showClose={true}
           />

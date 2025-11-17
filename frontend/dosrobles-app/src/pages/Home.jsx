@@ -52,12 +52,13 @@ export default function Home() {
       sx={{
         display: "flex",
         flexDirection: "column",
-        height: isMobile ? "auto" : "100dvh",
+        height: isMobile ? "auto" : "100%",
         overflow: "hidden",
         backgroundColor: "#f5f5f5",
         gap: 2,
         boxSizing: "border-box",
         padding: 4,
+        minHeight: 0,
       }}
     >
       {/* ===================
@@ -69,7 +70,7 @@ export default function Home() {
           <Box
             sx={{
               display: "flex",
-              flex: isMobile ? "0 0 auto" : "0 0 30%",
+              flex: isMobile ? "0 0 auto" : "0 0 40%",
               gap: 2,
               flexWrap: isMobile ? "wrap" : "nowrap",
             }}
@@ -110,40 +111,43 @@ export default function Home() {
             flex: 1,
             gap: 2,
             flexWrap: isMobile ? "wrap" : "nowrap",
+            minHeight: 0,
           }}
         >
-          {/* Columna izquierda (idéntica al admin) */}
+          {/* COLUMNA IZQUIERDA: Fichaje + Bandeja */}
           <Box
             sx={{
               display: "flex",
               flexDirection: "column",
               gap: 2,
               flex: isMobile ? "0 0 100%" : "0 0 50%",
+              minHeight: 0,
             }}
           >
-            <FichajeCard
-              isMobile={isMobile}
-              progress={progress}
-              seconds={seconds}
-              navigate={navigate}
-            />
-            <BandejaEntradaCard isMobile={isMobile} navigate={navigate} />
+            {/* CUADRANTE 1: FICHAJE (arriba) */}
+            <Box sx={{ flex: "0 0 40%" }}>
+              <FichajeCard
+                isMobile={isMobile}
+                progress={progress}
+                seconds={seconds}
+                navigate={navigate}
+              />
+            </Box>
+
+            {/* CUADRANTE 2: BANDEJA DE ENTRADA (abajo, ocupa resto) */}
+            <Box sx={{ flex: 1, minHeight: 0, overflow: "auto" }}>
+              <BandejaEntradaCard isMobile={isMobile} navigate={navigate} />
+            </Box>
           </Box>
 
-          {/* Columna derecha — eventos ocupa todo el alto */}
+          {/* COLUMNA DERECHA: Eventos (todo el alto) */}
           <Box
             sx={{
               flex: isMobile ? "0 0 100%" : "0 0 50%",
-              display: "flex",
-              flexDirection: "column",
-              justifyContent: "space-between",
+              minHeight: 0,
             }}
           >
-            <EventosCard
-              isMobile={isMobile}
-              eventos={eventos}
-              fullHeight
-            />
+            <EventosCard isMobile={isMobile} eventos={eventos} />
           </Box>
         </Box>
       )}

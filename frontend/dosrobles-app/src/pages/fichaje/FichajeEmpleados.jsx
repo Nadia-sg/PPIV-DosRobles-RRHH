@@ -15,7 +15,7 @@ import { NextButton, PrimaryButton } from "../../components/ui/Buttons";
 import CustomTable from "../../components/ui/CustomTable";
 import SearchBar from "../../components/ui/SearchBar";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
-import { useNavigate } from "react-router-dom";
+import { useNavigate, useLocation } from "react-router-dom";
 
 const meses = [
   "Enero",
@@ -33,14 +33,24 @@ const meses = [
 ];
 
 const FichajeEmpleados = () => {
+  const navigate = useNavigate();
+  const location = useLocation();
+  const searchParams = new URLSearchParams(location.search);
+  const mesParam = searchParams.get("mes"); // Ej: "9"
+  const anioParam = searchParams.get("anio"); // Ej: "2025"
+
   // 📅 Fecha actual
   const fechaActual = new Date();
   const mesActual = meses[fechaActual.getMonth()]; // Ej: "Noviembre"
   const anioActual = fechaActual.getFullYear(); // Ej: 2025
 
+  // Determinar mes y año iniciales (desde URL o actuales)
+  const mesInicial = mesParam ? meses[parseInt(mesParam) - 1] : mesActual;
+  const anioInicial = anioParam ? parseInt(anioParam) : anioActual;
+
   // 🧩 Estados
-  const [mes, setMes] = useState(mesActual);
-  const [anio, setAnio] = useState(anioActual);
+  const [mes, setMes] = useState(mesInicial);
+  const [anio, setAnio] = useState(anioInicial);
   const [search, setSearch] = useState("");
   const [fichajes, setFichajes] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -108,16 +118,16 @@ const FichajeEmpleados = () => {
     hsTrabajadas: f.hsTrabajadas || "—",
     masInfo: (
       <NextButton
-        onClick={() =>
-          navigate(`/fichaje/historial/${f.idEmpleado}?admin=true`)
+        onClick={() => {
+          const mesNumero = meses.indexOf(mes) + 1;
+          navigate(`/fichaje/historial/${f.idEmpleado}?admin=true&mes=${mesNumero}&anio=${anio}`)
+        }
         }
         endIcon={<ArrowForwardIcon />}
       />
     ),
     _empleadoId: f.idEmpleado,
   }));
-
-  const navigate = useNavigate();
 
   // 📤 Aprobar fichajes
   const handleAprobarFichajes = async () => {

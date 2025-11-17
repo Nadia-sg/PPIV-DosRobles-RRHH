@@ -367,14 +367,80 @@ describe('Flujo de Usuarios - Pruebas de Integración', () => {
   });
 
   describe('6. Logout', () => {
-    test('Debería retornar logout exitoso', async () => {
+    test('Debería retornar logout exitoso con token válido', async () => {
+      // Crear empleado
+      const empleado = await Empleado.create({
+        numeroLegajo: '0010',
+        nombre: 'Carlos',
+        apellido: 'Logout',
+        email: 'carlos@example.com',
+        numeroDocumento: '10000000',
+        tipoDocumento: 'dni',
+        cuil: '20100000001',
+        estado: 'activo',
+      });
+
+      // Registrar usuario
+      const registerResponse = await request(app)
+        .post('/api/auth/register')
+        .send({
+          legajo: '0010',
+          username: 'carlos_logout',
+          password: 'password123',
+          role: 'empleado',
+        });
+
+      expect(registerResponse.status).toBe(201);
+
+      // Hacer login para obtener token
+      const loginResponse = await request(app)
+        .post('/api/auth/login')
+        .send({
+          username: 'carlos_logout',
+          password: 'password123',
+        });
+
+      expect(loginResponse.status).toBe(200);
+      const token = loginResponse.body.token;
+      expect(token).toBeDefined();
+
+      // Llamar a logout con token válido
+      const logoutResponse = await request(app)
+        .post('/api/auth/logout')
+        .set('Authorization', `Bearer ${token}`);
+
+      // QUÉ SE PRUEBA: Logout con token válido
+      // RESULTADO ESPERADO: status 200, success true, datos del usuario
+      expect(logoutResponse.status).toBe(200);
+      expect(logoutResponse.body.success).toBe(true);
+      expect(logoutResponse.body.message).toBe('Logout exitoso');
+      expect(logoutResponse.body.data).toBeDefined();
+      expect(logoutResponse.body.data.username).toBe('carlos_logout');
+      expect(logoutResponse.body.data.nombre).toBe('Carlos');
+    });
+
+    test('Debería rechazar logout sin token', async () => {
+      // Llamar a logout sin token
       const response = await request(app).post('/api/auth/logout');
 
-      // QUÉ SE PRUEBA: Función logout
-      // RESULTADO ESPERADO: status 200, success true
-      expect(response.status).toBe(200);
-      expect(response.body.success).toBe(true);
-      expect(response.body.message).toBe('Logout exitoso');
+      // QUÉ SE PRUEBA: Logout sin token
+      // RESULTADO ESPERADO: status 401, error
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('No hay token');
+    });
+
+    test('Debería rechazar logout con token inválido', async () => {
+      // Llamar a logout con token inválido
+      const response = await request(app)
+        .post('/api/auth/logout')
+        .set('Authorization', 'Bearer invalid_token_12345');
+
+      // QUÉ SE PRUEBA: Logout con token inválido
+      // RESULTADO ESPERADO: status 401, error
+      expect(response.status).toBe(401);
+      expect(response.body.success).toBe(false);
+      expect(response.body.message).toContain('Token inválido');
     });
   });
 });

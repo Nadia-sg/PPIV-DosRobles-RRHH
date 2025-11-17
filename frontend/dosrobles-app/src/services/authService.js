@@ -32,9 +32,28 @@ export const authService = {
   },
 
   // Logout
-  logout: () => {
-    // Limpiar todo el localStorage completamente
-    localStorage.clear();
+  logout: async () => {
+    try {
+      const token = localStorage.getItem("token");
+
+      // Llamar a la API de logout para validar y registrar
+      if (token) {
+        await fetch(`${API_URL}/logout`, {
+          method: "POST",
+          headers: {
+            "Content-Type": "application/json",
+            Authorization: `Bearer ${token}`,
+          },
+        });
+      }
+    } catch (error) {
+      console.warn("Advertencia en logout API:", error);
+      // No bloquear logout si hay error en la API
+    } finally {
+      // Siempre limpiar localStorage, incluso si hay error en la API
+      localStorage.clear();
+      console.log("✅ Sesión cerrada localmente");
+    }
   },
 
   // Verificar token

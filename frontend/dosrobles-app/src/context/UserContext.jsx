@@ -48,10 +48,17 @@ export const UserProvider = ({ children }) => {
     }
   };
 
-  const logout = () => {
-    authService.logout();
-    setUser(null);
-    setError(null);
+  const logout = async () => {
+    try {
+      await authService.logout();
+      setUser(null);
+      setError(null);
+    } catch (error) {
+      console.error("Error en logout:", error);
+      // Igual limpiar estado local aunque falle
+      setUser(null);
+      setError(null);
+    }
   };
 
   const value = {

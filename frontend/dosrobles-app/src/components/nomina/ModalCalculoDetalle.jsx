@@ -10,33 +10,39 @@ import { PrimaryButton } from "../ui/Buttons";
 export default function ModalCalculoDetalle({ open, onClose, empleado, onCalcular, onAprobar }) {
   if (!empleado) return null;
 
-  // Crear estructura por defecto si no existen los detalles de cálculo
-  const calcDetalle = empleado.calculoDetalle || {
-    antiguedad: 0,
-    presentismo: 0,
-    horasExtras: 0,
-    viaticos: 0,
-    jubilacion: 0,
-    obraSocial: 0,
-    ley19032: 0,
-    sindicato: 0,
+  // Extraer datos de la nómina o usar estructura por defecto
+  const nomina = empleado.nomina || {};
+  const haberesDatos = nomina.haberes || {};
+  const deduccionesDatos = nomina.deducciones || {};
+
+  const calcDetalle = {
+    antiguedad: haberesDatos.antiguedad || 0,
+    presentismo: haberesDatos.presentismo || 0,
+    horasExtras: haberesDatos.horasExtras || 0,
+    viaticos: haberesDatos.viaticos || 0,
+    jubilacion: deduccionesDatos.jubilacion || 0,
+    obraSocial: deduccionesDatos.obraSocial || 0,
+    ley19032: deduccionesDatos.ley19032 || 0,
+    sindicato: deduccionesDatos.sindicato || 0,
   };
 
-  // Calcular totales
-  const haberes =
+  // Usar totales de la nómina si existen, sino calcular
+  const haberes = haberesDatos.totalHaberes || (
     empleado.sueldoBasico +
     calcDetalle.antiguedad +
     calcDetalle.presentismo +
     calcDetalle.horasExtras +
-    calcDetalle.viaticos;
+    calcDetalle.viaticos
+  );
 
-  const deducciones =
+  const deducciones = deduccionesDatos.totalDeducciones || (
     calcDetalle.jubilacion +
     calcDetalle.obraSocial +
     calcDetalle.ley19032 +
-    calcDetalle.sindicato;
+    calcDetalle.sindicato
+  );
 
-  const neto = haberes - deducciones;
+  const neto = nomina.totalNeto || (haberes - deducciones);
 
   // Formatear moneda
   const formatMonto = (num) => {

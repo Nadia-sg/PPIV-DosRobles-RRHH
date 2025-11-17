@@ -145,11 +145,50 @@ export const eliminarUsuario = async (req, res) => {
 };
 
 // === LOGOUT ===
-export const logout = (req, res) => {
-  return res.status(200).json({
-    success: true,
-    message: "Logout exitoso",
-  });
+export const logout = async (req, res) => {
+  try {
+    const token = req.headers.authorization?.split(" ")[1];
+
+    if (!token) {
+      return res.status(401).json({
+        success: false,
+        message: "No hay token para logout",
+      });
+    }
+
+    const jwtSecret = getJwtSecret();
+    const decoded = jwt.verify(token, jwtSecret);
+
+    // Obtener usuario que se está desconectando
+    const usuario = await Usuario.findById(decoded.usuarioId).populate("empleado");
+
+    if (!usuario) {
+      return res.status(404).json({
+        success: false,
+        message: "Usuario no encontrado",
+      });
+    }
+
+    // Log de logout (auditoría)
+    console.log(`📤 [LOGOUT] ${usuario.username} se desconectó a las ${new Date().toLocaleString()}`);
+
+    return res.status(200).json({
+      success: true,
+      message: "Logout exitoso",
+      data: {
+        usuarioId: usuario._id,
+        username: usuario.username,
+        nombre: usuario.empleado?.nombre,
+        timestamp: new Date(),
+      },
+    });
+  } catch (error) {
+    console.error("Error en logout:", error);
+    return res.status(401).json({
+      success: false,
+      message: "Token inválido o expirado",
+    });
+  }
 };
 
 // === VERIFICAR TOKEN ===
