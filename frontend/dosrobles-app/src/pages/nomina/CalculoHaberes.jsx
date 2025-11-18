@@ -82,7 +82,9 @@ export default function CalculoHaberes() {
       const empleadosConNomina = empleadosActivos.map((emp) => {
         // Buscar nómina - considerar que empleadoId puede ser un objeto (populate)
         const nomina = nominas.find((n) => {
-          const nominaEmpleadoId = typeof n.empleadoId === 'object'
+          // Validar que empleadoId no sea null antes de acceder a propiedades
+          if (!n.empleadoId) return false;
+          const nominaEmpleadoId = typeof n.empleadoId === 'object' && n.empleadoId !== null
             ? n.empleadoId._id.toString()
             : n.empleadoId.toString();
           return nominaEmpleadoId === emp._id.toString();
@@ -90,7 +92,9 @@ export default function CalculoHaberes() {
 
         // Buscar aprobación de fichajes
         const aprobacion = aprobaciones.find((a) => {
-          const aprobacionEmpleadoId = typeof a.empleadoId === 'object'
+          // Validar que empleadoId no sea null antes de acceder a propiedades
+          if (!a.empleadoId) return false;
+          const aprobacionEmpleadoId = typeof a.empleadoId === 'object' && a.empleadoId !== null
             ? a.empleadoId._id.toString()
             : a.empleadoId.toString();
           return aprobacionEmpleadoId === emp._id.toString();
