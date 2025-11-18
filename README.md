@@ -23,7 +23,7 @@ y generar reportes automáticos relacionados con ausencias, horas extra y licenc
 
 ## Tecnologías
 
-- **Frontend:** React (Vite), React Router, Axios, Material-UI (MUI), Context API  
+- **Frontend:** React (Vite), React Router, Material-UI (MUI), Context API  
 - **Backend:** Node.js, Express.js, Mongoose (MongoDB), Multer 
 - **BD:** MongoDB (Atlas)  
 - **Autenticación:** JWT (JSON Web Tokens)  
