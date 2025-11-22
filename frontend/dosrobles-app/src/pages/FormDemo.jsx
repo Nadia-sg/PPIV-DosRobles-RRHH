@@ -4,8 +4,8 @@ import { Box, Stack } from "@mui/material";
 import FormCard from "../components/ui/FormCard";
 import BaseInput from "../components/ui/BaseInput";
 import SelectInput from "../components/ui/SelectInput";
-import CheckboxInput from "../components/ui/CheckboxInput";
-import DateField from "../components/ui/DateField"; 
+import CheckBox from "../components/ui/CheckBox";
+import DateField from "../components/ui/DateField";
 import TextInput from "../components/ui/TextInput";
 import TextareaInput from "../components/ui/TextareaInput";
 import { PrimaryButton } from "../components/ui/Buttons";
@@ -15,12 +15,12 @@ import WorkIcon from "@mui/icons-material/Work";
 
 
 export default function FormDemo() {
-const [name, setName] = useState("");
-const [email, setEmail] = useState("");
-const [role, setRole] = useState("");
-const [terms, setTerms] = useState(false);
-const [dob, setDob] = useState("");
-const [bio, setBio] = useState("");
+  const [name, setName] = useState("");
+  const [email, setEmail] = useState("");
+  const [role, setRole] = useState("");
+  const [terms, setTerms] = useState(false);
+  const [dob, setDob] = useState("");
+  const [bio, setBio] = useState("");
 
 
   const roles = [
@@ -78,7 +78,7 @@ const [bio, setBio] = useState("");
               icon={<WorkIcon sx={{ color: "#7FC6BA" }} />}
             />
 
-            <CheckboxInput
+            <CheckBox
               label="Acepto los términos y condiciones"
               checked={terms}
               onChange={(e) => setTerms(e.target.checked)}

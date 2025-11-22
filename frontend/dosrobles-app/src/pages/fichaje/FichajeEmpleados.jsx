@@ -11,7 +11,7 @@ import {
   Alert,
 } from "@mui/material";
 import { NextButton, PrimaryButton } from "../../components/ui/Buttons";
-import CheckBoxInput from "../../components/ui/CheckBoxInput";
+import CheckBox from "../../components/ui/CheckBox";
 import CustomTable from "../../components/ui/CustomTable";
 import SearchBar from "../../components/ui/SearchBar";
 import ArrowForwardIcon from "@mui/icons-material/ArrowForward";
@@ -64,11 +64,11 @@ const FichajeEmpleados = () => {
 
 
 
-  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000";
+  const API_URL = import.meta.env.VITE_API_URL || "http://localhost:4000/api";
 
 
   async function aprobarFichajeService(payload) {
-    const res = await fetch(`${API_URL}/api/fichajes/aprobar`, {
+    const res = await fetch(`${API_URL}/fichajes/aprobar`, {
       method: "POST",
       headers: { "Content-Type": "application/json" },
       body: JSON.stringify(payload),
@@ -88,7 +88,7 @@ const FichajeEmpleados = () => {
       try {
         const mesNumero = meses.indexOf(mes) + 1;
         const res = await fetch(
-          `${API_URL}/api/fichajes/empleados-mes?mes=${mesNumero}&anio=${anio}`
+          `${API_URL}/fichajes/empleados-mes?mes=${mesNumero}&anio=${anio}`
         );
 
         if (!res.ok) throw new Error("Error al obtener fichajes");
@@ -117,7 +117,7 @@ const FichajeEmpleados = () => {
       try {
         const mesNumero = meses.indexOf(mes) + 1;
         const res = await fetch(
-          `${API_URL}/api/fichajes/aprobaciones/mes?mes=${mesNumero}&anio=${anio}`
+          `${API_URL}/fichajes/aprobaciones/mes?mes=${mesNumero}&anio=${anio}`
         );
 
         if (res.ok) {
@@ -167,7 +167,7 @@ const FichajeEmpleados = () => {
         Aprobado
       </Typography>
     ) : (
-      <CheckBoxInput
+      <CheckBox
         checked={!!selected[f.idEmpleado]}
         onChange={(e) =>
           setSelected((prev) => ({
